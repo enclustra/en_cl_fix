@@ -12,7 +12,7 @@ Marc Oberholzer [marc.oberholzer@enclustra.com]
 See [Changelog](Changelog.md)
 
 ## Detailed Documentation
-See [VHDL Documentation](doc/vhdl_out/index.html)
+See [VHDL Documentation](https://rawgit.com/enclustra/en_cl_fix/master/doc/vhdl_out/index.html)
 
 ## Tagging Policy
 Stable releases are tagged in the form *major*.*minor*.*bugfix*. 
