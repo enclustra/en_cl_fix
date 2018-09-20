@@ -6,7 +6,7 @@ The *en_cl_fix* library allows implementing the same algorithms and calculations
 This library is published under [PSI HDL Library License](License.txt), which is [LGPL](LGPL2_1.txt) plus some additional exceptions to clarify the LGPL terms in the context of firmware development.
 
 ## Maintainers
-Marc Oberholzer [marc.oberholzer@enclustra.com]
+Martin Heimlicher [martin.heimlicher@enclustra.com]
 
 ## Changelog
 See [Changelog](Changelog.md)
