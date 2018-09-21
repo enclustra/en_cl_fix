@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['max',['max',['../class__en__cl__fix__pkg.html#aa78768d2fd9ff6cd152669d7d7d05d51',1,'_en_cl_fix_pkg']]],
-  ['min',['min',['../class__en__cl__fix__pkg.html#a0edfe367410d609cdbf6aba3464a62a9',1,'_en_cl_fix_pkg']]]
+  ['ieee',['ieee',['../classen__cl__fix__pkg.html#a0a6af6eef40212dbaf130d57ce711256',1,'en_cl_fix_pkg.ieee()'],['../classen__cl__fix__pkg__tb.html#a0a6af6eef40212dbaf130d57ce711256',1,'en_cl_fix_pkg_tb.ieee()']]],
+  ['intbits',['IntBits',['../classen__cl__fix__pkg.html#a76a7446ab8bda1829beb6ae24084ee1f',1,'en_cl_fix_pkg']]]
 ];
