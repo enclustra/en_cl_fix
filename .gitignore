@@ -1,0 +1,5 @@
+#Modelsim Library
+/sim/work
+
+#Modelsim transcript files
+*.transcript
