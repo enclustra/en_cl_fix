@@ -6,3 +6,4 @@
 
 #Pycharm project files
 **/.idea
+*.pyc

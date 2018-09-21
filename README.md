@@ -21,9 +21,22 @@ Stable releases are tagged in the form *major*.*minor*.*bugfix*.
 * Whenever new features are added, the *minor* version number is incremented
 * If only bugs are fixed (i.e. no functional changes are applied), the *bugfix* version is incremented
 
+# Dependencies
+
+The python implementation depends on the *numpy* package
+
 # Simulations and Testbenches
 
-TBD
+* Python Models
+  * Navigate to *python/unittest* 
+  * Run *python3 en_cl_fix_pkg_test.py*
+* VHDL Models
+  * Start Mmodelsim
+  * In the TCL console, navigate to *sim*
+  * run *source ./sim.tcl*
+  * The script automatically prints whether all tests were successful
+* MATLAB
+  * Currently there are not tests for the MATLAB implementation
 
 # Fixed Point Number Format
 
