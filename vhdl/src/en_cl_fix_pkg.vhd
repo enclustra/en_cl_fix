@@ -13,6 +13,8 @@ library ieee;
 	use ieee.std_logic_1164.all;
 	--! package for conversions
 	use ieee.numeric_std.all;
+	--! package for real calculations 
+	use ieee.math_real.all;
 
 --! std library
 library std;
@@ -254,14 +256,28 @@ package en_cl_fix_pkg is
 	--! \see			cl_fix_min_value()
 	function cl_fix_max_value (	fmt 	: FixFormat_t) 
 								return std_logic_vector;
-	
+								
 	--! \brief			Minimum value in a given format
 	--! \param fmt		Format to get the minimum value from
 	--! \return			Fix-point representation of the minimum value representable in format fmt
 	--! \see			cl_fix_zero_value()
 	--! \see			cl_fix_max_value()
 	function cl_fix_min_value (	fmt 	: FixFormat_t) 
-								return std_logic_vector;
+								return std_logic_vector;	
+
+	--! \brief			Maximum value in a given format as real number
+	--!	\param fmt		Format to get the maximum value from
+	--! \return			Real representation of the maximum value representable in format fmt
+	--! \see			cl_fix_min_real()
+	function cl_fix_max_real (	fmt 	: FixFormat_t) 
+								return real;								
+	
+	--! \brief			Minimum value in a given format as real number
+	--! \param fmt		Format to get the minimum value from
+	--! \return			Real representation of the minimum value representable in format fmt
+	--! \see			cl_fix_max_real()
+	function cl_fix_min_real (	fmt 	: FixFormat_t) 
+								return real;						
 		
 	--! \brief			Extract sign bit from a fix-point number
 	--! \param a		Number to extract sign bit from
@@ -448,6 +464,26 @@ package en_cl_fix_pkg is
 	function cl_fix_to_hex (	a			: std_logic_vector; 
 								a_fmt		: FixFormat_t) 
 								return string;
+
+	--! \brief				Get bits intereted as number (ignoring fractional bits). This is very useful
+	--!						for writing fixed-point number to files efficiently.
+	--! \param a			Fix-point number to get the bits from
+	--! \param a_fmt		Format of a
+	--! \return				Integer representation of the bits in a
+	--! \see 				cl_fix_from_bits_as_int()			
+	function cl_fix_get_bits_as_int(	a		: std_logic_vector;
+										aFmt	: FixFormat_t)
+										return integer;
+
+	--! \brief				Create fixed-point number from bits stored in integer representation. This is very
+	--!						useful for reading fixed-point numbers from files efficiently.
+	--! \param a			Bits of a fixed-point number in integer representation
+	--! \param a_fmt		Format of of the fixed-point number
+	--! \return				Fixed-point number as std_logic_vector
+	--! \see 				cl_fix_get_bits_as_int()										
+	function cl_fix_from_bits_as_int(	a 		: integer;
+										aFmt 	: FixFormat_t)
+										return std_logic_vector;								
 
 	-----------------------------------------------------------------------------------------------
 	-- File Operations
@@ -943,6 +979,19 @@ package en_cl_fix_pkg is
 							round		: FixRound_t	:= Trunc_s; 
 							saturate	: FixSaturate_t := Warn_s) 
 							return std_logic_vector;
+							
+	--! \brief				Compare two fixed point numbers (the format can be different)
+	--! \param comparison	Type of the comparison ("a=b", "a<b", "a>b", "a<=b", "a>=b", "a!=b")
+	--! \param a			Input A
+	--! \param aFmt			Format of input A
+	--! \param b 			Input B
+	--! \param bFmt			Format of input B
+	--! \return				Result of comparison 
+	function cl_fix_compare(	comparison	: string;
+								a			: std_logic_vector;
+								aFmt		: FixFormat_t;
+								b			: std_logic_vector;
+								bFmt		: FixFormat_t) return boolean;							
 		
 end package;
 
@@ -1306,6 +1355,26 @@ package body en_cl_fix_pkg is
 		end if;
 		return result_v;
 	end;
+	
+	-----------------------------------------------------------------------------------------------	
+	--! cl_fix_max_real	implementation		
+	function cl_fix_max_real(	fmt 	: FixFormat_t)
+								return real is
+	begin
+		return 2.0**real(fmt.IntBits)-2.0**real(-fmt.FracBits);
+	end function;
+		
+	-----------------------------------------------------------------------------------------------	
+	--! cl_fix_min_real implementation		
+	function cl_fix_min_real(	fmt 	: FixFormat_t)
+								return real is
+	begin
+		if fmt.Signed then
+			return -(2.0**real(fmt.IntBits));
+		else
+			return 0.0;
+		end if;
+	end function;	
 	
 	-----------------------------------------------------------------------------------------------	
 	--! cl_fix_sign implementation		
@@ -1673,6 +1742,32 @@ package body en_cl_fix_pkg is
 	begin
 		return toHexString (a);
 	end;
+	
+	-----------------------------------------------------------------------------------------------	
+	--! cl_fix_from_bits_as_int implementation	
+	function cl_fix_from_bits_as_int(	a 		: integer;
+										aFmt 	: FixFormat_t)
+										return std_logic_vector is
+	begin
+		if aFmt.Signed then
+			return std_logic_vector(to_signed(a, cl_fix_width(aFmt)));
+		else
+			return std_logic_vector(to_unsigned(a, cl_fix_width(aFmt)));
+		end if;
+	end function;
+	
+	-----------------------------------------------------------------------------------------------	
+	--! cl_fix_to_hex implementation	
+	function cl_fix_get_bits_as_int(	a		: std_logic_vector;
+										aFmt	: FixFormat_t)
+										return integer is
+	begin
+		if aFmt.Signed then
+			return to_integer(signed(a));
+		else
+			return to_integer(unsigned(a));
+		end if;
+	end function;	
 	
 	-----------------------------------------------------------------------------------------------	
 	--! cl_fix_read_int implementation
@@ -2445,4 +2540,37 @@ package body en_cl_fix_pkg is
 		result_v := cl_fix_resize (temp_v, TempFmt_c, result_fmt, round, saturate);
 		return result_v;
 	end;
+	
+	-----------------------------------------------------------------------------------------------	
+	--! cl_fix_compare implementation
+	function cl_fix_compare(	comparison	: string;
+							a			: std_logic_vector;
+							aFmt		: FixFormat_t;
+							b			: std_logic_vector;
+							bFmt		: FixFormat_t) return boolean is
+		constant FullFmt_c	: FixFormat_t	:= (aFmt.Signed or bFmt.Signed, max(aFmt.IntBits, bFmt.IntBits), max(aFmt.FracBits, bFmt.FracBits));
+		variable AFull_v	: std_logic_vector(cl_fix_width(FullFmt_c)-1 downto 0);
+		variable BFull_v	: std_logic_vector(cl_fix_width(FullFmt_c)-1 downto 0);
+	begin
+		-- Check operator
+		-- Convert to same type
+		AFull_v	:= cl_fix_resize(a, aFmt, FullFmt_c);
+		BFull_v := cl_fix_resize(b, bFmt, FullFmt_c);
+		-- Convert to unsigned representation with offset
+		if FullFmt_c.Signed then
+			AFull_v(AFull_v'high) := not AFull_v(AFull_v'high);
+			BFull_v(BFull_v'high) := not BFull_v(BFull_v'high);
+		end if;
+		-- Copare
+		if 		comparison = "a=b" 	then return unsigned(AFull_v) = unsigned(BFull_v);
+		elsif 	comparison = "a<b" 	then return unsigned(AFull_v) < unsigned(BFull_v);
+		elsif	comparison = "a>b"	then return unsigned(AFull_v) > unsigned(BFull_v);
+		elsif	comparison = "a<=b" then return unsigned(AFull_v) <= unsigned(BFull_v);
+		elsif	comparison = "a>=b" then return unsigned(AFull_v) >= unsigned(BFull_v);
+		elsif	comparison = "a!=b"	then return unsigned(AFull_v) /= unsigned(BFull_v);
+		else	report "###ERROR###: cl_fix_compare illegal comparison type [" & comparison & "]" severity error;
+				return false;
+		end if;
+		
+	end function;	
 end;
