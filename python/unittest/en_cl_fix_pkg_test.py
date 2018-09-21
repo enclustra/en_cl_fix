@@ -5,7 +5,7 @@
 ########################################################################################################################
 import sys
 sys.path.append("../src")
-from src.en_cl_fix_pkg import *
+from en_cl_fix_pkg import *
 
 import unittest
 
