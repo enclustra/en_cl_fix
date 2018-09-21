@@ -3,3 +3,6 @@
 
 #Modelsim transcript files
 *.transcript
+
+#Pycharm project files
+**/.idea
