@@ -48,6 +48,15 @@ architecture sim of en_cl_fix_pkg_tb is
 		assert expected = actual
 			report "###ERROR### " & msg & " [expected: " & real'image(expected) & ", got: " & real'image(actual) & "]"
 			severity error;
+	end procedure;	
+
+	procedure CheckStdl(	expected : std_logic;
+							actual	 : std_logic;
+							msg		 : string) is
+	begin
+		assert expected = actual
+			report "###ERROR### " & msg & " [expected: " & std_logic'image(expected) & ", got: " & std_logic'image(actual) & "]"
+			severity error;
 	end procedure;		
 	
 	procedure CheckBoolean(	expected : boolean;
@@ -147,7 +156,6 @@ begin
 		CheckInt(-3, cl_fix_get_bits_as_int("1101", (true,1,2)), "cl_fix_get_bits_as_int: Fractional"); -- binary point position is not important
 
 		-- *** cl_fix_resize ***
-		-- TODO: Test new rounding modes
 		print("*** cl_fix_resize ***");
 		CheckStdlv(	"0101", cl_fix_resize("0101", (true, 2, 1), (true, 2, 1)), 
 					"cl_fix_resize: No formatchange");
@@ -716,7 +724,92 @@ begin
 						cl_fix_compare(	"a!=b",
 										cl_fix_from_real(2.5, (false, 4, 2)), (false, 4, 2),
 										cl_fix_from_real(-1.5, (true, 2, 1)), (true, 2, 1)),
-						"a!=b unsigned signed true");		
+						"a!=b unsigned signed true");	
+
+		-- *** cl_fix_sign ***
+		print("*** cl_fix_sign ***");
+		CheckStdl(	'0', cl_fix_sign(cl_fix_from_real(3.25, (false, 2, 2)), (false,2,2)), "Unsigned"); 
+		CheckStdl(	'1', cl_fix_sign(cl_fix_from_real(-1.25, (true, 2, 2)), (true,2,2)), "SignedOne"); 
+		CheckStdl(	'0', cl_fix_sign(cl_fix_from_real(3.25, (true, 2, 2)), (true,2,2)), "SignedZero"); 
+		
+		-- *** cl_fix_int ***
+		print("*** cl_fix_int ***");
+		CheckStdlv(	"11", cl_fix_int(cl_fix_from_real(3.25, (false, 2, 2)), (false,2,2)), "Unsigned"); 
+		CheckStdlv(	"11", cl_fix_int(cl_fix_from_real(3.25, (true, 2, 2)), (true,2,2)), "SignedOne"); 
+		CheckStdlv(	"10", cl_fix_int(cl_fix_from_real(-1.25, (true, 2, 2)), (true,2,2)), "SignedZero"); 
+
+		-- *** cl_fix_frac ***
+		print("*** cl_fix_frac ***");
+		CheckStdlv(	"010", cl_fix_frac(cl_fix_from_real(3.25, (false, 2, 3)), (false,2,3)), "Test"); 		
+		
+		-- *** cl_fix_combine ***
+		print("*** cl_fix_combine ***");
+		CheckStdlv(	cl_fix_from_real(-3.25, (True,2,2)), 
+					cl_fix_combine('1', "00", "11", (True,2,2)), "Test");	
+
+		-- *** cl_fix_get_msb ***
+		print("*** cl_fix_get_msb ***");
+		CheckStdl(	'1', cl_fix_get_msb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 2), "One"); 				
+		CheckStdl(	'0', cl_fix_get_msb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 1), "Zero"); 	
+
+		-- *** cl_fix_get_lsb ***
+		print("*** cl_fix_get_lsb ***");
+		CheckStdl(	'1', cl_fix_get_lsb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 1), "One"); 				
+		CheckStdl(	'0', cl_fix_get_lsb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 2), "Zero"); 	
+
+		-- *** cl_fix_set_msb ***
+		print("*** cl_fix_set_msb ***");
+		CheckStdlv(	cl_fix_from_real(2.25, (true,3,3)),
+					cl_fix_set_msb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 2, '1'), "SetOne"); 
+		CheckStdlv(	cl_fix_from_real(6.25, (true,3,3)),
+					cl_fix_set_msb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 1, '1'), "SetZero"); 
+		CheckStdlv(	cl_fix_from_real(0.25, (true,3,3)),
+					cl_fix_set_msb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 2, '0'), "ClearOne"); 
+		CheckStdlv(	cl_fix_from_real(2.25, (true,3,3)),
+					cl_fix_set_msb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 1, '0'), "ClearZero"); 
+
+		-- *** cl_fix_set_lsb ***
+		print("*** cl_fix_set_lsb ***");
+		CheckStdlv(	cl_fix_from_real(2.25, (true,3,3)),
+					cl_fix_set_lsb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 1, '1'), "SetOne"); 
+		CheckStdlv(	cl_fix_from_real(2.75, (true,3,3)),
+					cl_fix_set_lsb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 2, '1'), "SetZero"); 
+		CheckStdlv(	cl_fix_from_real(2.0, (true,3,3)),
+					cl_fix_set_lsb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 1, '0'), "ClearOne"); 
+		CheckStdlv(	cl_fix_from_real(2.25, (true,3,3)),
+					cl_fix_set_lsb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 2, '0'), "ClearZero"); 
+
+		-- *** cl_fix_sabs ***
+		print("*** cl_fix_sabs ***");
+		CheckStdlv(	cl_fix_from_real(2.25, (false,2,2)),
+					cl_fix_sabs(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), (false,2,2)), "Positive"); 					
+		CheckStdlv(	cl_fix_from_real(2.0, (false,2,2)),
+					cl_fix_sabs(cl_fix_from_real(-2.25, (true, 3, 3)), (true,3,3), (false,2,2)), "Negative");
+					
+		-- *** cl_fix_sneg ***
+		print("*** cl_fix_sneg ***");
+		CheckStdlv(	cl_fix_from_real(-2.5, (true,3,2)),
+					cl_fix_sneg(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), '1', (true,3,2)), "Pos"); 					
+		CheckStdlv(	cl_fix_from_real(2.0, (true,3,2)),
+					cl_fix_sneg(cl_fix_from_real(-2.25, (true, 3, 3)), (true,3,3), '1', (true,3,2)), "Neg"); 
+
+		-- *** cl_fix_addsub ***
+		print("*** cl_fix_addsub ***");
+		CheckStdlv(	cl_fix_from_real(1.75, (true,3,3)),
+					cl_fix_addsub(	cl_fix_from_real(1.0, (true,3,3)), (true,3,3),
+									cl_fix_from_real(0.75, (true,3,3)), (true,3,3), '1', (true,3,3)), "Add");	
+		CheckStdlv(	cl_fix_from_real(1.0, (true,3,3)),
+					cl_fix_addsub(	cl_fix_from_real(1.25, (true,3,3)), (true,3,3),
+									cl_fix_from_real(0.25, (true,3,3)), (true,3,3), '0', (true,3,3)), "Sub");		
+
+		-- *** cl_fix_saddsub ***
+		print("*** cl_fix_saddsub ***");
+		CheckStdlv(	cl_fix_from_real(1.75, (true,3,2)),
+					cl_fix_saddsub(	cl_fix_from_real(1.0, (true,3,2)), (true,3,2),
+									cl_fix_from_real(0.75, (true,3,2)), (true,3,2), '1', (true,3,2)), "Add");	
+		CheckStdlv(	cl_fix_from_real(0.75, (true,3,2)),
+					cl_fix_saddsub(	cl_fix_from_real(1.25, (true,3,2)), (true,3,2),
+									cl_fix_from_real(0.25, (true,3,2)), (true,3,2), '0', (true,3,2)), "Sub");											
 		wait;
 	end process;
 
