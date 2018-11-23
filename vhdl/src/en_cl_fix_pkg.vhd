@@ -1608,9 +1608,13 @@ package body en_cl_fix_pkg is
 		variable frac_v : real;
 	begin
 
-		if result_fmt.IntBits + result_fmt.FracBits <= 31 then
+		if (result_fmt.IntBits + result_fmt.FracBits <= 31) then
 			temp_v := integer (a * 2.0**result_fmt.FracBits);	-- as, 
-			return cl_fix_from_int (temp_v, TempFmt_c, saturate);
+			if result_fmt.Signed then
+				return std_logic_vector(to_signed(temp_v, cl_fix_width(result_fmt)));
+			else
+				return std_logic_vector(to_unsigned(temp_v, cl_fix_width(result_fmt)));
+			end if;
 		else
 			assert result_fmt.IntBits <= 31 and result_fmt.FracBits <= 31 
 				report "cl_fix_from_real : 'result_fmt.IntBits' and 'result_fmt.FracBits' must be at most 31 each!" 
