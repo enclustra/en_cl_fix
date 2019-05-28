@@ -1361,7 +1361,7 @@ package body en_cl_fix_pkg is
 	function cl_fix_max_real(	fmt 	: FixFormat_t)
 								return real is
 	begin
-		return 2.0**real(fmt.IntBits)-2.0**real(-fmt.FracBits);
+		return real(2*fmt.IntBits)-1.0/real(2**fmt.FracBits);
 	end function;
 		
 	-----------------------------------------------------------------------------------------------	
