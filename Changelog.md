@@ -1,3 +1,10 @@
+## 1.1.2
+
+* Features
+  * None
+* Bugfixes
+  * Fixed bug in cl\_fix\_max\_real that led to problems with GHDL
+
 ## 1.1.1
 
 * Features
