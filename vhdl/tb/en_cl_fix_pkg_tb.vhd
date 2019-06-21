@@ -22,6 +22,18 @@ end entity en_cl_fix_pkg_tb;
 
 architecture sim of en_cl_fix_pkg_tb is
 
+	-- Define VHDL-2008 equivalent for tools that are not VHDL 2008 capable (e.g. vivado simulator)
+	function to_string( a: std_logic_vector) return string is
+		variable b : string (1 to a'length) := (others => NUL);
+		variable stri : integer := 1; 
+	begin
+		for i in a'range loop
+			b(stri) := std_logic'image(a((i)))(2);
+			stri := stri+1;
+		end loop;
+		return b;
+	end function;
+
 	procedure CheckStdlv(	expected : std_logic_vector;
 							actual	 : std_logic_vector;
 							msg		 : string) is
@@ -37,7 +49,7 @@ architecture sim of en_cl_fix_pkg_tb is
 						msg		 : string) is
 	begin
 		assert expected = actual
-			report "###ERROR### " & msg & " [expected: " & to_string(expected) & ", got: " & to_string(actual) & "]"
+			report "###ERROR### " & msg & " [expected: " & integer'image(expected) & ", got: " & integer'image(actual) & "]"
 			severity error;
 	end procedure;	
 	
