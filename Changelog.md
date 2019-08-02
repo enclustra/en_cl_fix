@@ -1,3 +1,10 @@
+## 1.1.3
+
+* Features
+  * None
+* Bugfixes
+  * Remove VHDL-2008 statements to make the code runnable in Vivado Simulator
+
 ## 1.1.2
 
 * Features
