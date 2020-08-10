@@ -1360,17 +1360,34 @@ package body en_cl_fix_pkg is
 	--! cl_fix_max_real	implementation		
 	function cl_fix_max_real(	fmt 	: FixFormat_t)
 								return real is
+		variable Range_v, Lsb_v : real;
 	begin
-		return real(2*fmt.IntBits)-1.0/real(2**fmt.FracBits);
+		if fmt.IntBits >= 0 then
+			Range_v := real(2**fmt.IntBits);
+		else
+			Range_v := 1.0/(real(2**(-fmt.IntBits)));
+		end if;
+		if fmt.FracBits >= 0 then
+			Lsb_v := 1.0/real(2**fmt.FracBits);
+		else
+			Lsb_v := real(2**(-fmt.FracBits));
+		end if;		
+		return Range_v-Lsb_v;
 	end function;
 		
 	-----------------------------------------------------------------------------------------------	
 	--! cl_fix_min_real implementation		
 	function cl_fix_min_real(	fmt 	: FixFormat_t)
 								return real is
+		variable Range_v : real;
 	begin
 		if fmt.Signed then
-			return -(2.0**real(fmt.IntBits));
+			if fmt.IntBits >= 0 then
+				Range_v := real(2**fmt.IntBits);
+			else
+				Range_v := 1.0/(real(2**(-fmt.IntBits)));
+			end if;
+			return -Range_v;
 		else
 			return 0.0;
 		end if;
@@ -1606,10 +1623,19 @@ package body en_cl_fix_pkg is
 			);
 		variable temp_v : integer;
 		variable frac_v : real;
+		variable ASat_v : real; 
 	begin
-
 		if (result_fmt.IntBits + result_fmt.FracBits <= 31) then
-			temp_v := integer (a * 2.0**result_fmt.FracBits);	-- as, 
+			-- Limit
+			if a > cl_fix_max_real(result_fmt) then	
+				ASat_v := cl_fix_max_real(result_fmt);
+			elsif a < cl_fix_min_real(result_fmt) then
+				ASat_v := cl_fix_min_real(result_fmt);
+			else
+				ASat_v := a;
+			end if;		
+			-- Convert to fixed
+			temp_v := integer (ASat_v * 2.0**result_fmt.FracBits);	-- as, 
 			if result_fmt.Signed then
 				return std_logic_vector(to_signed(temp_v, cl_fix_width(result_fmt)));
 			else
