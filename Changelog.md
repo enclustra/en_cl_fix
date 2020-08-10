@@ -1,3 +1,10 @@
+## 1.1.4
+
+* Features
+  * None
+* Bugfixes
+  * Fixed bug in cl\_fix\_from\_real (saturation did not work)
+
 ## 1.1.3
 
 * Features
