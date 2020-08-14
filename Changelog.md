@@ -1,3 +1,11 @@
+## 1.1.5
+
+* Features
+  * None
+* Bugfixes
+  * Support numbers > 31 bits for cl\_fix\_from\_real
+    * In this case the result is not exact (only upper 31 bits are correct) and a warning is printed
+
 ## 1.1.4
 
 * Features
