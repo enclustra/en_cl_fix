@@ -1621,10 +1621,18 @@ package body en_cl_fix_pkg is
 				IntBits		=> result_fmt.IntBits+result_fmt.FracBits, 
 				FracBits	=> 0
 			);
+		constant Fmt31Bits_c 	: FixFormat_t := 
+			(
+				Signed		=> result_fmt.Signed,
+				IntBits		=> result_fmt.IntBits,
+				FracBits	=> 31-toInteger(result_fmt.Signed)-result_fmt.IntBits
+			);
+		constant Appendix31Bits_c	: std_logic_vector(cl_fix_width(result_fmt)-31-1 downto 0) := (others => '0');
 		variable temp_v : integer;
 		variable frac_v : real;
 		variable ASat_v : real; 
 	begin
+		-- In this case, the conversion can be done with full precision
 		if (result_fmt.IntBits + result_fmt.FracBits <= 31) then
 			-- Limit
 			if a > cl_fix_max_real(result_fmt) then	
@@ -1641,14 +1649,11 @@ package body en_cl_fix_pkg is
 			else
 				return std_logic_vector(to_unsigned(temp_v, cl_fix_width(result_fmt)));
 			end if;
+		-- In this case, the higher 31 bits are converted correctly and the lower bits are filled with zeros
+		-- ... this is not precise but at least roughly correct.
 		else
-			assert result_fmt.IntBits <= 31 and result_fmt.FracBits <= 31 
-				report "cl_fix_from_real : 'result_fmt.IntBits' and 'result_fmt.FracBits' must be at most 31 each!" 
-				severity failure;
-			assert false -- TO DO: implement this
-				report "cl_fix_from_real : Not implemented!" 
-				severity failure;
-			return "0";
+			report "cl_fix_from_real : Word width > 31 bits leads to imprecise results" severity warning;
+			return cl_fix_from_real(a, Fmt31Bits_c, saturate) & Appendix31Bits_c;
 		end if;
 	end;
 	
