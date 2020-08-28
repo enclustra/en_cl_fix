@@ -2404,28 +2404,13 @@ package body en_cl_fix_pkg is
 								round		: FixRound_t	:= Trunc_s; 
 								saturate	: FixSaturate_t := Warn_s) 
 								return std_logic_vector is
-		constant CarryBit_c : boolean := -- addition performed with an additional integer bit
-			result_fmt.IntBits > max (a_fmt.IntBits, b_fmt.IntBits) or (saturate = Sat_s or
-		-- synthesis translate_off
-			saturate = Warn_s or
-		-- synthesis translate_on
-			saturate = SatWarn_s);
-		constant TempFmt_c 	: FixFormat_t := 
-			(
-				Signed		=> a_fmt.Signed or b_fmt.Signed,
-				IntBits		=> max (a_fmt.IntBits, b_fmt.IntBits) + toInteger (CarryBit_c), 
-				FracBits	=> max (a_fmt.FracBits, b_fmt.FracBits)
-			);
-		constant TempWidth_c: positive := cl_fix_width (TempFmt_c);
-		variable a_v		: std_logic_vector (TempWidth_c-1 downto 0);
-		variable b_v		: std_logic_vector (TempWidth_c-1 downto 0);
-		variable temp_v		: std_logic_vector (TempWidth_c-1 downto 0);
 		variable result_v	: std_logic_vector (cl_fix_width (result_fmt)-1 downto 0);
 	begin
-		a_v := cl_fix_resize (a, a_fmt, TempFmt_c, Trunc_s, None_s);
-		b_v := cl_fix_resize (b, b_fmt, TempFmt_c, Trunc_s, None_s);
-		temp_v := cl_fix_addsub_internal(a_v, a_fmt, b_v, b_fmt, add);
-		result_v := cl_fix_resize (temp_v, TempFmt_c, result_fmt, round, saturate);
+		if to01 (add) = '1' then
+			result_v := cl_fix_add(a, a_fmt, b, b_fmt, result_fmt, round, saturate);
+		else
+			result_v := cl_fix_sub(a, a_fmt, b, b_fmt, result_fmt, round, saturate);
+		end if;
 		return result_v;
 	end;
 	
