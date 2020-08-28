@@ -2293,7 +2293,35 @@ package body en_cl_fix_pkg is
 		result_v := cl_fix_resize (temp_v, TempFmt_c, result_fmt, round, saturate);
 		return result_v;
 	end;
-		
+	
+	-----------------------------------------------------------------------------------------------
+	--! cl_fix_addsub_internal implementation (internal package use only)
+	function cl_fix_addsub_internal(	a			: std_logic_vector;
+										a_fmt		: FixFormat_t; 
+										b			: std_logic_vector;
+										b_fmt		: FixFormat_t;
+										add			: std_logic) return std_logic_vector is
+		constant IsSigned_c	: boolean := a_fmt.Signed or b_fmt.Signed;
+		variable result_v	: std_logic_vector(a'range);
+	begin
+		-- Synthesis tools may create problems if correct signed/unsigned type
+		-- is not used for addition.
+		if to01 (add) = '1' then
+			if IsSigned_c then
+				result_v := std_logic_vector (  signed (a) +   signed (b));
+			else
+				result_v := std_logic_vector (unsigned (a) + unsigned (b));
+			end if;
+		else
+			if IsSigned_c then
+				result_v := std_logic_vector (  signed (a) -   signed (b));
+			else
+				result_v := std_logic_vector (unsigned (a) - unsigned (b));
+			end if;
+		end if;
+		return result_v;
+	end function;
+	
 	-----------------------------------------------------------------------------------------------	
 	--! cl_fix_add implementation	
 	function cl_fix_add (	a			: std_logic_vector; 
@@ -2325,7 +2353,7 @@ package body en_cl_fix_pkg is
 	begin
 		a_v := cl_fix_resize (a, a_fmt, TempFmt_c, Trunc_s, None_s);
 		b_v := cl_fix_resize (b, b_fmt, TempFmt_c, Trunc_s, None_s);
-		temp_v := std_logic_vector (unsigned (a_v) + unsigned (b_v));
+		temp_v := cl_fix_addsub_internal(a_v, a_fmt, b_v, b_fmt, '1');
 		result_v := cl_fix_resize (temp_v, TempFmt_c, result_fmt, round, saturate);
 		return result_v;
 	end;
@@ -2348,7 +2376,7 @@ package body en_cl_fix_pkg is
 			saturate = SatWarn_s);
 		constant TempFmt_c 	: FixFormat_t := 
 			(
-				Signed		=> true,
+				Signed		=> a_fmt.Signed or b_fmt.Signed,
 				IntBits		=> max (a_fmt.IntBits, b_fmt.IntBits) + toInteger (CarryBit_c), 
 				FracBits	=> max (a_fmt.FracBits, b_fmt.FracBits)
 			);
@@ -2360,7 +2388,7 @@ package body en_cl_fix_pkg is
 	begin
 		a_v := cl_fix_resize (a, a_fmt, TempFmt_c, Trunc_s, None_s);
 		b_v := cl_fix_resize (b, b_fmt, TempFmt_c, Trunc_s, None_s);
-		temp_v := std_logic_vector (unsigned (a_v) - unsigned (b_v));
+		temp_v := cl_fix_addsub_internal(a_v, a_fmt, b_v, b_fmt, '0');
 		result_v := cl_fix_resize (temp_v, TempFmt_c, result_fmt, round, saturate);
 		return result_v;
 	end;
@@ -2396,11 +2424,7 @@ package body en_cl_fix_pkg is
 	begin
 		a_v := cl_fix_resize (a, a_fmt, TempFmt_c, Trunc_s, None_s);
 		b_v := cl_fix_resize (b, b_fmt, TempFmt_c, Trunc_s, None_s);
-		if to01 (add) = '1' then
-			temp_v := std_logic_vector (unsigned (a_v) + unsigned (b_v));
-		else
-			temp_v := std_logic_vector (unsigned (a_v) - unsigned (b_v));
-		end if;
+		temp_v := cl_fix_addsub_internal(a_v, a_fmt, b_v, b_fmt, add);
 		result_v := cl_fix_resize (temp_v, TempFmt_c, result_fmt, round, saturate);
 		return result_v;
 	end;
@@ -2439,7 +2463,7 @@ package body en_cl_fix_pkg is
 		if to01 (add) = '0' then
 			b_v := not b_v;
 		end if;
-		temp_v := std_logic_vector (unsigned (a_v) + unsigned (b_v));
+		temp_v := cl_fix_addsub_internal(a_v, a_fmt, b_v, b_fmt, '1');
 		result_v := cl_fix_resize (temp_v, TempFmt_c, result_fmt, round, saturate);
 		return result_v;
 	end;
