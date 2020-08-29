@@ -1362,16 +1362,8 @@ package body en_cl_fix_pkg is
 								return real is
 		variable Range_v, Lsb_v : real;
 	begin
-		if fmt.IntBits >= 0 then
-			Range_v := real(2**fmt.IntBits);
-		else
-			Range_v := 1.0/(real(2**(-fmt.IntBits)));
-		end if;
-		if fmt.FracBits >= 0 then
-			Lsb_v := 1.0/real(2**fmt.FracBits);
-		else
-			Lsb_v := real(2**(-fmt.FracBits));
-		end if;		
+		Range_v := 2.0**fmt.IntBits;
+		Lsb_v := 2.0**(-fmt.FracBits);
 		return Range_v-Lsb_v;
 	end function;
 		
@@ -1382,16 +1374,12 @@ package body en_cl_fix_pkg is
 		variable Range_v : real;
 	begin
 		if fmt.Signed then
-			if fmt.IntBits >= 0 then
-				Range_v := real(2**fmt.IntBits);
-			else
-				Range_v := 1.0/(real(2**(-fmt.IntBits)));
-			end if;
+			Range_v := 2.0**fmt.IntBits;
 			return -Range_v;
 		else
 			return 0.0;
 		end if;
-	end function;	
+	end function;
 	
 	-----------------------------------------------------------------------------------------------	
 	--! cl_fix_sign implementation		
@@ -1615,46 +1603,32 @@ package body en_cl_fix_pkg is
 								result_fmt	: FixFormat_t;
 								saturate	: FixSaturate_t := SatWarn_s) 
 								return std_logic_vector is
-		constant TempFmt_c 	: FixFormat_t := 
-			(
-				Signed		=> result_fmt.Signed,
-				IntBits		=> result_fmt.IntBits+result_fmt.FracBits, 
-				FracBits	=> 0
-			);
-		constant Fmt31Bits_c 	: FixFormat_t := 
-			(
-				Signed		=> result_fmt.Signed,
-				IntBits		=> result_fmt.IntBits,
-				FracBits	=> 31-toInteger(result_fmt.Signed)-result_fmt.IntBits
-			);
-		constant Appendix31Bits_c	: std_logic_vector(cl_fix_width(result_fmt)-31-1 downto 0) := (others => '0');
-		variable temp_v : integer;
-		variable frac_v : real;
-		variable ASat_v : real; 
+		constant ChunkSize_c	: positive := 31;
+		constant ChunkCount_c	: positive := (cl_fix_width(result_fmt) + ChunkSize_c - 1)/ChunkSize_c;
+		variable ASat_v 		: real;
+		variable Chunk_v		: std_logic_vector(ChunkSize_c-1 downto 0);
+		variable Result_v		: std_logic_vector(ChunkSize_c*ChunkCount_c-1 downto 0);
 	begin
-		-- In this case, the conversion can be done with full precision
-		if (result_fmt.IntBits + result_fmt.FracBits <= 31) then
-			-- Limit
-			if a > cl_fix_max_real(result_fmt) then	
-				ASat_v := cl_fix_max_real(result_fmt);
-			elsif a < cl_fix_min_real(result_fmt) then
-				ASat_v := cl_fix_min_real(result_fmt);
-			else
-				ASat_v := a;
-			end if;		
-			-- Convert to fixed
-			temp_v := integer (ASat_v * 2.0**result_fmt.FracBits);	-- as, 
-			if result_fmt.Signed then
-				return std_logic_vector(to_signed(temp_v, cl_fix_width(result_fmt)));
-			else
-				return std_logic_vector(to_unsigned(temp_v, cl_fix_width(result_fmt)));
-			end if;
-		-- In this case, the higher 31 bits are converted correctly and the lower bits are filled with zeros
-		-- ... this is not precise but at least roughly correct.
+		-- Limit
+		if a > cl_fix_max_real(result_fmt) then	
+			ASat_v := cl_fix_max_real(result_fmt);
+		elsif a < cl_fix_min_real(result_fmt) then
+			ASat_v := cl_fix_min_real(result_fmt);
 		else
-			report "cl_fix_from_real : Word width > 31 bits leads to imprecise results" severity warning;
-			return cl_fix_from_real(a, Fmt31Bits_c, saturate) & Appendix31Bits_c;
+			ASat_v := a;
 		end if;
+		
+		-- Rescale to appropriate fractional bits
+		ASat_v := round(ASat_v * 2.0**(result_fmt.FracBits));
+		
+		-- Convert to fixed-point in chunks
+		for i in 0 to ChunkCount_c-1 loop
+			Chunk_v := std_logic_vector(to_unsigned(integer(ASat_v mod 2.0**ChunkSize_c), ChunkSize_c));
+			Result_v((i+1)*ChunkSize_c-1 downto i*ChunkSize_c) := Chunk_v;
+			ASat_v := floor(ASat_v/2.0**ChunkSize_c);
+		end loop;
+		
+		return Result_v(cl_fix_width(result_fmt)-1 downto 0);
 	end;
 	
 	-----------------------------------------------------------------------------------------------	
@@ -1662,15 +1636,37 @@ package body en_cl_fix_pkg is
 	function cl_fix_to_real (	a 		: std_logic_vector; 
 								a_fmt 	: FixFormat_t) 
 								return real is
-		variable a_v		: std_logic_vector (a'length-1 downto 0);
-		variable result_v	: real;
+		constant ABits_c		: positive := cl_fix_width(a_fmt);
+		constant ChunkSize_c	: positive := 31;
+		constant ChunkCount_c	: positive := (ABits_c + ChunkSize_c - 1)/ChunkSize_c;
+		variable a_v			: std_logic_vector(a'length-1 downto 0);
+		variable Correction_v	: real := 0.0;
+		variable apad_v			: unsigned(ChunkSize_c*ChunkCount_c-1 downto 0);
+		variable Chunk_v		: unsigned(ChunkSize_c-1 downto 0);
+		variable result_v		: real := 0.0;
 	begin
+		-- Enforce 'downto' bit order
 		a_v := a;
-		if a_fmt.Signed then
-			result_v := real (to_integer (signed (a_v))) * real (2.0**(-a_fmt.FracBits));
-		else
-			result_v := real (to_integer (unsigned (a_v))) * real (2.0**(-a_fmt.FracBits));
+		
+		-- Handle sign bit
+		if a_fmt.Signed and a_v(ABits_c-1) = '1' then
+			a_v(ABits_c-1) := '0'; -- Clear sign bit.
+			Correction_v := -2.0**(ABits_c-1 - a_fmt.FracBits); -- Remember its weight.
 		end if;
+		
+		-- Resize to an integer number of chunks
+		apad_v := resize(unsigned(a_v), ChunkSize_c*ChunkCount_c);
+		
+		-- Convert to real in chunks
+		for i in ChunkCount_c-1 downto 0 loop
+			result_v := result_v * 2.0**ChunkSize_c; -- Shift to next chunk.
+			Chunk_v := apad_v((i+1)*ChunkSize_c-1 downto i*ChunkSize_c);
+			result_v := result_v + real(to_integer(Chunk_v)) * 2.0**(-a_fmt.FracBits);
+		end loop;
+		
+		-- Add sign bit contribution
+		result_v := result_v + Correction_v;
+		
 		return result_v;
 	end;
 	
