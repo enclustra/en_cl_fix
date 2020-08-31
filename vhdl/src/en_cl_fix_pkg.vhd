@@ -1603,7 +1603,7 @@ package body en_cl_fix_pkg is
 								result_fmt	: FixFormat_t;
 								saturate	: FixSaturate_t := SatWarn_s) 
 								return std_logic_vector is
-		constant ChunkSize_c	: positive := 31;
+		constant ChunkSize_c	: positive := 30;
 		constant ChunkCount_c	: positive := (cl_fix_width(result_fmt) + ChunkSize_c - 1)/ChunkSize_c;
 		variable ASat_v 		: real;
 		variable Chunk_v		: std_logic_vector(ChunkSize_c-1 downto 0);
@@ -1637,7 +1637,7 @@ package body en_cl_fix_pkg is
 								a_fmt 	: FixFormat_t) 
 								return real is
 		constant ABits_c		: positive := cl_fix_width(a_fmt);
-		constant ChunkSize_c	: positive := 31;
+		constant ChunkSize_c	: positive := 30;
 		constant ChunkCount_c	: positive := (ABits_c + ChunkSize_c - 1)/ChunkSize_c;
 		variable a_v			: std_logic_vector(a'length-1 downto 0);
 		variable Correction_v	: real := 0.0;
