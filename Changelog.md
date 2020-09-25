@@ -1,3 +1,10 @@
+## 1.1.6
+
+* Features
+  * None
+* Bugfixes
+  * Fixed "numbers > 31 bits for cl\_fix\_from\_real" for Modelsim
+
 ## 1.1.5
 
 * Features

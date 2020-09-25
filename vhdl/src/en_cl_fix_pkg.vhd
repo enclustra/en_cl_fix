@@ -1363,14 +1363,14 @@ package body en_cl_fix_pkg is
 		variable Range_v, Lsb_v : real;
 	begin
 		if fmt.IntBits >= 0 then
-			Range_v := real(2**fmt.IntBits);
+			Range_v := 2.0**real(fmt.IntBits);
 		else
-			Range_v := 1.0/(real(2**(-fmt.IntBits)));
+			Range_v := 1.0/(2.0**real(-fmt.IntBits));
 		end if;
 		if fmt.FracBits >= 0 then
-			Lsb_v := 1.0/real(2**fmt.FracBits);
+			Lsb_v := 1.0/(2.0**real(fmt.FracBits));
 		else
-			Lsb_v := real(2**(-fmt.FracBits));
+			Lsb_v := 2.0**real(-fmt.FracBits);
 		end if;		
 		return Range_v-Lsb_v;
 	end function;
@@ -1383,9 +1383,9 @@ package body en_cl_fix_pkg is
 	begin
 		if fmt.Signed then
 			if fmt.IntBits >= 0 then
-				Range_v := real(2**fmt.IntBits);
+				Range_v := 2.0**real(fmt.IntBits);
 			else
-				Range_v := 1.0/(real(2**(-fmt.IntBits)));
+				Range_v := 1.0/(2.0**real(-fmt.IntBits));
 			end if;
 			return -Range_v;
 		else
@@ -1643,7 +1643,7 @@ package body en_cl_fix_pkg is
 				ASat_v := a;
 			end if;		
 			-- Convert to fixed
-			temp_v := integer (ASat_v * 2.0**result_fmt.FracBits);	-- as, 
+			temp_v := integer (ASat_v * 2.0**real(result_fmt.FracBits));	-- as, 
 			if result_fmt.Signed then
 				return std_logic_vector(to_signed(temp_v, cl_fix_width(result_fmt)));
 			else
