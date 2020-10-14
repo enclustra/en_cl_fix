@@ -57,7 +57,7 @@ architecture sim of en_cl_fix_pkg_tb is
 							actual	 : real;
 							msg		 : string) is
 	begin
-		assert expected = actual
+		assert expected < actual + 1.0e-12 and expected > actual - 1.0e-12
 			report "###ERROR### " & msg & " [expected: " & real'image(expected) & ", got: " & real'image(actual) & "]"
 			severity error;
 	end procedure;	
