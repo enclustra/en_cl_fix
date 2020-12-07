@@ -1,3 +1,18 @@
+## 1.1.8
+
+* Features
+  * None
+* Bugfixes
+  * Fixed and cleaned up support for large numbers (>31 bits)
+  * Fixed synthesis issues with add/sub
+
+## 1.1.7
+
+* Features
+  * None
+* Bugfixes
+  * Fixed a bug in the testbench
+
 ## 1.1.6
 
 * Features
