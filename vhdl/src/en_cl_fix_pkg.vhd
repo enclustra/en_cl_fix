@@ -1860,7 +1860,7 @@ package body en_cl_fix_pkg is
 										return std_logic_vector is
 		variable line_v		: line;
 		variable ok_v		: boolean;
-		variable temp_v		: string (cl_fix_width (result_fmt)-1 downto 0);
+		variable temp_v		: string (cl_fix_width (result_fmt) downto 1);
 		variable result_v	: std_logic_vector (cl_fix_width (result_fmt)-1 downto 0);
 	begin
 		readline(a, line_v);
@@ -1882,7 +1882,7 @@ package body en_cl_fix_pkg is
 										return std_logic_vector is
 		variable line_v		: line;
 		variable ok_v		: boolean;
-		variable temp_v		: string (cl_fix_width (result_fmt)-1 downto 0);
+		variable temp_v		: string (cl_fix_width (result_fmt) downto 1);
 		variable result_v	: std_logic_vector (cl_fix_width (result_fmt)-1 downto 0);
 	begin
 		readline(a, line_v);
