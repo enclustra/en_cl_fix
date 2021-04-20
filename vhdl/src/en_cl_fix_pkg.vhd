@@ -1623,7 +1623,8 @@ package body en_cl_fix_pkg is
 		
 		-- Convert to fixed-point in chunks
 		for i in 0 to ChunkCount_c-1 loop
-			Chunk_v := std_logic_vector(to_unsigned(integer(ASat_v mod 2.0**ChunkSize_c), ChunkSize_c));
+			-- Note: Due to a Xilinx Vivado bug, we must explicitly call the math_real mod operator
+			Chunk_v := std_logic_vector(to_unsigned(integer(ieee.math_real."mod"(ASat_v, 2.0**ChunkSize_c)), ChunkSize_c));
 			Result_v((i+1)*ChunkSize_c-1 downto i*ChunkSize_c) := Chunk_v;
 			ASat_v := floor(ASat_v/2.0**ChunkSize_c);
 		end loop;
@@ -1859,7 +1860,7 @@ package body en_cl_fix_pkg is
 										return std_logic_vector is
 		variable line_v		: line;
 		variable ok_v		: boolean;
-		variable temp_v		: string (cl_fix_width (result_fmt)-1 downto 0);
+		variable temp_v		: string (cl_fix_width (result_fmt) downto 1);
 		variable result_v	: std_logic_vector (cl_fix_width (result_fmt)-1 downto 0);
 	begin
 		readline(a, line_v);
@@ -1881,7 +1882,7 @@ package body en_cl_fix_pkg is
 										return std_logic_vector is
 		variable line_v		: line;
 		variable ok_v		: boolean;
-		variable temp_v		: string (cl_fix_width (result_fmt)-1 downto 0);
+		variable temp_v		: string (cl_fix_width (result_fmt) downto 1);
 		variable result_v	: std_logic_vector (cl_fix_width (result_fmt)-1 downto 0);
 	begin
 		readline(a, line_v);
