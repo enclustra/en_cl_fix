@@ -1988,8 +1988,19 @@ package body en_cl_fix_pkg is
 		-- It is not clear what this extra bit is for (undocumented)
 		constant AddSignBit_c		: boolean := ((a_fmt.Signed = false) and (result_fmt.Signed = false) and (saturate /= None_s));
 		-- Several rounding methods use the largest value smaller than the tie weight ("half").
-		-- This is only used if NeedRound_c, so we ignore LessFracBits_c < 1 (to avoid sim error).
-		constant HalfMinusDelta_c	: integer := 2**(max(LessFracBits_c,1)-1) - 1;
+		-- The required integer value is 2**(LessFracBits_c-1)-1, but to support >32 bits, we use unsigned.
+        function GetHalfMinusDelta return unsigned is
+        begin
+            -- If LessFracBits_c = 1, then 2**(LessFracBits_c-1)-1 = 0.
+            -- If LessFracBits_c < 1, then NeedRound_c = FALSE, so the value is never used (just return 0).
+            if LessFracBits_c <= 1 then
+                return "0";
+            end if;
+            -- If LessFracBits_c > 1 then 2**(LessFracBits_c-1)-1 = "11...1"
+            return (LessFracBits_c-2 downto 0 => '1');
+        end function;
+        
+		constant HalfMinusDelta_c	: unsigned := GetHalfMinusDelta;
 		constant TempFmt_c : FixFormat_t := 
 			(
 				Signed		=> a_fmt.Signed or result_fmt.Signed, -- must stay like this!
