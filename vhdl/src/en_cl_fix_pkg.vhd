@@ -2037,10 +2037,10 @@ package body en_cl_fix_pkg is
 				when Trunc_s		=> null;
 				when NonSymPos_s	=> temp_v(TempWidth_c-1 downto LessFracBits_c-1) := temp_v(TempWidth_c-1 downto LessFracBits_c-1) + 1;
 				when NonSymNeg_s	=> temp_v := temp_v + HalfMinusDelta_c;
-				when SymInf_s		=> temp_v := temp_v + HalfMinusDelta_c + ("0" & not sign_v);
-				when SymZero_s		=> temp_v := temp_v + HalfMinusDelta_c + ("0" & sign_v);
-				when ConvEven_s		=> temp_v := temp_v + HalfMinusDelta_c + ("0" & a_v(LessFracBits_c));
-				when ConvOdd_s 		=> temp_v := temp_v + HalfMinusDelta_c + ("0" & not a_v(LessFracBits_c));
+				when SymInf_s		=> temp_v := temp_v + HalfMinusDelta_c + ("" & not sign_v);
+				when SymZero_s		=> temp_v := temp_v + HalfMinusDelta_c + ("" & sign_v);
+				when ConvEven_s		=> temp_v := temp_v + HalfMinusDelta_c + ("" & a_v(LessFracBits_c));
+				when ConvOdd_s 		=> temp_v := temp_v + HalfMinusDelta_c + ("" & not a_v(LessFracBits_c));
 			end case;
 		end if;
 		if CutIntSignBits_c > 0 and saturate /= None_s then -- saturation required
