@@ -1974,84 +1974,105 @@ package body en_cl_fix_pkg is
 	end;
 	
 	-----------------------------------------------------------------------------------------------	
-	--! cl_fix_resize implementation			
-	function cl_fix_resize (	a			: std_logic_vector; 
-								a_fmt		: FixFormat_t; 
-								result_fmt	: FixFormat_t; 
-								round		: FixRound_t	:= Trunc_s; 
-								saturate	: FixSaturate_t	:= Warn_s) 
-								return std_logic_vector is
-		constant LessFracBits_c	: integer := a_fmt.FracBits-result_fmt.FracBits;
-		constant NeedRound_c 	: boolean := round /= Trunc_s and LessFracBits_c > 0;
-		constant CarryBit_c : boolean := -- rounding addition performed with an additional integer bit
-			NeedRound_c and saturate /= None_s;
-		constant AddSignBit_c : boolean := ((a_fmt.Signed = false) and (result_fmt.Signed = false) and (saturate /= None_s));
-		constant TempFmt_c 	: FixFormat_t := 
+	--! cl_fix_resize implementation
+	function cl_fix_resize (a			: std_logic_vector; 
+							a_fmt		: FixFormat_t; 
+							result_fmt	: FixFormat_t; 
+							round		: FixRound_t	:= Trunc_s; 
+							saturate	: FixSaturate_t	:= Warn_s) 
+							return std_logic_vector is
+		constant DropFracBits_c		: integer := a_fmt.FracBits - result_fmt.FracBits;
+		constant NeedRound_c		: boolean := round /= Trunc_s and DropFracBits_c > 0;
+		-- Rounding addition is performed with an additional integer bit (carry bit)
+		constant CarryBit_c			: boolean := NeedRound_c and saturate /= None_s;
+		-- It is not clear what this extra bit is for (undocumented)
+		constant AddSignBit_c		: boolean := ((a_fmt.Signed = false) and (result_fmt.Signed = false) and (saturate /= None_s));
+		-- Several rounding methods use the largest value smaller than the tie weight ("half").
+		-- The required integer value is 2**(DropFracBits_c-1)-1, but to support >32 bits, we use unsigned.
+		function GetHalfMinusDelta return unsigned is
+		begin
+			-- If DropFracBits_c = 1, then 2**(DropFracBits_c-1)-1 = 0.
+			-- If DropFracBits_c < 1, then NeedRound_c = FALSE, so the value is never used (just return 0).
+			if DropFracBits_c <= 1 then
+				return "0";
+			end if;
+			-- If DropFracBits_c > 1 then 2**(DropFracBits_c-1)-1 = "11...1"
+			return (DropFracBits_c-2 downto 0 => '1');
+		end function;
+		
+		constant HalfMinusDelta_c	: unsigned := GetHalfMinusDelta;
+		constant TempFmt_c : FixFormat_t := 
 			(
 				Signed		=> a_fmt.Signed or result_fmt.Signed, -- must stay like this!
-				IntBits		=> max (a_fmt.IntBits+toInteger (CarryBit_c), result_fmt.IntBits)+toInteger(AddSignBit_c), 
-				FracBits	=> max (a_fmt.FracBits, result_fmt.FracBits)
+				IntBits		=> max(a_fmt.IntBits + toInteger(CarryBit_c), result_fmt.IntBits) + toInteger(AddSignBit_c), 
+				FracBits	=> max(a_fmt.FracBits, result_fmt.FracBits)
 			);
-		constant TempWidth_c		: positive := cl_fix_width (TempFmt_c);
-		constant ResultWidth_c		: positive := cl_fix_width (result_fmt);
-		constant MoreFracBits_c		: natural := TempFmt_c.FracBits-a_fmt.FracBits;
-		constant CutFracBits_c		: natural := TempFmt_c.FracBits-result_fmt.FracBits;
-		constant CutIntSignBits_c	: integer := TempWidth_c-(ResultWidth_c+CutFracBits_c);
-		variable a_v		: std_logic_vector (a'length-1 downto 0);
-		variable temp_v		: std_logic_vector (TempWidth_c-1 downto 0);
+		constant TempWidth_c		: positive := cl_fix_width(TempFmt_c);
+		constant ResultWidth_c		: positive := cl_fix_width(result_fmt);
+		constant MoreFracBits_c		: natural := TempFmt_c.FracBits - a_fmt.FracBits;
+		constant CutFracBits_c		: natural := TempFmt_c.FracBits - result_fmt.FracBits;
+		constant CutIntSignBits_c	: integer := TempWidth_c - (ResultWidth_c+CutFracBits_c);
+		
+		variable a_v		: std_logic_vector(a'length-1 downto 0);
+		variable temp_v		: unsigned(TempWidth_c-1 downto 0);
 		variable sign_v		: std_logic;
-		variable result_v	: std_logic_vector (ResultWidth_c-1 downto 0);
+		variable result_v	: std_logic_vector(ResultWidth_c-1 downto 0);
 	begin
 		-- TODO: Rounding addition could be less wide when result_fmt.IntBits > a_fmt.IntWidth
 		-- TODO: saturate = Warn_s could use no carry bit for synthesis.
 		a_v := a;
 		temp_v := (others => '0');
 		if a_fmt.Signed then
-			temp_v (temp_v'high downto MoreFracBits_c) := std_logic_vector (resize (signed (a_v), TempWidth_c-MoreFracBits_c));
+			temp_v(temp_v'high downto MoreFracBits_c) := unsigned(resize(signed(a_v), TempWidth_c-MoreFracBits_c));
 		else
-			temp_v (temp_v'high downto MoreFracBits_c) := std_logic_vector (resize (unsigned (a_v), TempWidth_c-MoreFracBits_c));
+			temp_v(temp_v'high downto MoreFracBits_c) := resize(unsigned(a_v), TempWidth_c-MoreFracBits_c);
 		end if;
 		if NeedRound_c then -- rounding required
 			if a_fmt.Signed then
-				sign_v := a_v (a_v'high);
+				sign_v := a_v(a_v'high);
 			else
 				sign_v := '0';
 			end if;
 			case round is
-			when Trunc_s => null;
-			when NonSymPos_s => temp_v (TempWidth_c-1 downto LessFracBits_c-1) := std_logic_vector (unsigned (temp_v (TempWidth_c-1 downto LessFracBits_c-1)) + 1);
---			when NonSymPos_s => temp_v := std_logic_vector (unsigned (temp_v) + 2**(LessFracBits_c-1));
-			when NonSymNeg_s => temp_v := std_logic_vector (unsigned (temp_v) + (2**(LessFracBits_c-1) - 1));
-			when SymInf_s => temp_v := std_logic_vector (unsigned (temp_v) + (2**(LessFracBits_c-1) - 1) + ("0" & not sign_v));
-			when SymZero_s => temp_v := std_logic_vector (unsigned (temp_v) + (2**(LessFracBits_c-1) - 1) + ("0" & sign_v));
-			when ConvEven_s => temp_v := std_logic_vector (unsigned (temp_v) + (2**(LessFracBits_c-1) - 1) + ("0" & a_v (LessFracBits_c)));
-			when ConvOdd_s => temp_v := std_logic_vector (unsigned (temp_v) + (2**(LessFracBits_c-1) - 1) + ("0" & not a_v (LessFracBits_c)));
+				when Trunc_s		=> null;
+				when NonSymPos_s	=> temp_v(TempWidth_c-1 downto DropFracBits_c-1) := temp_v(TempWidth_c-1 downto DropFracBits_c-1) + 1;
+				when NonSymNeg_s	=> temp_v := temp_v + HalfMinusDelta_c;
+				when SymInf_s		=> temp_v := temp_v + HalfMinusDelta_c + ("" & not sign_v);
+				when SymZero_s		=> temp_v := temp_v + HalfMinusDelta_c + ("" & sign_v);
+				when ConvEven_s		=>
+					if DropFracBits_c < a_v'length then
+						temp_v := temp_v + HalfMinusDelta_c + ("" & a_v(DropFracBits_c));
+					else
+						temp_v := temp_v + HalfMinusDelta_c + ("" & sign_v); -- implicit sign extension
+					end if;
+				when ConvOdd_s 		=>
+					if DropFracBits_c < a_v'length then
+						temp_v := temp_v + HalfMinusDelta_c + ("" & not a_v(DropFracBits_c));
+					else
+						temp_v := temp_v + HalfMinusDelta_c + ("" & not sign_v); -- implicit sign extension
+					end if;
 			end case;
 		end if;
 		if CutIntSignBits_c > 0 and saturate /= None_s then -- saturation required
 			if result_fmt.Signed then -- signed output
-				if unsigned (temp_v (temp_v'high downto temp_v'high-CutIntSignBits_c)) /= 0 and 
-						unsigned (not temp_v (temp_v'high downto temp_v'high-CutIntSignBits_c)) /= 0 then
-					assert saturate = Sat_s
-						report "cl_fix_resize : Saturation Warning!"
-						severity warning;
+				if temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c) /= 0 and 
+						not temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c) /= 0 then
+					assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
 					if saturate /= Warn_s then
-						temp_v (temp_v'high-1 downto 0):= (others => not temp_v (temp_v'high));
-						temp_v (ResultWidth_c+CutFracBits_c-1) := temp_v (temp_v'high);
+						temp_v(temp_v'high-1 downto 0) := (others => not temp_v(temp_v'high));
+						temp_v(ResultWidth_c+CutFracBits_c-1) := temp_v(temp_v'high);
 					end if;
 				end if;
 			else -- unsigned output
-				if unsigned (temp_v (temp_v'high downto temp_v'high-CutIntSignBits_c+1)) /= 0 then
-					assert saturate = Sat_s
-						report "cl_fix_resize : Saturation Warning!"
-						severity warning;
+				if temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c+1) /= 0 then
+					assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
 					if saturate /= Warn_s then
-						temp_v := (others => not temp_v (temp_v'high));
+						temp_v := (others => not temp_v(temp_v'high));
 					end if;
 				end if;
 			end if;
 		end if;
-		result_v := temp_v (ResultWidth_c+CutFracBits_c-1 downto CutFracBits_c);
+		result_v := std_logic_vector(temp_v(ResultWidth_c+CutFracBits_c-1 downto CutFracBits_c));
 		return result_v;
 	end;
 	
