@@ -1974,32 +1974,32 @@ package body en_cl_fix_pkg is
 	end;
 	
 	-----------------------------------------------------------------------------------------------	
-	--! cl_fix_resize implementation			
+	--! cl_fix_resize implementation
 	function cl_fix_resize (a			: std_logic_vector; 
 							a_fmt		: FixFormat_t; 
 							result_fmt	: FixFormat_t; 
 							round		: FixRound_t	:= Trunc_s; 
 							saturate	: FixSaturate_t	:= Warn_s) 
 							return std_logic_vector is
-		constant LessFracBits_c		: integer := a_fmt.FracBits - result_fmt.FracBits;
-		constant NeedRound_c		: boolean := round /= Trunc_s and LessFracBits_c > 0;
-		-- Rounding addition performed with an additional integer bit (carry bit)
+		constant DropFracBits_c		: integer := a_fmt.FracBits - result_fmt.FracBits;
+		constant NeedRound_c		: boolean := round /= Trunc_s and DropFracBits_c > 0;
+		-- Rounding addition is performed with an additional integer bit (carry bit)
 		constant CarryBit_c			: boolean := NeedRound_c and saturate /= None_s;
 		-- It is not clear what this extra bit is for (undocumented)
 		constant AddSignBit_c		: boolean := ((a_fmt.Signed = false) and (result_fmt.Signed = false) and (saturate /= None_s));
 		-- Several rounding methods use the largest value smaller than the tie weight ("half").
-		-- The required integer value is 2**(LessFracBits_c-1)-1, but to support >32 bits, we use unsigned.
-        function GetHalfMinusDelta return unsigned is
-        begin
-            -- If LessFracBits_c = 1, then 2**(LessFracBits_c-1)-1 = 0.
-            -- If LessFracBits_c < 1, then NeedRound_c = FALSE, so the value is never used (just return 0).
-            if LessFracBits_c <= 1 then
-                return "0";
-            end if;
-            -- If LessFracBits_c > 1 then 2**(LessFracBits_c-1)-1 = "11...1"
-            return (LessFracBits_c-2 downto 0 => '1');
-        end function;
-        
+		-- The required integer value is 2**(DropFracBits_c-1)-1, but to support >32 bits, we use unsigned.
+		function GetHalfMinusDelta return unsigned is
+		begin
+			-- If DropFracBits_c = 1, then 2**(DropFracBits_c-1)-1 = 0.
+			-- If DropFracBits_c < 1, then NeedRound_c = FALSE, so the value is never used (just return 0).
+			if DropFracBits_c <= 1 then
+				return "0";
+			end if;
+			-- If DropFracBits_c > 1 then 2**(DropFracBits_c-1)-1 = "11...1"
+			return (DropFracBits_c-2 downto 0 => '1');
+		end function;
+		
 		constant HalfMinusDelta_c	: unsigned := GetHalfMinusDelta;
 		constant TempFmt_c : FixFormat_t := 
 			(
@@ -2035,12 +2035,22 @@ package body en_cl_fix_pkg is
 			end if;
 			case round is
 				when Trunc_s		=> null;
-				when NonSymPos_s	=> temp_v(TempWidth_c-1 downto LessFracBits_c-1) := temp_v(TempWidth_c-1 downto LessFracBits_c-1) + 1;
+				when NonSymPos_s	=> temp_v(TempWidth_c-1 downto DropFracBits_c-1) := temp_v(TempWidth_c-1 downto DropFracBits_c-1) + 1;
 				when NonSymNeg_s	=> temp_v := temp_v + HalfMinusDelta_c;
 				when SymInf_s		=> temp_v := temp_v + HalfMinusDelta_c + ("" & not sign_v);
 				when SymZero_s		=> temp_v := temp_v + HalfMinusDelta_c + ("" & sign_v);
-				when ConvEven_s		=> temp_v := temp_v + HalfMinusDelta_c + ("" & a_v(LessFracBits_c));
-				when ConvOdd_s 		=> temp_v := temp_v + HalfMinusDelta_c + ("" & not a_v(LessFracBits_c));
+				when ConvEven_s		=>
+					if DropFracBits_c < a_v'length then
+						temp_v := temp_v + HalfMinusDelta_c + ("" & a_v(DropFracBits_c));
+					else
+						temp_v := temp_v + HalfMinusDelta_c + ("" & sign_v); -- implicit sign extension
+					end if;
+				when ConvOdd_s 		=>
+					if DropFracBits_c < a_v'length then
+						temp_v := temp_v + HalfMinusDelta_c + ("" & not a_v(DropFracBits_c));
+					else
+						temp_v := temp_v + HalfMinusDelta_c + ("" & not sign_v); -- implicit sign extension
+					end if;
 			end case;
 		end if;
 		if CutIntSignBits_c > 0 and saturate /= None_s then -- saturation required
