@@ -2138,70 +2138,24 @@ package body en_cl_fix_pkg is
 
 	-----------------------------------------------------------------------------------------------	
 	--! cl_fix_in_range implementation	
-	function cl_fix_in_range (	a			: std_logic_vector; 
+	function cl_fix_in_range(	a			: std_logic_vector; 
 								a_fmt		: FixFormat_t; 
 								result_fmt	: FixFormat_t; 
 								round		: FixRound_t	:= Trunc_s) 
 								return boolean is
-		constant LessFracBits_c	: integer := a_fmt.FracBits-result_fmt.FracBits;
-		constant NeedRound_c 	: boolean := round /= Trunc_s and LessFracBits_c > 0;
-		constant TempFmt_c 	: FixFormat_t := 
+		-- Note: This matches the python implementation
+		constant rndFmt_c : FixFormat_t := 
 			(
-				Signed		=> a_fmt.Signed or result_fmt.Signed,
-				IntBits		=> max (a_fmt.IntBits+toInteger (NeedRound_c), result_fmt.IntBits), 
-				FracBits	=> max (a_fmt.FracBits, result_fmt.FracBits)
+				Signed		=> a_fmt.Signed,
+				IntBits		=> a_fmt.IntBits + 1,
+				FracBits	=> result_fmt.FracBits
 			);
-		constant TempWidth_c		: positive := cl_fix_width (TempFmt_c);
-		constant ResultWidth_c		: positive := cl_fix_width (result_fmt);
-		constant MoreFracBits_c		: natural := TempFmt_c.FracBits-a_fmt.FracBits;
-		constant CutFracBits_c		: natural := TempFmt_c.FracBits-result_fmt.FracBits;
-		constant CutIntSignBits_c	: integer := TempWidth_c-(ResultWidth_c+CutFracBits_c);
-		variable a_v		: std_logic_vector (a'length-1 downto 0);
-		variable temp_v		: std_logic_vector (TempWidth_c-1 downto 0);
-		variable result_v	: boolean;
-		variable sign_v		: std_logic;
+		
+		-- Apply rounding
+		constant Rounded_c	: std_logic_vector := cl_fix_resize(a, a_fmt, rndFmt_c, round, Sat_s);
 	begin
-		result_v := true;
-		if CutIntSignBits_c > 0 then -- saturation required
-			a_v := a;
-			temp_v := (others => '0');
-			if a_fmt.Signed then
-				temp_v (temp_v'high downto MoreFracBits_c) := std_logic_vector (resize (signed (a_v), TempWidth_c-MoreFracBits_c));
-			else
-				temp_v (temp_v'high downto MoreFracBits_c) := std_logic_vector (resize (unsigned (a_v), TempWidth_c-MoreFracBits_c));
-			end if;
-			if round /= Trunc_s and LessFracBits_c > 0 then -- rounding required
-				if a_fmt.Signed then
-					sign_v := a_v (a_v'high);
-				else
-					sign_v := '0';
-				end if;
-				case round is
-				when Trunc_s => null;
-				when NonSymPos_s => temp_v (TempWidth_c-1 downto LessFracBits_c-1) := std_logic_vector (unsigned (temp_v (TempWidth_c-1 downto LessFracBits_c-1)) + 1);
-				when NonSymNeg_s => temp_v := std_logic_vector (unsigned (temp_v) + (2**(LessFracBits_c-1) - 1));
-				when SymInf_s => temp_v := std_logic_vector (unsigned (temp_v) + (2**(LessFracBits_c-1) - 1) + ("0" & not sign_v));
-				when SymZero_s => temp_v := std_logic_vector (unsigned (temp_v) + (2**(LessFracBits_c-1) - 1) + ("0" & sign_v));
-				when ConvEven_s => temp_v := std_logic_vector (unsigned (temp_v) + (2**(LessFracBits_c-1) - 1) + ("0" & a_v (LessFracBits_c)));
-				when ConvOdd_s => temp_v := std_logic_vector (unsigned (temp_v) + (2**(LessFracBits_c-1) - 1) + ("0" & not a_v (LessFracBits_c)));
-				end case;
-			end if;
-			if result_fmt.Signed then -- (un)signed to signed
-				if unsigned (temp_v (temp_v'high downto temp_v'high-CutIntSignBits_c)) /= 0 and 
-						unsigned (not temp_v (temp_v'high downto temp_v'high-CutIntSignBits_c)) /= 0 then
-					result_v := false;
-				end if;
-			elsif a_fmt.Signed then -- signed to unsigned
-				if unsigned (temp_v (temp_v'high downto temp_v'high-CutIntSignBits_c+1)) /= 0 then
-					result_v := false;
-				end if;
-			else -- unsigned to unsigned
-				if unsigned (temp_v (temp_v'high downto temp_v'high-CutIntSignBits_c+1)) /= 0 then
-					result_v := false;
-				end if;
-			end if;
-		end if;
-		return result_v;
+		return cl_fix_compare("a>=b", Rounded_c, rndFmt_c, cl_fix_min_value(result_fmt), result_fmt) and
+		       cl_fix_compare("a<=b", Rounded_c, rndFmt_c, cl_fix_max_value(result_fmt), result_fmt);
 	end;
 
 	-----------------------------------------------------------------------------------------------	
