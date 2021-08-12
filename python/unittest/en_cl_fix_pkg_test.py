@@ -45,11 +45,11 @@ class cl_fix_from_real_Test(unittest.TestCase):
         self.assertEqual(-0.5, cl_fix_from_real(-0.52, FixFormat(True, 2, 2)))
 
     def test_OutOfRangeError(self):
-        with self.assertRaises(ValueError):
+        with self.assertWarns(Warning):
             cl_fix_from_real(4.2, FixFormat(False, 2, 2))
-        with self.assertRaises(ValueError):
+        with self.assertWarns(Warning):
             cl_fix_from_real(-0.5, FixFormat(False, 2, 2))
-        with self.assertRaises(ValueError):
+        with self.assertWarns(Warning):
             cl_fix_from_real(-4.2, FixFormat(True, 2, 2))
 
     def test_OutOfRangeNoError(self):
@@ -58,7 +58,7 @@ class cl_fix_from_real_Test(unittest.TestCase):
         self.assertEqual(-4.0, cl_fix_from_real(-4.2, FixFormat(True, 2, 2), FixSaturate.Sat_s))
 
     def test_LimitDueToRounding(self):
-        with self.assertRaises(ValueError):
+        with self.assertWarns(Warning):
             cl_fix_from_real(3.9, FixFormat(False, 2, 2))
 
 ### cl_fix_from_bits_as_int ###
