@@ -405,12 +405,32 @@ def cl_fix_shift(  a, aFmt : FixFormat,
     # Note: "shift" direction is left. (So shift<0 shifts right).
     if cl_fix_is_wide(rFmt):
         a = wide_fxp.FromFxp(a, aFmt)
-    temp_fmt = FixFormat.ForShift(aFmt, shift)
     if type(a) == wide_fxp:
-        # Change format without changing data values => shift
-        tmp = wide_fxp(a.data, temp_fmt)
-        return cl_fix_resize(tmp, temp_fmt, rFmt, rnd, sat)
+        if np.ndim(shift) == 0:
+            # Constant shift
+            temp_fmt = FixFormat.ForShift(aFmt, shift)
+            # Change format without changing data values => shift
+            tmp = wide_fxp(a.data, temp_fmt)
+            return cl_fix_resize(tmp, temp_fmt, rFmt, rnd, sat)
+        else:
+            # Variable shift (each value individually)
+            assert np.ndim(shift) == 1, "cl_fix_shift : shift must be 0d or 1d"
+            assert shift.size == a.data.size, "cl_fix_shift : shift must be 0d or the same length as a"
+            r = wide_fxp(np.zeros(a.data.size, dtype=object), rFmt)
+            for i, s in enumerate(shift):
+                temp_fmt = FixFormat.ForShift(aFmt, s)
+                # Change format without changing data values => shift
+                tmp = wide_fxp._FromIntScalar(a.data[i], temp_fmt)
+                # Resize to rFmt
+                r._data[i] = tmp.resize(rFmt, rnd, sat).data[0]
+            
+            # Convert to narrow if required
+            if not cl_fix_is_wide(rFmt):
+                r = r.to_narrow_fxp()
+            
+            return r
     else:
+        temp_fmt = FixFormat.ForShift(aFmt, np.min(shift), np.max(shift))
         return cl_fix_resize(a * 2.0 ** shift, temp_fmt, rFmt, rnd, sat)
 
 def cl_fix_mult(    a, aFmt : FixFormat,
