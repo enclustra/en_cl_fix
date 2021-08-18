@@ -199,6 +199,7 @@ def cl_fix_resize(  a, aFmt : FixFormat,
         if not cl_fix_is_wide(rFmt):
             result = result.to_narrow_fxp()
     else:
+        a = np.array(a)
         # Rounding
         bitGrowth = 0
         if rFmt.FracBits < aFmt.FracBits:
