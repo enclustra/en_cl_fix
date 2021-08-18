@@ -115,8 +115,7 @@ def cl_fix_get_msb(a, aFmt : FixFormat, index : int):
     if type(a) == wide_fxp:
         return a.get_msb(index)
     else:
-        if np.ndim(a) == 0:
-            a = np.array(a, ndmin=1)
+        a = np.array(a)
         if aFmt.Signed:
             if index == 0:
                 return (a < 0).astype(int)
@@ -152,13 +151,10 @@ def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.S
     if cl_fix_is_wide(rFmt):
         return wide_fxp.FromFloat(a, rFmt, saturate)
     else:
-        if np.ndim(a) == 0:
-            a = np.array(a, ndmin=1)
-        
         # Saturation warning
         if (saturate == FixSaturate.SatWarn_s) or (saturate == FixSaturate.Warn_s):
-            amax = a.max()
-            amin = a.min()
+            amax = np.max(a)
+            amin = np.min(a)
             if amax > cl_fix_max_value(rFmt):
                 warnings.warn(f"cl_fix_from_real: Number {amax} exceeds maximum for format {rFmt}", Warning)
             if amin < cl_fix_min_value(rFmt):
@@ -203,8 +199,6 @@ def cl_fix_resize(  a, aFmt : FixFormat,
         if not cl_fix_is_wide(rFmt):
             result = result.to_narrow_fxp()
     else:
-        if np.ndim(a) == 0:
-            a = np.array(a, ndmin=1)
         # Rounding
         bitGrowth = 0
         if rFmt.FracBits < aFmt.FracBits:
@@ -318,8 +312,7 @@ def cl_fix_sneg(a, aFmt : FixFormat,
                 enable : bool,
                 rFmt : FixFormat,
                 rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
-    if np.ndim(enable) == 0:
-        enable = np.array(enable, ndmin=1)
+    enable = np.array(enable)
     temp_fmt = FixFormat(True, aFmt.IntBits, max(aFmt.FracBits, rFmt.FracBits))
     temp = cl_fix_resize(a, aFmt, temp_fmt, FixRound.Trunc_s, FixSaturate.None_s)
     if type(temp) == wide_fxp:
