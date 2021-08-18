@@ -83,6 +83,7 @@ class wide_fxp:
     # Convert from narrow (double-precision float) data to wide_fxp object, without bounds checks.
     @staticmethod
     def FromNarrowFxp(data : np.ndarray, fmt : FixFormat):
+        data = np.array(data, ndmin=1)
         assert data.dtype == float, "FromNarrowFxp : requires input dtype == float."
         int_data = (data*2.0**fmt.FracBits).astype(object)
         int_data = np.floor(int_data)
