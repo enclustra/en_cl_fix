@@ -37,8 +37,11 @@ class FixFormat:
     
     # Format for result of left-shift
     @staticmethod
-    def ForShift(aFmt, shift):
-        return FixFormat(aFmt.Signed, aFmt.IntBits + shift, aFmt.FracBits - shift)
+    def ForShift(aFmt, minShift, maxShift=None):
+        if maxShift is None:
+            maxShift = minShift
+        assert minShift <= maxShift, f"minShift ({minShift}) must be <= maxShift ({maxShift})"
+        return FixFormat(aFmt.Signed, aFmt.IntBits + maxShift, aFmt.FracBits - minShift)
     
     def __repr__(self):
         return "FixFormat" + f"({self.Signed}, {self.IntBits}, {self.FracBits})"
