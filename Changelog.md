@@ -1,3 +1,13 @@
+## 1.2.0
+* Features
+  * Added wide fixed-point (> 53 bits) Python support
+* Bugfixes
+  * Added workaround for Xilinx Vivado bug (resolution of "mod" operator)
+  * Fixed non-compliant VHDL string indexes
+  * Fixed cl_fix_resize crashes when DropFracBits_c >= a'length
+  * Fixed case-sensitivity bug in string_parse_boolean (VHDL)
+  * Fixed inconsistency between cl_fix_in_range and cl_fix_resize (VHDL)
+
 ## 1.1.8
 
 * Features
