@@ -405,16 +405,20 @@ class wide_fxp:
     
     # Support [] access (get)
     def __getitem__(self, key):
-        if isinstance(key, slice):
-            return wide_fxp(self._data[key], self._fmt)
+        data = self._data[key]
+        if isinstance(data, int):
+            return wide_fxp._FromIntScalar(data, self._fmt)
         else:
-            return wide_fxp._FromIntScalar(self._data[key], self._fmt)
+            return wide_fxp(data, self._fmt)
     
     
     # Support [] access (set)
     def __setitem__(self, key, value):
         assert value.fmt == self._fmt, "Format mismatch in wide_fxp[key] = value assignment."
-        self._data[key] = value.data
+        if isinstance(self._data[key], int):
+            self._data[key] = value.data[0]
+        else:
+            self._data[key] = value.data
     
     
     # "+" operator

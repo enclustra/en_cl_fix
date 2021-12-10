@@ -776,7 +776,65 @@ class cl_fix_saddsub_Test(unittest.TestCase):
         self.assertEqual(1.75, result[0])
         self.assertEqual(0.75, result[1])
 
-
+### cl_fix_Indexing_Test ###
+class cl_fix_Indexing_Test(unittest.TestCase):
+    def RunGetTest(self, fmt):
+        n = 24
+        x_1d = cl_fix_random(n, fmt)
+        x_2d = x_1d.reshape((4,n//4))
+        # Check iterability, 1D scalar indexing and 2D scalar indexing (get)
+        for i, x in enumerate(x_1d):
+            self.assertEqual(x, x_1d[i])
+            self.assertEqual(x, x_2d[i // x_2d.shape[1],i % x_2d.shape[1]])
+        # Check 1D slice indexing (get)
+        self.assertTrue(np.array_equal(x_2d[1,2:4], x_1d[x_2d.shape[1]+2:x_2d.shape[1]+4]))
+        # Check 2D slice indexing (get)
+        row_lims = [1,3]
+        col_lims = [1,4]
+        xslice = x_2d[row_lims[0]:row_lims[1], col_lims[0]:col_lims[1]]
+        for i, row in enumerate(x_2d[row_lims[0]:row_lims[1], :]):
+            for j, val in enumerate(row[col_lims[0]:col_lims[1]]):
+                self.assertEqual(x_2d[row_lims[0]+i,col_lims[0]+j], val)
+    
+    def RunSetTest(self, fmt):
+        n = 24
+        x_1d = cl_fix_random(n, fmt)
+        x_2d = x_1d.reshape((4,n//4))
+        # Check 1D scalar indexing and 2D scalar indexing (set)
+        y_1d = cl_fix_from_real(np.zeros(n), fmt)
+        y_2d = y_1d.reshape((4,n//4))
+        for i, x in enumerate(x_1d):
+            y_1d[i] = x
+            y_2d[i // x_2d.shape[1],i % x_2d.shape[1]] = x
+        self.assertTrue(np.array_equal(y_1d, x_1d))
+        self.assertTrue(np.array_equal(y_2d, x_2d))
+        # Check 1D slice indexing (set)
+        y_1d = cl_fix_from_real(np.zeros(n), fmt)
+        y_2d = y_1d.reshape((4,n//4))
+        y_2d[1,2:4] = x_2d[1,2:4]
+        y_1d[x_2d.shape[1]+2:x_2d.shape[1]+4] = x_1d[x_2d.shape[1]+2:x_2d.shape[1]+4]
+        self.assertTrue(np.array_equal(y_2d[1,2:4], x_1d[x_2d.shape[1]+2:x_2d.shape[1]+4]))
+        self.assertTrue(np.array_equal(y_1d[x_2d.shape[1]+2:x_2d.shape[1]+4], x_1d[x_2d.shape[1]+2:x_2d.shape[1]+4]))
+        # Check 2D slice indexing (set)
+        y_1d = cl_fix_from_real(np.zeros(n), fmt)
+        y_2d = y_1d.reshape((4,n//4))
+        row_slice = slice(1,3)
+        col_slice = slice(1,4)
+        y_2d[row_slice, col_slice] = x_2d[row_slice, col_slice]
+        self.assertTrue(np.array_equal(y_2d[row_slice, col_slice], x_2d[row_slice, col_slice]))
+        
+    def test_Narrow_Indexing(self):
+        fmt = FixFormat(True, 5, 5)
+        self.assertFalse(cl_fix_is_wide(fmt))
+        self.RunGetTest(fmt)
+        self.RunSetTest(fmt)
+    
+    def test_Wide_Indexing(self):
+        fmt = FixFormat(True, 50, 50)
+        self.assertTrue(cl_fix_is_wide(fmt))
+        self.RunGetTest(fmt)
+        self.RunSetTest(fmt)
+        
 ########################################################################################################################
 # Test Runner
 ########################################################################################################################
