@@ -2104,7 +2104,7 @@ package body en_cl_fix_pkg is
 		end if;
 		if CutIntSignBits_c > 0 and saturate /= None_s then -- saturation required
 			if result_fmt.Signed then -- signed output
-				if temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c) /= 0 and 
+				if to_01(temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c)) /= 0 and 
 						not temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c) /= 0 then
 					assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
 					if saturate /= Warn_s then
@@ -2113,7 +2113,7 @@ package body en_cl_fix_pkg is
 					end if;
 				end if;
 			else -- unsigned output
-				if temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c+1) /= 0 then
+				if to_01(temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c+1)) /= 0 then
 					assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
 					if saturate /= Warn_s then
 						temp_v := (others => not temp_v(temp_v'high));
