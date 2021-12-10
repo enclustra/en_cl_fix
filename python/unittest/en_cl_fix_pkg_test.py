@@ -801,23 +801,23 @@ class cl_fix_Indexing_Test(unittest.TestCase):
         x_1d = cl_fix_random(n, fmt)
         x_2d = x_1d.reshape((4,n//4))
         # Check 1D scalar indexing and 2D scalar indexing (set)
-        y_1d = cl_fix_from_real(np.zeros(n), fmt)
-        y_2d = y_1d.reshape((4,n//4))
+        y_1d = cl_fix_zeros(n, fmt)
+        y_2d = cl_fix_zeros((4, n//4), fmt)
         for i, x in enumerate(x_1d):
             y_1d[i] = x
             y_2d[i // x_2d.shape[1],i % x_2d.shape[1]] = x
         self.assertTrue(np.array_equal(y_1d, x_1d))
         self.assertTrue(np.array_equal(y_2d, x_2d))
         # Check 1D slice indexing (set)
-        y_1d = cl_fix_from_real(np.zeros(n), fmt)
-        y_2d = y_1d.reshape((4,n//4))
+        y_1d = cl_fix_zeros(n, fmt)
+        y_2d = cl_fix_zeros((4, n//4), fmt)
         y_2d[1,2:4] = x_2d[1,2:4]
         y_1d[x_2d.shape[1]+2:x_2d.shape[1]+4] = x_1d[x_2d.shape[1]+2:x_2d.shape[1]+4]
         self.assertTrue(np.array_equal(y_2d[1,2:4], x_1d[x_2d.shape[1]+2:x_2d.shape[1]+4]))
         self.assertTrue(np.array_equal(y_1d[x_2d.shape[1]+2:x_2d.shape[1]+4], x_1d[x_2d.shape[1]+2:x_2d.shape[1]+4]))
         # Check 2D slice indexing (set)
-        y_1d = cl_fix_from_real(np.zeros(n), fmt)
-        y_2d = y_1d.reshape((4,n//4))
+        y_1d = cl_fix_zeros(n, fmt)
+        y_2d = cl_fix_zeros((4, n//4), fmt)
         row_slice = slice(1,3)
         col_slice = slice(1,4)
         y_2d[row_slice, col_slice] = x_2d[row_slice, col_slice]
