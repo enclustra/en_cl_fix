@@ -557,7 +557,8 @@ def array_equal(*args, **kwargs):
     assert x.data.shape == y.data.shape, "wide_fxp array_equal : data shape mismatch"
     
     return np.all(x == y)
-
+    
+    
 # Implementation of np.concatenate() for wide_fxp objects.
 @implements(np.concatenate)
 def concatenate(*args, **kwargs):
