@@ -239,7 +239,23 @@ package en_cl_fix_pkg is
 	--! \param Str		Format string in the form "(<IsSigned>,<IntBits>,<FracBits>)"
 	--! \return			FixFormat_t
 	function cl_fix_format_from_string(		Str	: string) 
-											return FixFormat_t;											
+											return FixFormat_t;
+	
+	--! \brief			Converts a string into a FixRound_t
+	--!	\details		This is very useful for the same reasons as \link cl_fix_format_from_string
+	--!					\endlink.
+	--! \param Str		Rounding mode string, for example "Trunc_s". See \link FixRound_t \endlink.
+	--! \return			FixRound_t
+	function cl_fix_round_from_string(	Str	: string) 
+											return FixRound_t;
+	
+	--! \brief			Converts a string into a FixSaturate_t
+	--!	\details		This is very useful for the same reasons as \link cl_fix_format_from_string
+	--!					\endlink.
+	--! \param Str		Saturation mode string, for example "None_s". See \link FixSaturate_t \endlink.
+	--! \return			FixSaturate_t
+	function cl_fix_saturate_from_string(	Str	: string) 
+											return FixSaturate_t;
 	
 	--! \brief			Zero in a given format
 	--! \param fmt		Format to represent zero in
@@ -1349,7 +1365,15 @@ package body en_cl_fix_pkg is
 		assert Index_v > 0 
 			report "cl_fix_string_from_format: wrong Format, missing '('" 
 			severity error;
-		Format_v.Signed := string_parse_boolean(Str, Index_v+1);
+		-- Allow signedness to be specified as an integer
+		if Str(Index_v+1) = '0' then
+			Format_v.Signed := false;
+		elsif Str(Index_v+1) = '1' then
+			Format_v.Signed := true;
+		else
+			-- Parse signedness as boolean
+			Format_v.Signed := string_parse_boolean(Str, Index_v+1);
+		end if;
 		Index_v := string_find_next_match(Str, ',', Index_v+1);
 		assert Index_v > 0 
 			report "cl_fix_string_from_format: wrong Format, missing ',' between IsSigned and IntBits " 
@@ -1365,7 +1389,53 @@ package body en_cl_fix_pkg is
 			report "cl_fix_string_from_format: wrong Format, missing ')'" 
 			severity error;	
 		return Format_v;
-	end function;	
+	end;
+	
+	-----------------------------------------------------------------------------------------------	
+	--! cl_fix_round_from_string Implementation
+	function cl_fix_round_from_string(	Str	: string) 
+										return FixRound_t is
+		constant StrLower_c	: string := toLower(Str);
+	begin
+		if StrLower_c = "trunc_s" then
+			return Trunc_s;
+		elsif StrLower_c = "nonsympos_s" then
+			return NonSymPos_s;
+		elsif StrLower_c = "nonsymneg_s" then
+			return NonSymNeg_s;
+		elsif StrLower_c = "syminf_s" then
+			return SymInf_s;
+		elsif StrLower_c = "symzero_s" then
+			return SymZero_s;
+		elsif StrLower_c = "conveven_s" then
+			return ConvEven_s;
+		elsif StrLower_c = "convodd_s" then
+			return ConvOdd_s;
+		end if;
+		
+		report "cl_fix_round_from_string: unrecognized format " & Str severity failure;
+		return Trunc_s;
+	end;
+	
+	-----------------------------------------------------------------------------------------------	
+	--! cl_fix_saturate_from_string Implementation
+	function cl_fix_saturate_from_string(	Str	: string) 
+										return FixSaturate_t is
+		constant StrLower_c	: string := toLower(Str);
+	begin
+		if StrLower_c = "none_s" then
+			return None_s;
+		elsif StrLower_c = "warn_s" then
+			return Warn_s;
+		elsif StrLower_c = "sat_s" then
+			return Sat_s;
+		elsif StrLower_c = "satwarn_s" then
+			return SatWarn_s;
+		end if;
+		
+		report "cl_fix_saturate_from_string: unrecognized format " & Str severity failure;
+		return None_s;
+	end;
 	
 	-----------------------------------------------------------------------------------------------	
 	--! cl_fix_zero_value implementation
@@ -2104,7 +2174,7 @@ package body en_cl_fix_pkg is
 		end if;
 		if CutIntSignBits_c > 0 and saturate /= None_s then -- saturation required
 			if result_fmt.Signed then -- signed output
-				if temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c) /= 0 and 
+				if to_01(temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c)) /= 0 and 
 						not temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c) /= 0 then
 					assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
 					if saturate /= Warn_s then
@@ -2113,7 +2183,7 @@ package body en_cl_fix_pkg is
 					end if;
 				end if;
 			else -- unsigned output
-				if temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c+1) /= 0 then
+				if to_01(temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c+1)) /= 0 then
 					assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
 					if saturate /= Warn_s then
 						temp_v := (others => not temp_v(temp_v'high));
