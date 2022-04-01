@@ -156,6 +156,21 @@ class wide_fxp:
         return self._fmt
     
     
+    @property
+    def size(self):
+        return self._data.size
+    
+    
+    @property
+    def shape(self):
+        return self._data.shape
+    
+    
+    @property
+    def T(self):
+        return wide_fxp(self._data.T, self._fmt)
+    
+    
     # Get data in human-readable floating-point format (with loss of precision), with bounds checks
     def to_float(self):
         # To avoid this warning, call to_narrow_fxp() directly.
@@ -342,6 +357,13 @@ class wide_fxp:
         return wide_fxp(val, rFmt)
 
 
+    def reshape(self, shape, order='C'):
+        return wide_fxp(self._data.reshape(shape, order=order), self._fmt)
+    
+    
+    def flatten(self, order='C'):
+        return wide_fxp(self._data.flatten(order=order), self._fmt)
+
     ###############################################################################################
     # Private Functions 
     ###############################################################################################
@@ -361,7 +383,7 @@ class wide_fxp:
         assert type(fmt) == FixFormat, "wide_fxp : fmt must be of type en_cl_fix_types.FixFormat."
         self._data = data
         self._fmt = fmt
-    
+        
     
     # Same as __init__, except the internal integer data is a scalar (arbitrary-precision int).
     @staticmethod
@@ -383,16 +405,20 @@ class wide_fxp:
     
     # Support [] access (get)
     def __getitem__(self, key):
-        if isinstance(key, slice):
-            return wide_fxp(self._data[key], self._fmt)
+        data = self._data[key]
+        if isinstance(data, int):
+            return wide_fxp._FromIntScalar(data, self._fmt)
         else:
-            return wide_fxp._FromIntScalar(self._data[key], self._fmt)
+            return wide_fxp(data, self._fmt)
     
     
     # Support [] access (set)
     def __setitem__(self, key, value):
         assert value.fmt == self._fmt, "Format mismatch in wide_fxp[key] = value assignment."
-        self._data[key] = value.data
+        if isinstance(self._data[key], int):
+            self._data[key] = value.data[0]
+        else:
+            self._data[key] = value.data
     
     
     # "+" operator
@@ -531,3 +557,15 @@ def array_equal(*args, **kwargs):
     assert x.data.shape == y.data.shape, "wide_fxp array_equal : data shape mismatch"
     
     return np.all(x == y)
+    
+    
+# Implementation of np.concatenate() for wide_fxp objects.
+@implements(np.concatenate)
+def concatenate(*args, **kwargs):
+    # Inputs are passed in a tuple
+    tup = args[0]
+    for x in tup:
+        assert x.fmt == tup[0].fmt, "wide_fxp np.concatenate() : Cannot mix formats."
+    
+    result = np.concatenate(tuple(x.data for x in tup), *args[1:], **kwargs)
+    return wide_fxp(result, tup[0].fmt)

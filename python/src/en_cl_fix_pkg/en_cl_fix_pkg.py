@@ -170,6 +170,9 @@ def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.S
         
         return x
 
+def cl_fix_zeros(shape, fmt):
+    return cl_fix_from_real(np.zeros(shape), fmt)
+
 def cl_fix_from_bits_as_int(a : int, aFmt : FixFormat):
     if cl_fix_is_wide(aFmt):
         if not np.all(cl_fix_in_range(a, aFmt, aFmt)):
