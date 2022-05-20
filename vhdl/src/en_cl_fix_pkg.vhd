@@ -213,6 +213,65 @@ package en_cl_fix_pkg is
                                 fracBits    : integer) 
                                 return FixFormat_t;
     
+    --! \brief          Calculates (conservatively) the FixFormat_t required to guarantee that the
+    --!                 result of an addition a+b can be represented.
+    --! \param a_fmt    Format of summand a.
+    --! \param b_fmt    Format of summand b.
+    --! \return         Format of the sum a+b.
+    --! \see cl_fix_add
+    function cl_fix_add_fmt (  a_fmt        : FixFormat_t;
+                               b_fmt        : FixFormat_t)
+                               return FixFormat_t;
+    
+    --! \brief          Calculates (conservatively) the FixFormat_t required to guarantee that the
+    --!                 result of a subtraction a-b can be represented.
+    --! \param a_fmt    Format of the minuend a.
+    --! \param b_fmt    Format of the subtrahend b.
+    --! \return         Format of the difference a-b.
+    --! \see cl_fix_sub
+    function cl_fix_sub_fmt (  a_fmt        : FixFormat_t;
+                               b_fmt        : FixFormat_t)
+                               return FixFormat_t;
+    
+    --! \brief          Calculates (conservatively) the FixFormat_t required to guarantee that the
+    --!                 result of a multiplication a*b can be represented.
+    --! \param a_fmt    Format of factor a.
+    --! \param b_fmt    Format of factor b.
+    --! \return         Format of the product a*b.
+    --! \see cl_fix_mult
+    function cl_fix_mult_fmt (  a_fmt       : FixFormat_t;
+                                b_fmt       : FixFormat_t)
+                                return FixFormat_t;
+    
+    --! \brief          Calculates (conservatively) the FixFormat_t required to guarantee that the
+    --!                 result of a negation -a can be represented.
+    --! \param a_fmt    Format of the initial value a.
+    --! \return         Format of the negated value -a.
+    --! \see cl_fix_neg
+    function cl_fix_neg_fmt (  a_fmt        : FixFormat_t)
+                               return FixFormat_t;
+    
+    --! \brief              Calculates (conservatively) the FixFormat_t required to guarantee that
+    --!                     the result of a variable arithmetic shift can be represented.
+    --! \param a_fmt        Format of the initial value a.
+    --! \param min_shift    Minimum possible left-shift.
+    --! \param max_shift    Maximum possible left-shift.
+    --! \return             Format of the shifted result.
+    --! \see cl_fix_shift
+    function cl_fix_shift_fmt (  a_fmt      : FixFormat_t;
+                                 min_shift  : integer;
+                                 max_shift  : integer)
+                                 return FixFormat_t;
+    
+    --! \brief          Calculates (conservatively) the FixFormat_t required to guarantee that the
+    --!                 result of a constant arithmetic shift can be represented.
+    --! \param a_fmt    Format of the initial value a.
+    --! \param shift    Constant left-shift.
+    --! \return         Format of the shifted result.
+    --! \see cl_fix_shift
+    function cl_fix_shift_fmt (  a_fmt      : FixFormat_t;
+                                 shift      : integer)
+                                 return FixFormat_t;
     
     --! \brief          Get the number of bits to represent a fix-point format
     --! \param fmt      Format to get the number of bits required for
@@ -1317,16 +1376,89 @@ package body en_cl_fix_pkg is
                                 intBits     : integer;
                                 fracBits    : integer) 
                                 return FixFormat_t is
-        variable result_v : FixFormat_t;
     begin
         assert intBits + fracBits >= 1
             report "cl_fix_format : The sum of 'intBits' and 'fracBits' must be at least 1!"
             severity failure;
-
-        result_v.Signed := signed;
-        result_v.IntBits := intBits;
-        result_v.FracBits := fracBits;
-        return result_v;
+        
+        return (signed, intBits, fracBits);
+    end;
+    
+    -----------------------------------------------------------------------------------------------
+    --! cl_fix_add_fmt implementation
+    function cl_fix_add_fmt (   a_fmt        : FixFormat_t;
+                                b_fmt        : FixFormat_t)
+                                return FixFormat_t is
+    begin
+        return (
+            a_fmt.Signed or b_fmt.Signed,
+            max(a_fmt.IntBits, b_fmt.IntBits)+1,
+            max(a_fmt.FracBits, b_fmt.FracBits)
+        );
+    end;
+    
+    -----------------------------------------------------------------------------------------------
+    --! cl_fix_sub_fmt implementation
+    function cl_fix_sub_fmt (   a_fmt        : FixFormat_t;
+                                b_fmt        : FixFormat_t)
+                                return FixFormat_t is
+    begin
+        return (
+            true,
+            max(a_fmt.IntBits, b_fmt.IntBits + toInteger(b_fmt.Signed)),
+            max(a_fmt.FracBits, b_fmt.FracBits)
+        );
+    end;
+    
+    -----------------------------------------------------------------------------------------------
+    --! cl_fix_mult_fmt implementation
+    function cl_fix_mult_fmt (  a_fmt       : FixFormat_t;
+                                b_fmt       : FixFormat_t)
+                                return FixFormat_t is
+        constant Signed_c   : boolean := a_fmt.Signed or b_fmt.Signed;
+    begin
+        return (
+            Signed_c,
+            a_fmt.IntBits + b_fmt.IntBits + toInteger(Signed_c),
+            a_fmt.FracBits + b_fmt.FracBits
+        );
+    end;
+    
+    -----------------------------------------------------------------------------------------------
+    --! cl_fix_neg_fmt implementation
+    function cl_fix_neg_fmt(    a_fmt        : FixFormat_t)
+                                return FixFormat_t is
+    begin
+        return (
+            true,
+            a_fmt.IntBits + toInteger(a_fmt.Signed),
+            a_fmt.FracBits
+        );
+    end;
+    
+    -----------------------------------------------------------------------------------------------
+    --! cl_fix_shift_fmt implementation (variable shift)
+    function cl_fix_shift_fmt ( a_fmt      : FixFormat_t;
+                                min_shift  : integer;
+                                max_shift  : integer)
+                                return FixFormat_t is
+    begin
+        assert min_shift <= max_shift report "min_shift must be <= max_shift" severity Failure;
+        
+        return (
+            a_fmt.Signed,
+            a_fmt.IntBits + max_shift,
+            a_fmt.FracBits - min_shift
+        );
+    end;
+    
+    -----------------------------------------------------------------------------------------------
+    --! cl_fix_shift_fmt implementation (constant shift)
+    function cl_fix_shift_fmt ( a_fmt      : FixFormat_t;
+                                shift      : integer)
+                                return FixFormat_t is
+    begin
+        return cl_fix_shift_fmt(a_fmt, shift, shift);
     end;
     
     ----------------------------------------------------------------------------------------------- 
@@ -2630,10 +2762,10 @@ package body en_cl_fix_pkg is
                             round       : FixRound_t    := Trunc_s; 
                             saturate    : FixSaturate_t := Warn_s) 
                             return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t := 
+        constant TempFmt_c  : FixFormat_t :=
             (
                 Signed      => result_fmt.Signed,
-                IntBits     => result_fmt.IntBits - shift, 
+                IntBits     => result_fmt.IntBits - shift,
                 FracBits    => result_fmt.FracBits + shift
             );
     begin

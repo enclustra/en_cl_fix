@@ -40,6 +40,16 @@ architecture sim of en_cl_fix_pkg_tb is
         return b;
     end function;
     
+    procedure CheckFmt( expected : FixFormat_t;
+                        actual   : FixFormat_t;
+                        msg      : string) is
+        alias to_string is cl_fix_string_from_format[FixFormat_t return string];
+    begin
+        assert expected = actual
+            report "###ERROR### " & msg & " [expected: " & to_string(expected) & ", got: " & to_string(actual) & "]"
+            severity error;
+    end procedure;
+    
     procedure CheckStdlv(   expected : std_logic_vector;
                             actual   : std_logic_vector;
                             msg      : string) is
@@ -100,6 +110,30 @@ begin
     
     p_control : process
     begin
+        -- *** cl_fix_add_fmt ***
+        print("*** cl_fix_add_fmt ***");
+        CheckFmt((true, 8, 1), cl_fix_add_fmt((true, 1, 1), (false, 7, 0)), "cl_fix_add_fmt Wrong");
+        
+        -- *** cl_fix_sub_fmt ***
+        print("*** cl_fix_sub_fmt ***");
+        CheckFmt((true, 7, 1), cl_fix_sub_fmt((true, 1, 1), (false, 7, 0)), "cl_fix_sub_fmt Wrong");
+        
+        -- *** cl_fix_mult_fmt ***
+        print("*** cl_fix_mult_fmt ***");
+        CheckFmt((true, 9, 1), cl_fix_mult_fmt((true, 1, 1), (false, 7, 0)), "cl_fix_mult_fmt Wrong");
+        
+        -- *** cl_fix_neg_fmt ***
+        print("*** cl_fix_neg_fmt ***");
+        CheckFmt((true, 7, 0), cl_fix_neg_fmt((false, 7, 0)), "cl_fix_neg_fmt Wrong");
+        
+        -- *** cl_fix_shift_fmt ***
+        print("*** cl_fix_shift_fmt ***");
+        CheckFmt((false, 6, 5), cl_fix_shift_fmt((false, 7, 0), -5, -1), "cl_fix_shift_fmt Wrong");
+        
+        -- *** cl_fix_shift_fmt ***
+        print("*** cl_fix_shift_fmt ***");
+        CheckFmt((false, 11, -4), cl_fix_shift_fmt((false, 7, 0), 4), "cl_fix_shift_fmt Wrong");
+        
         -- *** cl_fix_width ***
         print("*** cl_fix_width ***");
         CheckInt(3, cl_fix_width((false, 3, 0)),    "cl_fix_width Wrong: Integer only, Unsigned, NoFractional Bits");
