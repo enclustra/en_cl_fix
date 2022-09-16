@@ -28,7 +28,8 @@ class FixFormat:
     # Format for result of multiplication
     @staticmethod
     def ForMult(aFmt, bFmt):
-        return FixFormat(True, aFmt.IntBits+bFmt.IntBits+1, aFmt.FracBits+bFmt.FracBits)
+        signed = aFmt.Signed or bFmt.Signed
+        return FixFormat(signed, aFmt.IntBits+bFmt.IntBits+int(signed), aFmt.FracBits+bFmt.FracBits)
     
     # Format for result of negation
     @staticmethod

@@ -470,7 +470,7 @@ def cl_fix_random(n : int, fmt : FixFormat):
     if cl_fix_is_wide(fmt):
         xint = np.empty((n,), dtype=object)
         for i in range(n):
-            xint[i] = random.randrange(fmtLo.data, fmtHi.data+1)
+            xint[i] = random.randrange(fmtLo.data[0], fmtHi.data[0]+1)
 
         return wide_fxp(xint, fmt)
     else:

@@ -1,3 +1,10 @@
+## 1.3.0
+* Features
+  * Added simple format calculation functions in VHDL to mirror the Python implementation
+* Bugfixes
+  * Various minor improvements to wide fixed-point support
+  * Fixed simulation script
+
 ## 1.2.0
 * Features
   * Added wide fixed-point (> 53 bits) Python support
