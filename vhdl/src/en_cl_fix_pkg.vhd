@@ -22,7 +22,7 @@ package en_cl_fix_pkg is
 
     -----------------------------------------------------------------------------------------------
     -- Types
-    ----------------------------------------------------------------------------------------------- 
+    -----------------------------------------------------------------------------------------------
     
     type FixFormat_t is record
         Signed      : boolean;
@@ -55,354 +55,285 @@ package en_cl_fix_pkg is
     -- Format Functions
     -----------------------------------------------------------------------------------------------
     
-    function cl_fix_format(    signed      : boolean;
-                                intBits     : integer;
-                                fracBits    : integer) 
-                                return FixFormat_t;
+    function cl_fix_format(signed : boolean; intBits : integer; fracBits : integer) return FixFormat_t;
     
-    function cl_fix_add_fmt(  a_fmt        : FixFormat_t;
-                               b_fmt        : FixFormat_t)
-                               return FixFormat_t;
+    function cl_fix_add_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t;
     
-    function cl_fix_sub_fmt(  a_fmt        : FixFormat_t;
-                               b_fmt        : FixFormat_t)
-                               return FixFormat_t;
+    function cl_fix_sub_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t;
     
-    function cl_fix_mult_fmt(  a_fmt       : FixFormat_t;
-                                b_fmt       : FixFormat_t)
-                                return FixFormat_t;
+    function cl_fix_mult_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t;
     
-    function cl_fix_neg_fmt(  a_fmt        : FixFormat_t)
-                               return FixFormat_t;
+    function cl_fix_neg_fmt(a_fmt : FixFormat_t) return FixFormat_t;
     
-    function cl_fix_shift_fmt(  a_fmt      : FixFormat_t;
-                                 min_shift  : integer;
-                                 max_shift  : integer)
-                                 return FixFormat_t;
+    function cl_fix_shift_fmt(a_fmt : FixFormat_t; min_shift : integer; max_shift : integer) return FixFormat_t;
     
-    function cl_fix_shift_fmt(  a_fmt      : FixFormat_t;
-                                 shift      : integer)
-                                 return FixFormat_t;
+    function cl_fix_shift_fmt(a_fmt : FixFormat_t; shift : integer) return FixFormat_t;
     
-    function cl_fix_width( fmt     : FixFormat_t)
-                            return positive;
+    function cl_fix_width(fmt : FixFormat_t) return positive;
     
+    function cl_fix_string_from_format(fmt : FixFormat_t) return string;
     
-    function cl_fix_string_from_format(    fmt     : FixFormat_t) 
-                                            return string;
+    function cl_fix_format_from_string(Str : string) return FixFormat_t;
     
-    function cl_fix_format_from_string(     Str : string)
-                                            return FixFormat_t;
+    function cl_fix_round_from_string(Str : string) return FixRound_t;
     
-    function cl_fix_round_from_string(  Str : string)
-                                            return FixRound_t;
+    function cl_fix_saturate_from_string(Str : string) return FixSaturate_t;
     
-    function cl_fix_saturate_from_string(   Str : string)
-                                            return FixSaturate_t;
+    function cl_fix_zero_value(fmt : FixFormat_t) return std_logic_vector;
     
-    function cl_fix_zero_value(    fmt     : FixFormat_t)
-                                    return std_logic_vector;
+    function cl_fix_max_value(fmt : FixFormat_t) return std_logic_vector;
     
-    function cl_fix_max_value( fmt     : FixFormat_t)
-                                return std_logic_vector;
+    function cl_fix_min_value(fmt : FixFormat_t) return std_logic_vector;
     
-    function cl_fix_min_value( fmt     : FixFormat_t)
-                                return std_logic_vector;
+    function cl_fix_max_real(fmt : FixFormat_t) return real;
     
-    function cl_fix_max_real(  fmt     : FixFormat_t)
-                                return real;
+    function cl_fix_min_real(fmt : FixFormat_t) return real;
     
-    function cl_fix_min_real(  fmt     : FixFormat_t) 
-                                return real;
+    function cl_fix_sign(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic;
     
-    function cl_fix_sign(  a       : std_logic_vector; 
-                            a_fmt   : FixFormat_t) 
-                            return std_logic;
+    function cl_fix_int(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
     
-    function cl_fix_int(   a       : std_logic_vector; 
-                            a_fmt   : FixFormat_t) 
-                            return std_logic_vector;
+    function cl_fix_frac(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
     
-    function cl_fix_frac(  a       : std_logic_vector; 
-                            a_fmt   : FixFormat_t) 
-                            return std_logic_vector;
-    
-    function cl_fix_combine(   sign        : std_logic; 
-                                int         : std_logic_vector; 
-                                frac        : std_logic_vector;
-                                result_fmt  : FixFormat_t) 
-                                return std_logic_vector;
+    function cl_fix_combine(sign : std_logic; int : std_logic_vector; frac : std_logic_vector; result_fmt : FixFormat_t) return std_logic_vector;
 
     -----------------------------------------------------------------------------------------------
     -- Bit Manipulation
-    ----------------------------------------------------------------------------------------------- 
+    -----------------------------------------------------------------------------------------------
     
-    function cl_fix_get_msb(   a       : std_logic_vector;
-                                a_fmt   : FixFormat_t;
-                                index   : natural) 
-                                return std_logic;
+    function cl_fix_get_msb(a : std_logic_vector; a_fmt : FixFormat_t; index : natural) return std_logic;
     
-    function cl_fix_get_lsb(   a       : std_logic_vector;
-                                a_fmt   : FixFormat_t;
-                                index   : natural) 
-                                return std_logic;
+    function cl_fix_get_lsb(a : std_logic_vector; a_fmt : FixFormat_t; index : natural) return std_logic;
     
-    function cl_fix_set_msb(   a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t; 
-                                index       : natural;
-                                value       : std_logic) 
-                                return std_logic_vector;
+    function cl_fix_set_msb(a : std_logic_vector; a_fmt : FixFormat_t; index : natural; value : std_logic) return std_logic_vector;
     
-    function cl_fix_set_lsb(   a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t; 
-                                index       : natural;
-                                value       : std_logic) 
-                                return std_logic_vector;
+    function cl_fix_set_lsb(a : std_logic_vector; a_fmt : FixFormat_t; index : natural; value : std_logic) return std_logic_vector;
 
     -----------------------------------------------------------------------------------------------
     -- Conversion To/From Other Formats
-    -----------------------------------------------------------------------------------------------     
+    -----------------------------------------------------------------------------------------------
     
-    function cl_fix_from_int(  a           : integer; 
-                                result_fmt  : FixFormat_t;
-                                saturate    : FixSaturate_t := SatWarn_s)                               
-                                return std_logic_vector;
+    function cl_fix_from_int(a : integer; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector;
     
-    function cl_fix_to_int(    a       : std_logic_vector; 
-                                a_fmt   : FixFormat_t) 
-                                return integer;
+    function cl_fix_to_int(a : std_logic_vector; a_fmt : FixFormat_t) return integer;
     
-    function cl_fix_from_real( a           : real; 
-                                result_fmt  : FixFormat_t;
-                                saturate    : FixSaturate_t := SatWarn_s) 
-                                return std_logic_vector;
+    function cl_fix_from_real(a : real; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector;
     
-    function cl_fix_to_real(   a       : std_logic_vector; 
-                                a_fmt   : FixFormat_t) 
-                                return real;
+    function cl_fix_to_real(a : std_logic_vector; a_fmt : FixFormat_t) return real;
     
-    function cl_fix_from_bin(  a           : string; 
-                                result_fmt  : FixFormat_t) 
-                                return std_logic_vector;
+    function cl_fix_from_bin(a : string; result_fmt : FixFormat_t) return std_logic_vector;
     
-    function cl_fix_to_bin(    a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t) 
-                                return string;
+    function cl_fix_to_bin(a : std_logic_vector; a_fmt : FixFormat_t) return string;
     
-    function cl_fix_from_hex(  a           : string; 
-                                result_fmt  : FixFormat_t) 
-                                return std_logic_vector;
+    function cl_fix_from_hex(a : string; result_fmt : FixFormat_t) return std_logic_vector;
     
-    function cl_fix_to_hex(    a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t) 
-                                return string;
+    function cl_fix_to_hex(a : std_logic_vector; a_fmt : FixFormat_t) return string;
     
-    function cl_fix_get_bits_as_int(    a       : std_logic_vector;
-                                        aFmt    : FixFormat_t)
-                                        return integer;
+    function cl_fix_get_bits_as_int(a : std_logic_vector; aFmt : FixFormat_t) return integer;
     
-    function cl_fix_from_bits_as_int(   a       : integer;
-                                        aFmt    : FixFormat_t)
-                                        return std_logic_vector;
+    function cl_fix_from_bits_as_int(a : integer; aFmt : FixFormat_t) return std_logic_vector;
 
     -----------------------------------------------------------------------------------------------
     -- File Operations
-    ----------------------------------------------------------------------------------------------- 
+    -----------------------------------------------------------------------------------------------
     
-    impure function cl_fix_read_int(   file a      : text; 
+    impure function cl_fix_read_int(   file a      : text;
                                         result_fmt  : FixFormat_t;
-                                        saturate    : FixSaturate_t := SatWarn_s) 
+                                        saturate    : FixSaturate_t := SatWarn_s)
                                         return std_logic_vector;
     
-    impure function cl_fix_read_real(  file a      : text; 
+    impure function cl_fix_read_real(  file a      : text;
                                         result_fmt  : FixFormat_t;
-                                        saturate    : FixSaturate_t := SatWarn_s) 
+                                        saturate    : FixSaturate_t := SatWarn_s)
                                         return std_logic_vector;
     
-    impure function cl_fix_read_bin(   file a      : text; 
-                                        result_fmt  : FixFormat_t) 
+    impure function cl_fix_read_bin(   file a      : text;
+                                        result_fmt  : FixFormat_t)
                                         return std_logic_vector;
     
-    impure function cl_fix_read_hex(   file a      : text; 
-                                        result_fmt  : FixFormat_t) 
+    impure function cl_fix_read_hex(   file a      : text;
+                                        result_fmt  : FixFormat_t)
                                         return std_logic_vector;
     
-    procedure cl_fix_write_int(    a           : std_logic_vector; 
+    procedure cl_fix_write_int(    a           : std_logic_vector;
                                     a_fmt       : FixFormat_t;
                                     file f      : text;
                                     f_fmt       : FixFormat_t;
-                                    round       : FixRound_t    := Trunc_s; 
+                                    round       : FixRound_t    := Trunc_s;
                                     saturate    : FixSaturate_t := Warn_s);
     
-    procedure cl_fix_write_real(   a           : std_logic_vector; 
+    procedure cl_fix_write_real(   a           : std_logic_vector;
                                     a_fmt       : FixFormat_t;
                                     file f      : text;
                                     f_fmt       : FixFormat_t;
-                                    round       : FixRound_t    := Trunc_s; 
+                                    round       : FixRound_t    := Trunc_s;
                                     saturate    : FixSaturate_t := Warn_s);
     
-    procedure cl_fix_write_bin(    a           : std_logic_vector; 
+    procedure cl_fix_write_bin(    a           : std_logic_vector;
                                     a_fmt       : FixFormat_t;
                                     file f      : text;
                                     f_fmt       : FixFormat_t;
-                                    round       : FixRound_t    := Trunc_s; 
+                                    round       : FixRound_t    := Trunc_s;
                                     saturate    : FixSaturate_t := Warn_s
         );
     
-    procedure cl_fix_write_hex(    a           : std_logic_vector; 
+    procedure cl_fix_write_hex(    a           : std_logic_vector;
                                     a_fmt       : FixFormat_t;
                                     file f      : text;
                                     f_fmt       : FixFormat_t;
-                                    round       : FixRound_t    := Trunc_s; 
+                                    round       : FixRound_t    := Trunc_s;
                                     saturate    : FixSaturate_t := Warn_s
         );
 
     -----------------------------------------------------------------------------------------------
     -- Resize and Rounding
-    ----------------------------------------------------------------------------------------------- 
+    -----------------------------------------------------------------------------------------------
     
-    function cl_fix_resize(    a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t; 
-                                result_fmt  : FixFormat_t; 
-                                round       : FixRound_t    := Trunc_s; 
-                                saturate    : FixSaturate_t := Warn_s) 
-                                return std_logic_vector;
+    function cl_fix_resize(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_fix(   a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t) 
-                            return std_logic_vector;
+    function cl_fix_fix(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
     
-    function cl_fix_floor( a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t) 
-                            return std_logic_vector;
+    function cl_fix_floor(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
     
-    function cl_fix_ceil(  a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t) 
-                            return std_logic_vector;
+    function cl_fix_ceil(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
     
-    function cl_fix_round( a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t) 
-                            return std_logic_vector;
+    function cl_fix_round(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
     
-    function cl_fix_in_range(  a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t; 
-                                result_fmt  : FixFormat_t; 
-                                round       : FixRound_t    := Trunc_s) 
-                                return boolean;
+    function cl_fix_in_range(a : std_logic_vector; a_fmt : FixFormat_t; result_fmt : FixFormat_t; round : FixRound_t := Trunc_s) return boolean;
         
     -----------------------------------------------------------------------------------------------
     -- Math Functions
-    ----------------------------------------------------------------------------------------------- 
+    -----------------------------------------------------------------------------------------------
     
-    function cl_fix_abs(   a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector;
+    function cl_fix_abs(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_sabs(  a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector;
+    function cl_fix_sabs(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_neg(   a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            enable      : std_logic     := '1';
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector;
+    function cl_fix_neg(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        enable      : std_logic := '1';
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_sneg(  a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            enable      : std_logic     := '1';
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector;
+    function cl_fix_sneg(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        enable      : std_logic := '1';
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_add(   a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            b           : std_logic_vector; 
-                            b_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector;
+    function cl_fix_add(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_sub(   a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            b           : std_logic_vector; 
-                            b_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector;
+    function cl_fix_sub(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_addsub(    a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t; 
-                                b           : std_logic_vector; 
-                                b_fmt       : FixFormat_t; 
-                                add         : std_logic;
-                                result_fmt  : FixFormat_t; 
-                                round       : FixRound_t    := Trunc_s; 
-                                saturate    : FixSaturate_t := Warn_s) 
-                                return std_logic_vector;
+    function cl_fix_addsub(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        add         : std_logic;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_saddsub(   a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t; 
-                                b           : std_logic_vector; 
-                                b_fmt       : FixFormat_t; 
-                                add         : std_logic;
-                                result_fmt  : FixFormat_t; 
-                                round       : FixRound_t    := Trunc_s; 
-                                saturate    : FixSaturate_t := Warn_s) 
-                                return std_logic_vector;
+    function cl_fix_saddsub(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        add         : std_logic;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_mean(  a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            b           : std_logic_vector; 
-                            b_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector;
+    function cl_fix_mean(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_mean_angle(    a           : std_logic_vector; 
-                                    a_fmt       : FixFormat_t; 
-                                    b           : std_logic_vector; 
-                                    b_fmt       : FixFormat_t; 
-                                    precise     : boolean;
-                                    result_fmt  : FixFormat_t; 
-                                    round       : FixRound_t    := Trunc_s; 
-                                    saturate    : FixSaturate_t := Warn_s) 
-                                    return std_logic_vector;
+    function cl_fix_mean_angle(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        precise     : boolean;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_shift( a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            shift       : integer;
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector;
+    function cl_fix_shift(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        shift       : integer;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_mult(  a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            b           : std_logic_vector; 
-                            b_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector;
+    function cl_fix_mult(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
-    function cl_fix_compare(    comparison  : string;
-                                a           : std_logic_vector;
-                                aFmt        : FixFormat_t;
-                                b           : std_logic_vector;
-                                bFmt        : FixFormat_t) return boolean;                          
+    function cl_fix_compare(
+        comparison  : string;
+        a           : std_logic_vector;
+        aFmt        : FixFormat_t;
+        b           : std_logic_vector;
+        bFmt        : FixFormat_t
+    ) return boolean;
         
 end package;
 
@@ -415,6 +346,7 @@ package body en_cl_fix_pkg is
     -----------------------------------------------------------------------------------------------
     -- Internally used constants
     -----------------------------------------------------------------------------------------------
+    
     subtype HexCharacter_t is string(1 to 16);
     constant HexCharacter_c : HexCharacter_t := "0123456789ABCDEF";
     
@@ -425,8 +357,7 @@ package body en_cl_fix_pkg is
     -- Internally used functions
     -----------------------------------------------------------------------------------------------
     
-    function max(  a, b    : integer) 
-                    return integer is
+    function max(a, b : integer) return integer is
     begin
         if a >= b then
             return a;
@@ -435,8 +366,7 @@ package body en_cl_fix_pkg is
         end if;
     end;
     
-    function min(  a, b    : integer) 
-                    return integer is
+    function min(a, b : integer) return integer is
     begin
         if a <= b then
             return a;
@@ -445,8 +375,7 @@ package body en_cl_fix_pkg is
         end if;
     end;
     
-    function to01( sl  : std_logic) 
-                    return std_logic is
+    function to01(sl : std_logic) return std_logic is
         variable result_v : std_logic;
     begin
         if sl = '1' or sl = 'H' then
@@ -457,8 +386,7 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function toInteger(    bool    : boolean) 
-                            return integer is
+    function toInteger(bool : boolean) return integer is
     begin
         if bool then
             return 1;
@@ -511,10 +439,7 @@ package body en_cl_fix_pkg is
         return v;
     end;
     
-    function string_find_next_match(    Str         : string;
-                                        Char        : character;
-                                        StartIdx    : natural)
-                                        return integer is
+    function string_find_next_match(Str : string; Char : character; StartIdx : natural) return integer is
         variable CurrentIdx_v       : integer := StartIdx;
         variable Match_v            : boolean := false;
         variable MatchIdx_v         : integer := -1;
@@ -533,10 +458,7 @@ package body en_cl_fix_pkg is
         return MatchIdx_v;
     end function;
     
-    function string_find_next_match(    Str         : string;
-                                        Pattern     : string;
-                                        StartIdx    : natural)
-                                            return integer is
+    function string_find_next_match(Str : string; Pattern : string; StartIdx : natural) return integer is
         variable CurrentIdx_v       : integer := StartIdx;
         variable Match_v            : boolean := false;
         variable MatchIdx_v         : integer := -1;
@@ -559,11 +481,9 @@ package body en_cl_fix_pkg is
             CurrentIdx_v := CurrentIdx_v + 1;
         end loop;
         return MatchIdx_v;
-    end function;   
+    end function;
     
-    function string_parse_boolean(  Str         : string;
-                                    StartIdx    : natural)
-                                    return boolean is
+    function string_parse_boolean(Str : string; StartIdx : natural) return boolean is
             constant StrLower_c : string := toLower(Str);
             variable TrueIdx_v  : integer;
             variable FalseIdx_v : integer;
@@ -585,10 +505,10 @@ package body en_cl_fix_pkg is
                 return true;
             else
                 return (TrueIdx_v < FalseIdx_v);
-            end if; 
-    end function;   
+            end if;
+    end function;
     
-    function string_int_from_char(  Char : character) return integer is
+    function string_int_from_char(Char : character) return integer is
     begin
         case Char is
             when '0'    => return 0;
@@ -606,15 +526,12 @@ package body en_cl_fix_pkg is
         return 0;
     end function;
     
-    function string_char_is_numeric(    Char : character)
-                                            return boolean is
+    function string_char_is_numeric(Char : character) return boolean is
     begin
         return string_int_from_char(Char) /= -1;
-    end function;   
+    end function;
     
-    function string_parse_int(  Str         : string;
-                                StartIdx    : natural)
-                                return integer is
+    function string_parse_int(Str : string; StartIdx : natural) return integer is
         variable CurrentIdx_v       : integer   := StartIdx;
         variable IsNegative_v       : boolean   := false;
         variable AbsoluteVal_v      : integer   := 0;
@@ -673,16 +590,13 @@ package body en_cl_fix_pkg is
                 value_i((s'length-ptr)*4+3 downto (s'length-ptr)*4)))+1));
         end loop;
         return s;
-    end;    
+    end;
     
     -----------------------------------------------------------------------------------------------
     -- Public Functions
-    ----------------------------------------------------------------------------------------------- 
+    -----------------------------------------------------------------------------------------------
     
-    function cl_fix_format(    signed      : boolean;
-                                intBits     : integer;
-                                fracBits    : integer) 
-                                return FixFormat_t is
+    function cl_fix_format(signed : boolean; intBits : integer; fracBits : integer) return FixFormat_t is
     begin
         assert intBits + fracBits >= 1
             report "cl_fix_format : The sum of 'intBits' and 'fracBits' must be at least 1!"
@@ -691,9 +605,7 @@ package body en_cl_fix_pkg is
         return (signed, intBits, fracBits);
     end;
     
-    function cl_fix_add_fmt(   a_fmt        : FixFormat_t;
-                                b_fmt        : FixFormat_t)
-                                return FixFormat_t is
+    function cl_fix_add_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
     begin
         return (
             a_fmt.Signed or b_fmt.Signed,
@@ -702,9 +614,7 @@ package body en_cl_fix_pkg is
         );
     end;
     
-    function cl_fix_sub_fmt(   a_fmt        : FixFormat_t;
-                                b_fmt        : FixFormat_t)
-                                return FixFormat_t is
+    function cl_fix_sub_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
     begin
         return (
             true,
@@ -713,9 +623,7 @@ package body en_cl_fix_pkg is
         );
     end;
     
-    function cl_fix_mult_fmt(  a_fmt       : FixFormat_t;
-                                b_fmt       : FixFormat_t)
-                                return FixFormat_t is
+    function cl_fix_mult_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
         constant Signed_c   : boolean := a_fmt.Signed or b_fmt.Signed;
     begin
         return (
@@ -725,8 +633,7 @@ package body en_cl_fix_pkg is
         );
     end;
     
-    function cl_fix_neg_fmt(    a_fmt        : FixFormat_t)
-                                return FixFormat_t is
+    function cl_fix_neg_fmt(a_fmt : FixFormat_t) return FixFormat_t is
     begin
         return (
             true,
@@ -735,10 +642,7 @@ package body en_cl_fix_pkg is
         );
     end;
     
-    function cl_fix_shift_fmt( a_fmt      : FixFormat_t;
-                                min_shift  : integer;
-                                max_shift  : integer)
-                                return FixFormat_t is
+    function cl_fix_shift_fmt(a_fmt : FixFormat_t; min_shift : integer; max_shift : integer) return FixFormat_t is
     begin
         assert min_shift <= max_shift report "min_shift must be <= max_shift" severity Failure;
         
@@ -749,15 +653,12 @@ package body en_cl_fix_pkg is
         );
     end;
     
-    function cl_fix_shift_fmt( a_fmt      : FixFormat_t;
-                                shift      : integer)
-                                return FixFormat_t is
+    function cl_fix_shift_fmt(a_fmt : FixFormat_t; shift : integer) return FixFormat_t is
     begin
         return cl_fix_shift_fmt(a_fmt, shift, shift);
     end;
     
-    function cl_fix_width( fmt     : FixFormat_t) 
-                            return positive is
+    function cl_fix_width(fmt : FixFormat_t) return positive is
     begin
         assert (fmt.IntBits+fmt.FracBits) > 0
             report "cl_fix_width : The sum of 'IntBits' and 'FracBits' must be at least 1!"
@@ -766,22 +667,20 @@ package body en_cl_fix_pkg is
         return toInteger(fmt.Signed)+fmt.IntBits+fmt.FracBits;
     end;
     
-    function cl_fix_string_from_format(    fmt     : FixFormat_t) 
-                                            return string is
+    function cl_fix_string_from_format(fmt : FixFormat_t) return string is
     begin
         return "(" & boolean'image(fmt.Signed) & "," & integer'image(fmt.IntBits) & "," & integer'image(fmt.FracBits) & ")";
     end;
     
-    function cl_fix_format_from_string( Str : string) 
-                                        return FixFormat_t is
+    function cl_fix_format_from_string(Str : string) return FixFormat_t is
         variable Format_v   : FixFormat_t;
         variable Index_v    : integer;
     begin
         -- Parse Format
         Index_v := Str'low;
         Index_v := string_find_next_match(Str, '(', Index_v);
-        assert Index_v > 0 
-            report "cl_fix_string_from_format: wrong Format, missing '('" 
+        assert Index_v > 0
+            report "cl_fix_string_from_format: wrong Format, missing '('"
             severity error;
         -- Allow signedness to be specified as an integer
         if Str(Index_v+1) = '0' then
@@ -793,24 +692,23 @@ package body en_cl_fix_pkg is
             Format_v.Signed := string_parse_boolean(Str, Index_v+1);
         end if;
         Index_v := string_find_next_match(Str, ',', Index_v+1);
-        assert Index_v > 0 
-            report "cl_fix_string_from_format: wrong Format, missing ',' between IsSigned and IntBits " 
+        assert Index_v > 0
+            report "cl_fix_string_from_format: wrong Format, missing ',' between IsSigned and IntBits "
             severity error;
         Format_v.IntBits := string_parse_int(Str, Index_v+1);
         Index_v := string_find_next_match(Str, ',', Index_v+1);
-        assert Index_v > 0 
-            report "cl_fix_string_from_format: wrong Format, missing ',' between IntBits and FracBits " 
+        assert Index_v > 0
+            report "cl_fix_string_from_format: wrong Format, missing ',' between IntBits and FracBits "
             severity error;
         Format_v.FracBits := string_parse_int(Str, Index_v+1);
         Index_v := string_find_next_match(Str, ')', Index_v+1);
-        assert Index_v > 0 
-            report "cl_fix_string_from_format: wrong Format, missing ')'" 
-            severity error; 
+        assert Index_v > 0
+            report "cl_fix_string_from_format: wrong Format, missing ')'"
+            severity error;
         return Format_v;
     end;
     
-    function cl_fix_round_from_string(  Str : string) 
-                                        return FixRound_t is
+    function cl_fix_round_from_string(Str : string) return FixRound_t is
         constant StrLower_c : string := toLower(Str);
     begin
         if StrLower_c = "trunc_s" then
@@ -833,8 +731,7 @@ package body en_cl_fix_pkg is
         return Trunc_s;
     end;
     
-    function cl_fix_saturate_from_string(   Str : string) 
-                                        return FixSaturate_t is
+    function cl_fix_saturate_from_string(Str : string) return FixSaturate_t is
         constant StrLower_c : string := toLower(Str);
     begin
         if StrLower_c = "none_s" then
@@ -851,16 +748,14 @@ package body en_cl_fix_pkg is
         return None_s;
     end;
     
-    function cl_fix_zero_value(    fmt     : FixFormat_t) 
-                                    return std_logic_vector is
+    function cl_fix_zero_value(fmt : FixFormat_t) return std_logic_vector is
         variable result_v : std_logic_vector(cl_fix_width(fmt)-1 downto 0);
     begin
         result_v := (others => '0');
         return result_v;
     end;
     
-    function cl_fix_max_value( fmt     : FixFormat_t) 
-                                return std_logic_vector is
+    function cl_fix_max_value(fmt : FixFormat_t) return std_logic_vector is
         variable result_v : std_logic_vector(cl_fix_width(fmt)-1 downto 0);
     begin
         result_v := (others => '1');
@@ -870,8 +765,7 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_min_value( fmt : FixFormat_t) 
-                                return std_logic_vector is 
+    function cl_fix_min_value(fmt : FixFormat_t) return std_logic_vector is
         variable result_v : std_logic_vector(cl_fix_width(fmt)-1 downto 0);
     begin
         if fmt.Signed then
@@ -883,8 +777,7 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_max_real(   fmt     : FixFormat_t)
-                                return real is
+    function cl_fix_max_real(fmt : FixFormat_t) return real is
         variable Range_v, Lsb_v : real;
     begin
         Range_v := 2.0**fmt.IntBits;
@@ -892,8 +785,7 @@ package body en_cl_fix_pkg is
         return Range_v-Lsb_v;
     end function;
     
-    function cl_fix_min_real(   fmt     : FixFormat_t)
-                                return real is
+    function cl_fix_min_real(fmt : FixFormat_t)return real is
         variable Range_v : real;
     begin
         if fmt.Signed then
@@ -902,11 +794,9 @@ package body en_cl_fix_pkg is
         else
             return 0.0;
         end if;
-    end function;   
+    end function;
     
-    function cl_fix_sign(  a       : std_logic_vector; 
-                            a_fmt   : FixFormat_t) 
-                            return std_logic is
+    function cl_fix_sign(a : std_logic_vector; a_fmt: FixFormat_t) return std_logic is
         variable a_v : std_logic_vector(a'length-1 downto 0);
     begin
         a_v := a;
@@ -917,9 +807,7 @@ package body en_cl_fix_pkg is
         end if;
     end;
     
-    function cl_fix_int(   a       : std_logic_vector; 
-                            a_fmt   : FixFormat_t) 
-            return std_logic_vector is
+    function cl_fix_int(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
         variable a_v        : std_logic_vector(a'length-1 downto 0);
         variable result_v   : std_logic_vector(max(1, a_fmt.IntBits)-1 downto 0);
     begin
@@ -937,8 +825,7 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_frac(  a       : std_logic_vector; 
-                            a_fmt   : FixFormat_t) 
+    function cl_fix_frac(a : std_logic_vector; a_fmt : FixFormat_t)
             return std_logic_vector is
         variable a_v        : std_logic_vector(a'length-1 downto 0);
         variable result_v   : std_logic_vector(max(1, a_fmt.FracBits)-1 downto 0);
@@ -957,11 +844,7 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_combine(   sign        : std_logic; 
-                                int         : std_logic_vector; 
-                                frac        : std_logic_vector;
-                                result_fmt  : FixFormat_t) 
-                                return std_logic_vector is
+    function cl_fix_combine(sign : std_logic; int : std_logic_vector; frac : std_logic_vector; result_fmt : FixFormat_t) return std_logic_vector is
         variable int_v : std_logic_vector(int'length-1 downto 0);
         variable frac_v : std_logic_vector(frac'length-1 downto 0);
         variable result_v : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
@@ -972,7 +855,7 @@ package body en_cl_fix_pkg is
         if result_fmt.Signed then
             if result_fmt.IntBits > 0 then
                 if result_fmt.FracBits > 0 then
-                    result_v := sign & int_v(result_fmt.IntBits-1 downto 0) & 
+                    result_v := sign & int_v(result_fmt.IntBits-1 downto 0) &
                         frac_v(result_fmt.FracBits-1 downto 0);
                 else
                     result_v := sign & int_v(result_fmt.IntBits-1 downto -result_fmt.FracBits);
@@ -986,7 +869,7 @@ package body en_cl_fix_pkg is
                 severity failure;
             if result_fmt.IntBits > 0 then
                 if result_fmt.FracBits > 0 then
-                    result_v := int_v(result_fmt.IntBits-1 downto 0) & 
+                    result_v := int_v(result_fmt.IntBits-1 downto 0) &
                         frac_v(result_fmt.FracBits-1 downto 0);
                 else
                     result_v := int_v(result_fmt.IntBits-1 downto -result_fmt.FracBits);
@@ -998,27 +881,22 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_get_msb(   a       : std_logic_vector;
-                                a_fmt   : FixFormat_t;
-                                index   : natural) 
-                                return std_logic is
+    function cl_fix_get_msb(a : std_logic_vector; a_fmt : FixFormat_t; index : natural) return std_logic is
     begin
         return a(a'high-index);
     end;
     
-    function cl_fix_get_lsb(   a       : std_logic_vector;
-                                a_fmt   : FixFormat_t;
-                                index   : natural) 
-                                return std_logic is
+    function cl_fix_get_lsb(a : std_logic_vector; a_fmt : FixFormat_t; index : natural) return std_logic is
     begin
         return a(index);
     end;
     
-    function cl_fix_set_msb(   a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t; 
-                                index       : natural;
-                                value       : std_logic) 
-                                return std_logic_vector is
+    function cl_fix_set_msb(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        index       : natural;
+        value       : std_logic
+    ) return std_logic_vector is
         variable a_v : std_logic_vector(a'length-1 downto 0);
     begin
         a_v := a;
@@ -1026,11 +904,12 @@ package body en_cl_fix_pkg is
         return a_v;
     end;
     
-    function cl_fix_set_lsb(   a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t; 
-                                index       : natural;
-                                value       : std_logic) 
-                                return std_logic_vector is
+    function cl_fix_set_lsb(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        index       : natural;
+        value       : std_logic
+    ) return std_logic_vector is
         variable a_v : std_logic_vector(a'length-1 downto 0);
     begin
         a_v := a;
@@ -1038,41 +917,36 @@ package body en_cl_fix_pkg is
         return a_v;
     end;
     
-    function cl_fix_from_int(  a           : integer; 
-                                result_fmt  : FixFormat_t; 
-                                saturate    : FixSaturate_t := SatWarn_s) 
-                                return std_logic_vector is
+    function cl_fix_from_int(a : integer; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector is
         variable a_v        : integer;
         variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
         result_v := (others => '0');
         a_v := a;
         if result_fmt.Signed then
-            assert not ((saturate = Warn_s or saturate = SatWarn_s) and 
+            assert not ((saturate = Warn_s or saturate = SatWarn_s) and
                     (a_v >= 2**result_fmt.IntBits or a_v < -2**result_fmt.IntBits))
-                report "cl_fix_from_int : Saturation Warning!" 
+                report "cl_fix_from_int : Saturation Warning!"
                 severity warning;
             if saturate = Sat_s or saturate = SatWarn_s then
                 a_v := max(min(a_v, 2**result_fmt.IntBits-1), -2**result_fmt.IntBits);
             end if;
-            result_v(result_v'high downto result_fmt.FracBits) := 
+            result_v(result_v'high downto result_fmt.FracBits) :=
                 std_logic_vector(to_signed(a_v, result_fmt.IntBits+1));
         else
             assert not ((saturate = Warn_s or saturate = SatWarn_s) and (a_v >= 2**result_fmt.IntBits or a_v < 0))
-                report "cl_fix_from_int : Saturation Warning!" 
+                report "cl_fix_from_int : Saturation Warning!"
                 severity warning;
             if saturate = Sat_s or saturate = SatWarn_s then
                 a_v := max(min(a_v, 2**result_fmt.IntBits-1), 0);
             end if;
-            result_v(result_v'high downto result_fmt.FracBits) := 
+            result_v(result_v'high downto result_fmt.FracBits) :=
                 std_logic_vector(to_unsigned(a_v, result_fmt.IntBits));
         end if;
         return result_v;
     end;
     
-    function cl_fix_to_int(    a       : std_logic_vector; 
-                                a_fmt   : FixFormat_t) 
-                                return integer is
+    function cl_fix_to_int(a : std_logic_vector; a_fmt : FixFormat_t) return integer is
         variable a_v : std_logic_vector(a'length-1 downto 0);
     begin
         a_v := a;
@@ -1100,10 +974,7 @@ package body en_cl_fix_pkg is
         end if;
     end;
     
-    function cl_fix_from_real( a           : real; 
-                                result_fmt  : FixFormat_t;
-                                saturate    : FixSaturate_t := SatWarn_s) 
-                                return std_logic_vector is
+    function cl_fix_from_real(a : real; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector is
         constant ChunkSize_c    : positive := 30;
         constant ChunkCount_c   : positive := (cl_fix_width(result_fmt) + ChunkSize_c - 1)/ChunkSize_c;
         variable ASat_v         : real;
@@ -1111,7 +982,7 @@ package body en_cl_fix_pkg is
         variable Result_v       : std_logic_vector(ChunkSize_c*ChunkCount_c-1 downto 0);
     begin
         -- Limit
-        if a > cl_fix_max_real(result_fmt) then 
+        if a > cl_fix_max_real(result_fmt) then
             ASat_v := cl_fix_max_real(result_fmt);
         elsif a < cl_fix_min_real(result_fmt) then
             ASat_v := cl_fix_min_real(result_fmt);
@@ -1133,9 +1004,7 @@ package body en_cl_fix_pkg is
         return Result_v(cl_fix_width(result_fmt)-1 downto 0);
     end;
     
-    function cl_fix_to_real(   a       : std_logic_vector; 
-                                a_fmt   : FixFormat_t) 
-                                return real is
+    function cl_fix_to_real(a : std_logic_vector; a_fmt : FixFormat_t) return real is
         constant ABits_c        : positive := cl_fix_width(a_fmt);
         constant ChunkSize_c    : positive := 30;
         constant ChunkCount_c   : positive := (ABits_c + ChunkSize_c - 1)/ChunkSize_c;
@@ -1170,9 +1039,7 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_from_bin(  a           : string; 
-                                result_fmt  : FixFormat_t) 
-                                return std_logic_vector is
+    function cl_fix_from_bin(a : string; result_fmt : FixFormat_t) return std_logic_vector is
         variable a_v : string(1 to a'length);
         variable result_v : std_logic_vector(a'length-1 downto 0);
         variable pos_v : natural;
@@ -1193,26 +1060,22 @@ package body en_cl_fix_pkg is
                 end if;
             when '_' =>
             when others =>
-                report "cl_fix_from_bin : Illegal character in binary string!" 
+                report "cl_fix_from_bin : Illegal character in binary string!"
                     severity error;
             end case;
         end loop;
         assert a'length-pos_v = cl_fix_width(result_fmt);
-            report "cl_fix_from_bin : The binary string doesn't have the correct length!" 
+            report "cl_fix_from_bin : The binary string doesn't have the correct length!"
             severity error;
         return result_v(a'length-1 downto pos_v);
     end;
     
-    function cl_fix_to_bin(    a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t) 
-                                return string is
+    function cl_fix_to_bin(a : std_logic_vector; a_fmt : FixFormat_t) return string is
     begin
         return toString(a);
     end;
     
-    function cl_fix_from_hex(  a           : string; 
-                                result_fmt  : FixFormat_t) 
-                                return std_logic_vector is
+    function cl_fix_from_hex(a : string; result_fmt : FixFormat_t) return std_logic_vector is
         constant ResultWidth_c : positive := cl_fix_width(result_fmt);
         variable a_v : string(1 to a'length);
         variable result_v : std_logic_vector(a'length*4-1 downto 0);
@@ -1244,31 +1107,27 @@ package body en_cl_fix_pkg is
                 end if;
             when '_' =>
             when others =>
-                report "cl_fix_from_hex : Illegal character in hexadecimal string!" 
+                report "cl_fix_from_hex : Illegal character in hexadecimal string!"
                     severity error;
             end case;
         end loop;
         assert 4*(a'length-pos_v) >= ResultWidth_c and 4*(a'length-pos_v-1) < ResultWidth_c;
-            report "cl_fix_from_hex : The hexadecimal string doesn't have the correct length!" 
+            report "cl_fix_from_hex : The hexadecimal string doesn't have the correct length!"
             severity error;
         if ResultWidth_c/4*4 < ResultWidth_c then
             assert unsigned(result_v(a'length*4-1 downto pos_v*4+ResultWidth_c)) = 0
-                report "cl_fix_from_hex : The unused bits in the hexadecimal string are not all equal to zero!" 
+                report "cl_fix_from_hex : The unused bits in the hexadecimal string are not all equal to zero!"
                 severity error;
         end if;
         return result_v(pos_v*4+ResultWidth_c-1 downto pos_v*4);
     end;
     
-    function cl_fix_to_hex(    a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t) 
-                                return string is
+    function cl_fix_to_hex(a : std_logic_vector; a_fmt : FixFormat_t) return string is
     begin
         return toHexString(a);
     end;
     
-    function cl_fix_from_bits_as_int(   a       : integer;
-                                        aFmt    : FixFormat_t)
-                                        return std_logic_vector is
+    function cl_fix_from_bits_as_int(a : integer; aFmt : FixFormat_t) return std_logic_vector is
     begin
         if aFmt.Signed then
             return std_logic_vector(to_signed(a, cl_fix_width(aFmt)));
@@ -1277,25 +1136,23 @@ package body en_cl_fix_pkg is
         end if;
     end function;
     
-    function cl_fix_get_bits_as_int(    a       : std_logic_vector;
-                                        aFmt    : FixFormat_t)
-                                        return integer is
+    function cl_fix_get_bits_as_int(a : std_logic_vector; aFmt : FixFormat_t) return integer is
     begin
         if aFmt.Signed then
             return to_integer(signed(a));
         else
             return to_integer(unsigned(a));
         end if;
-    end function;   
+    end function;
     
-    impure function cl_fix_read_int(   file a      : text; 
+    impure function cl_fix_read_int(   file a      : text;
                                         result_fmt  : FixFormat_t;
-                                        saturate    : FixSaturate_t := SatWarn_s) 
+                                        saturate    : FixSaturate_t := SatWarn_s)
                                         return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t := 
+        constant TempFmt_c  : FixFormat_t :=
             (
                 Signed      => result_fmt.Signed,
-                IntBits     => result_fmt.IntBits+result_fmt.FracBits, 
+                IntBits     => result_fmt.IntBits+result_fmt.FracBits,
                 FracBits    => 0
             );
         variable line_v     : line;
@@ -1308,16 +1165,16 @@ package body en_cl_fix_pkg is
         if ok_v then
             result_v := cl_fix_from_int(temp_v, TempFmt_c, saturate);
         else
-            assert false 
-                report "cl_fix_read_int : Could not read from stimuli file!" 
+            assert false
+                report "cl_fix_read_int : Could not read from stimuli file!"
                 severity error;
         end if;
         return result_v;
     end;
     
-    impure function cl_fix_read_real(  file a      : text; 
+    impure function cl_fix_read_real(  file a      : text;
                                         result_fmt  : FixFormat_t;
-                                        saturate    : FixSaturate_t := SatWarn_s) 
+                                        saturate    : FixSaturate_t := SatWarn_s)
                                         return std_logic_vector is
         variable line_v     : line;
         variable ok_v       : boolean;
@@ -1329,15 +1186,15 @@ package body en_cl_fix_pkg is
         if ok_v then
             result_v := cl_fix_from_real(temp_v, result_fmt, saturate);
         else
-            assert false 
-                report "cl_fix_read_real : Could not read from stimuli fil\EB!" 
+            assert false
+                report "cl_fix_read_real : Could not read from stimuli fil\EB!"
                 severity error;
         end if;
         return result_v;
     end;
     
-    impure function cl_fix_read_bin(   file a      : text; 
-                                        result_fmt  : FixFormat_t) 
+    impure function cl_fix_read_bin(   file a      : text;
+                                        result_fmt  : FixFormat_t)
                                         return std_logic_vector is
         variable line_v     : line;
         variable ok_v       : boolean;
@@ -1349,15 +1206,15 @@ package body en_cl_fix_pkg is
         if ok_v then
             result_v := cl_fix_from_bin(temp_v, result_fmt);
         else
-            assert false 
-                report "cl_fix_read_bin : Could not read from stimuli fil\EB!" 
+            assert false
+                report "cl_fix_read_bin : Could not read from stimuli fil\EB!"
                 severity error;
         end if;
         return result_v;
     end;
     
-    impure function cl_fix_read_hex(   file a      : text; 
-                                        result_fmt  : FixFormat_t) 
+    impure function cl_fix_read_hex(   file a      : text;
+                                        result_fmt  : FixFormat_t)
                                         return std_logic_vector is
         variable line_v     : line;
         variable ok_v       : boolean;
@@ -1369,18 +1226,18 @@ package body en_cl_fix_pkg is
         if ok_v then
             result_v := cl_fix_from_hex(temp_v, result_fmt);
         else
-            assert false 
-                report "cl_fix_read_hex : Could not read from stimuli fil\EB!" 
+            assert false
+                report "cl_fix_read_hex : Could not read from stimuli fil\EB!"
                 severity error;
         end if;
         return result_v;
     end;
     
-    procedure cl_fix_write_int(    a           : std_logic_vector; 
+    procedure cl_fix_write_int(    a           : std_logic_vector;
                                     a_fmt       : FixFormat_t;
                                     file f      : text;
                                     f_fmt       : FixFormat_t;
-                                    round       : FixRound_t    := Trunc_s; 
+                                    round       : FixRound_t    := Trunc_s;
                                     saturate    : FixSaturate_t := Warn_s) is
         variable line_v     : line;
         variable temp_v     : integer;
@@ -1396,11 +1253,11 @@ package body en_cl_fix_pkg is
         writeline(f, line_v);
     end;
     
-    procedure cl_fix_write_real(   a           : std_logic_vector; 
+    procedure cl_fix_write_real(   a           : std_logic_vector;
                                     a_fmt       : FixFormat_t;
                                     file f      : text;
                                     f_fmt       : FixFormat_t;
-                                    round       : FixRound_t    := Trunc_s; 
+                                    round       : FixRound_t    := Trunc_s;
                                     saturate    : FixSaturate_t := Warn_s) is
         variable line_v     : line;
         variable temp_v     : real;
@@ -1412,11 +1269,11 @@ package body en_cl_fix_pkg is
         writeline(f, line_v);
     end;
     
-    procedure cl_fix_write_bin(    a           : std_logic_vector; 
+    procedure cl_fix_write_bin(    a           : std_logic_vector;
                                     a_fmt       : FixFormat_t;
                                     file f      : text;
                                     f_fmt       : FixFormat_t;
-                                    round       : FixRound_t    := Trunc_s; 
+                                    round       : FixRound_t    := Trunc_s;
                                     saturate    : FixSaturate_t := Warn_s) is
         variable line_v     : line;
         variable temp_v     : string(1 to cl_fix_width(f_fmt));
@@ -1428,11 +1285,11 @@ package body en_cl_fix_pkg is
         writeline(f, line_v);
     end;
     
-    procedure cl_fix_write_hex(    a           : std_logic_vector; 
+    procedure cl_fix_write_hex(    a           : std_logic_vector;
                                     a_fmt       : FixFormat_t;
                                     file f      : text;
                                     f_fmt       : FixFormat_t;
-                                    round       : FixRound_t    := Trunc_s; 
+                                    round       : FixRound_t    := Trunc_s;
                                     saturate    : FixSaturate_t := Warn_s) is
         variable line_v     : line;
         variable temp_v     : string(1 to (cl_fix_width(a_fmt)-1)/4+1);
@@ -1444,12 +1301,13 @@ package body en_cl_fix_pkg is
         writeline(f, line_v);
     end;
     
-    function cl_fix_resize(a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector is
+    function cl_fix_resize(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t    := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
         constant DropFracBits_c     : integer := a_fmt.FracBits - result_fmt.FracBits;
         constant NeedRound_c        : boolean := round /= Trunc_s and DropFracBits_c > 0;
         -- Rounding addition is performed with an additional integer bit (carry bit)
@@ -1470,10 +1328,10 @@ package body en_cl_fix_pkg is
         end function;
         
         constant HalfMinusDelta_c   : unsigned := GetHalfMinusDelta;
-        constant TempFmt_c : FixFormat_t := 
+        constant TempFmt_c : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed or result_fmt.Signed, -- must stay like this!
-                IntBits     => max(a_fmt.IntBits + toInteger(CarryBit_c), result_fmt.IntBits) + toInteger(AddSignBit_c), 
+                IntBits     => max(a_fmt.IntBits + toInteger(CarryBit_c), result_fmt.IntBits) + toInteger(AddSignBit_c),
                 FracBits    => max(a_fmt.FracBits, result_fmt.FracBits)
             );
         constant TempWidth_c        : positive := cl_fix_width(TempFmt_c);
@@ -1524,7 +1382,7 @@ package body en_cl_fix_pkg is
         end if;
         if CutIntSignBits_c > 0 and saturate /= None_s then -- saturation required
             if result_fmt.Signed then -- signed output
-                if to_01(temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c)) /= 0 and 
+                if to_01(temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c)) /= 0 and
                         not temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c) /= 0 then
                     assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
                     if saturate /= Warn_s then
@@ -1545,65 +1403,58 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_fix(   a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t) 
-                            return std_logic_vector is
-        constant ResultFmt_c    : FixFormat_t := 
+    function cl_fix_fix(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
+        constant ResultFmt_c    : FixFormat_t :=
                                                 (
                                                     Signed      => a_fmt.Signed,
-                                                    IntBits     => a_fmt.IntBits, 
+                                                    IntBits     => a_fmt.IntBits,
                                                     FracBits    => 0
                                                 );
     begin
         return cl_fix_resize(a, a_fmt, ResultFmt_c, SymZero_s, None_s);
     end;
     
-    function cl_fix_floor( a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t) 
-                            return std_logic_vector is
-        constant ResultFmt_c    : FixFormat_t := 
+    function cl_fix_floor(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
+        constant ResultFmt_c    : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed,
-                IntBits     => a_fmt.IntBits, 
+                IntBits     => a_fmt.IntBits,
                 FracBits    => 0
             );
     begin
         return cl_fix_resize(a, a_fmt, ResultFmt_c, NonSymNeg_s, None_s);
     end;
     
-    function cl_fix_ceil(  a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t) 
-                            return std_logic_vector is
-        constant ResultFmt_c    : FixFormat_t := 
+    function cl_fix_ceil(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
+        constant ResultFmt_c    : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed,
-                IntBits     => a_fmt.IntBits, 
+                IntBits     => a_fmt.IntBits,
                 FracBits    => 0
             );
     begin
         return cl_fix_resize(a, a_fmt, ResultFmt_c, NonSymPos_s, None_s);
     end;
     
-    function cl_fix_round( a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t) 
-                            return std_logic_vector is
-        constant ResultFmt_c    : FixFormat_t := 
+    function cl_fix_round(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
+        constant ResultFmt_c    : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed,
-                IntBits     => a_fmt.IntBits, 
+                IntBits     => a_fmt.IntBits,
                 FracBits    => 0
             );
     begin
         return cl_fix_resize(a, a_fmt, ResultFmt_c, SymInf_s, None_s);
     end;
     
-    function cl_fix_in_range(   a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t; 
-                                result_fmt  : FixFormat_t; 
-                                round       : FixRound_t    := Trunc_s) 
-                                return boolean is
+    function cl_fix_in_range(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s
+    ) return boolean is
         -- Note: This matches the python implementation
-        constant rndFmt_c : FixFormat_t := 
+        constant rndFmt_c : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed,
                 IntBits     => a_fmt.IntBits + 1,
@@ -1617,13 +1468,14 @@ package body en_cl_fix_pkg is
                cl_fix_compare("a<=b", Rounded_c, rndFmt_c, cl_fix_max_value(result_fmt), result_fmt);
     end;
     
-    function cl_fix_abs(   a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t := 
+    function cl_fix_abs(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
+        constant TempFmt_c  : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed,
                 IntBits     => a_fmt.IntBits+toInteger(a_fmt.Signed),
@@ -1644,13 +1496,14 @@ package body en_cl_fix_pkg is
         return cl_fix_resize(temp_v, TempFmt_c, result_fmt, round, saturate);
     end;
     
-    function cl_fix_sabs(  a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t := 
+    function cl_fix_sabs(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
+        constant TempFmt_c  : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed,
                 IntBits     => a_fmt.IntBits,
@@ -1672,13 +1525,14 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_neg(   a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            enable      : std_logic     := '1';
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector is
+    function cl_fix_neg(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        enable      : std_logic := '1';
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
         constant AFullFmt_c : FixFormat_t := (true, a_fmt.IntBits+ toInteger(a_fmt.Signed), a_fmt.FracBits);
         variable AFull_v    : std_logic_vector(cl_fix_width(AFullFmt_c)-1 downto 0);
         variable Neg_v      : std_logic_vector(cl_fix_width(AFullFmt_c)-1 downto 0);
@@ -1688,14 +1542,15 @@ package body en_cl_fix_pkg is
         return cl_fix_resize(Neg_v, AFullFmt_c, result_fmt, round, saturate);
     end;
     
-    function cl_fix_sneg(  a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            enable      : std_logic     := '1';
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t := 
+    function cl_fix_sneg(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        enable      : std_logic := '1';
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
+        constant TempFmt_c  : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed,
                 IntBits     => a_fmt.IntBits,
@@ -1705,8 +1560,8 @@ package body en_cl_fix_pkg is
         variable temp_v     : std_logic_vector(cl_fix_width(TempFmt_c)-1 downto 0);
         variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
-        assert a_fmt.Signed 
-            report "cl_fix_sneg : Cannot negate an unsigned value." 
+        assert a_fmt.Signed
+            report "cl_fix_sneg : Cannot negate an unsigned value."
             severity failure;
 
         temp_v := cl_fix_resize(a, a_fmt, TempFmt_c, Trunc_s, None_s);
@@ -1717,11 +1572,13 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_addsub_internal(    a           : std_logic_vector;
-                                        a_fmt       : FixFormat_t; 
-                                        b           : std_logic_vector;
-                                        b_fmt       : FixFormat_t;
-                                        add         : std_logic) return std_logic_vector is
+    function cl_fix_addsub_internal(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        add         : std_logic
+    ) return std_logic_vector is
         constant IsSigned_c : boolean := a_fmt.Signed or b_fmt.Signed;
         variable result_v   : std_logic_vector(a'range);
     begin
@@ -1743,14 +1600,15 @@ package body en_cl_fix_pkg is
         return result_v;
     end function;
     
-    function cl_fix_add(   a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            b           : std_logic_vector; 
-                            b_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector is
+    function cl_fix_add(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
         constant CarryBit_c : boolean := -- addition performed with an additional integer bit
             result_fmt.IntBits > max(a_fmt.IntBits, b_fmt.IntBits) or (saturate = Sat_s or
         -- synthesis translate_off
@@ -1758,10 +1616,10 @@ package body en_cl_fix_pkg is
         -- synthesis translate_on
             saturate = SatWarn_s);
             -- TODO: CarryBit in cl_fix_resize not needed in all cases
-        constant TempFmt_c  : FixFormat_t := 
+        constant TempFmt_c  : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed or b_fmt.Signed,
-                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + toInteger(CarryBit_c), 
+                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + toInteger(CarryBit_c),
                 FracBits    => max(a_fmt.FracBits, b_fmt.FracBits)
             );
         constant TempWidth_c: positive := cl_fix_width(TempFmt_c);
@@ -1777,14 +1635,15 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_sub(   a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            b           : std_logic_vector; 
-                            b_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector is
+    function cl_fix_sub(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
         constant Saturate_c : boolean := (saturate = Sat_s or
         -- synthesis translate_off
             saturate = Warn_s or
@@ -1792,14 +1651,14 @@ package body en_cl_fix_pkg is
             saturate = SatWarn_s);
         constant Grow_c     : boolean := result_fmt.IntBits > max(a_fmt.IntBits, b_fmt.IntBits);
         -- Use correct signed/unsigned type for subtraction (else synthesis tools can cause problems)
-        constant SubFmt_c   : FixFormat_t := 
+        constant SubFmt_c   : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed or b_fmt.Signed,
                 IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + toInteger(Grow_c or Saturate_c),
                 FracBits    => max(a_fmt.FracBits, b_fmt.FracBits)
             );
         -- Switch to signed for final resize if saturating
-        constant ReszFmt_c  : FixFormat_t := 
+        constant ReszFmt_c  : FixFormat_t :=
             (
                 Signed      => SubFmt_c.Signed or Saturate_c,
                 IntBits     => SubFmt_c.IntBits,
@@ -1818,15 +1677,16 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_addsub(    a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t; 
-                                b           : std_logic_vector; 
-                                b_fmt       : FixFormat_t; 
-                                add         : std_logic;
-                                result_fmt  : FixFormat_t; 
-                                round       : FixRound_t    := Trunc_s; 
-                                saturate    : FixSaturate_t := Warn_s) 
-                                return std_logic_vector is
+    function cl_fix_addsub(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        add         : std_logic;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
         variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
         if to01(add) = '1' then
@@ -1837,25 +1697,26 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_saddsub(   a           : std_logic_vector; 
-                                a_fmt       : FixFormat_t; 
-                                b           : std_logic_vector; 
-                                b_fmt       : FixFormat_t; 
-                                add         : std_logic;
-                                result_fmt  : FixFormat_t; 
-                                round       : FixRound_t    := Trunc_s; 
-                                saturate    : FixSaturate_t := Warn_s) 
-                                return std_logic_vector is
+    function cl_fix_saddsub(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        add         : std_logic;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
         constant CarryBit_c : boolean := -- addition performed with an additional integer bit
             result_fmt.IntBits > max(a_fmt.IntBits, b_fmt.IntBits) or (saturate = Sat_s or
         -- synthesis translate_off
             saturate = Warn_s or
         -- synthesis translate_on
             saturate = SatWarn_s);
-        constant TempFmt_c  : FixFormat_t := 
+        constant TempFmt_c  : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed or b_fmt.Signed,
-                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + toInteger(CarryBit_c), 
+                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + toInteger(CarryBit_c),
                 FracBits    => max(a_fmt.FracBits, b_fmt.FracBits)
             );
         constant TempWidth_c: positive := cl_fix_width(TempFmt_c);
@@ -1874,18 +1735,19 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_mean(  a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            b           : std_logic_vector; 
-                            b_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t := 
+    function cl_fix_mean(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
+        constant TempFmt_c  : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed or b_fmt.Signed,
-                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + 1, 
+                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + 1,
                 FracBits    => max(a_fmt.FracBits, b_fmt.FracBits)
             );
         constant TempWidth_c: positive := cl_fix_width(TempFmt_c);
@@ -1897,19 +1759,20 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_mean_angle(    a           : std_logic_vector; 
-                                    a_fmt       : FixFormat_t; 
-                                    b           : std_logic_vector; 
-                                    b_fmt       : FixFormat_t; 
-                                    precise     : boolean;
-                                    result_fmt  : FixFormat_t; 
-                                    round       : FixRound_t    := Trunc_s; 
-                                    saturate    : FixSaturate_t := Warn_s) 
-                                    return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t := 
+    function cl_fix_mean_angle(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        precise     : boolean;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
+        constant TempFmt_c  : FixFormat_t :=
             (
                 Signed      => a_fmt.Signed or b_fmt.Signed,
-                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + 1, 
+                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + 1,
                 FracBits    => max(a_fmt.FracBits, b_fmt.FracBits)
             );
         constant TempWidth_c: positive := cl_fix_width(TempFmt_c);
@@ -1920,21 +1783,21 @@ package body en_cl_fix_pkg is
         variable differentSigns_v   : boolean;
     begin
         assert a_fmt.Signed = b_fmt.Signed and a_fmt.IntBits = b_fmt.IntBits
-            report "cl_fix_mean_angle : Signed and IntBits of 'a' and 'b' must be identical." 
+            report "cl_fix_mean_angle : Signed and IntBits of 'a' and 'b' must be identical."
             severity failure;
         assert cl_fix_width(a_fmt) >= 2 and cl_fix_width(b_fmt) >= 2
-            report "cl_fix_mean_angle : The widths of 'a' and 'b' must be at least 2 bits each." 
+            report "cl_fix_mean_angle : The widths of 'a' and 'b' must be at least 2 bits each."
             severity failure;
 
         a_v := a;
         b_v := b;
         differentSigns_v := a_v(a_v'high) /= b_v(b_v'high);
-        if differentSigns_v and 
+        if differentSigns_v and
                 a_v(a_v'high) /= a_v(a_v'high-1) and b_v(b_v'high) /= b_v(b_v'high-1) then
             a_v(a_v'high) := not a_v(a_v'high);
         end if;
         temp_v := cl_fix_add(a, a_fmt, b, b_fmt, TempFmt_c, Trunc_s, None_s);
-        if precise and differentSigns_v and a_v(a_v'high-1) = b_v(b_v'high-1) and 
+        if precise and differentSigns_v and a_v(a_v'high-1) = b_v(b_v'high-1) and
                 temp_v(temp_v'high-2) = a_v(a_v'high-1) then
             temp_v(temp_v'high) := not temp_v(temp_v'high);
         end if;
@@ -1942,13 +1805,14 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_shift( a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            shift       : integer;
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector is
+    function cl_fix_shift(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        shift       : integer;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t    := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
         constant TempFmt_c  : FixFormat_t :=
             (
                 Signed      => result_fmt.Signed,
@@ -1959,19 +1823,20 @@ package body en_cl_fix_pkg is
         return cl_fix_resize(a, a_fmt, TempFmt_c, round, saturate);
     end;
     
-    function cl_fix_mult(  a           : std_logic_vector; 
-                            a_fmt       : FixFormat_t; 
-                            b           : std_logic_vector; 
-                            b_fmt       : FixFormat_t; 
-                            result_fmt  : FixFormat_t; 
-                            round       : FixRound_t    := Trunc_s; 
-                            saturate    : FixSaturate_t := Warn_s) 
-                            return std_logic_vector is
+    function cl_fix_mult(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        b           : std_logic_vector;
+        b_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t    := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
         constant TempSigned_c : boolean := a_fmt.Signed or b_fmt.Signed;
-        constant TempFmt_c  : FixFormat_t := 
+        constant TempFmt_c  : FixFormat_t :=
             (
                 Signed      => TempSigned_c,
-                IntBits     => a_fmt.IntBits + b_fmt.IntBits + toInteger(TempSigned_c), 
+                IntBits     => a_fmt.IntBits + b_fmt.IntBits + toInteger(TempSigned_c),
                 FracBits    => a_fmt.FracBits + b_fmt.FracBits
             );
         variable a_v        : std_logic_vector(a'length-1 downto 0);
@@ -1998,16 +1863,17 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_compare(    comparison  : string;
-                            a           : std_logic_vector;
-                            aFmt        : FixFormat_t;
-                            b           : std_logic_vector;
-                            bFmt        : FixFormat_t) return boolean is
+    function cl_fix_compare(
+        comparison  : string;
+        a           : std_logic_vector;
+        aFmt        : FixFormat_t;
+        b           : std_logic_vector;
+        bFmt        : FixFormat_t
+    ) return boolean is
         constant FullFmt_c  : FixFormat_t   := (aFmt.Signed or bFmt.Signed, max(aFmt.IntBits, bFmt.IntBits), max(aFmt.FracBits, bFmt.FracBits));
         variable AFull_v    : std_logic_vector(cl_fix_width(FullFmt_c)-1 downto 0);
         variable BFull_v    : std_logic_vector(cl_fix_width(FullFmt_c)-1 downto 0);
     begin
-        -- Check operator
         -- Convert to same type
         AFull_v := cl_fix_resize(a, aFmt, FullFmt_c);
         BFull_v := cl_fix_resize(b, bFmt, FullFmt_c);
@@ -2017,15 +1883,15 @@ package body en_cl_fix_pkg is
             BFull_v(BFull_v'high) := not BFull_v(BFull_v'high);
         end if;
         -- Copare
-        if      comparison = "a=b"  then return unsigned(AFull_v) = unsigned(BFull_v);
-        elsif   comparison = "a<b"  then return unsigned(AFull_v) < unsigned(BFull_v);
-        elsif   comparison = "a>b"  then return unsigned(AFull_v) > unsigned(BFull_v);
-        elsif   comparison = "a<=b" then return unsigned(AFull_v) <= unsigned(BFull_v);
-        elsif   comparison = "a>=b" then return unsigned(AFull_v) >= unsigned(BFull_v);
-        elsif   comparison = "a!=b" then return unsigned(AFull_v) /= unsigned(BFull_v);
-        else    report "###ERROR###: cl_fix_compare illegal comparison type [" & comparison & "]" severity error;
-                return false;
+        if    comparison = "a=b"  then return unsigned(AFull_v) = unsigned(BFull_v);
+        elsif comparison = "a<b"  then return unsigned(AFull_v) < unsigned(BFull_v);
+        elsif comparison = "a>b"  then return unsigned(AFull_v) > unsigned(BFull_v);
+        elsif comparison = "a<=b" then return unsigned(AFull_v) <= unsigned(BFull_v);
+        elsif comparison = "a>=b" then return unsigned(AFull_v) >= unsigned(BFull_v);
+        elsif comparison = "a!=b" then return unsigned(AFull_v) /= unsigned(BFull_v);
+        else
+            report "###ERROR###: cl_fix_compare illegal comparison type [" & comparison & "]" severity error;
+            return false;
         end if;
-        
     end function;
 end;
