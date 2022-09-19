@@ -206,17 +206,7 @@ end package;
 ---------------------------------------------------------------------------------------------------
 
 package body en_cl_fix_pkg is
-
-    -----------------------------------------------------------------------------------------------
-    -- Internally used constants
-    -----------------------------------------------------------------------------------------------
     
-    subtype HexCharacter_t is string(1 to 16);
-    constant HexCharacter_c : HexCharacter_t := "0123456789ABCDEF";
-    
-    type StdLogicCharacter_t is array(natural range <>) of character;
-    constant StdLogicCharacter_c : StdLogicCharacter_t(0 to 8) := ('U', 'X', '0', '1', 'Z', 'W', 'L', 'H', '-');
-        
     -----------------------------------------------------------------------------------------------
     -- Internally used functions
     -----------------------------------------------------------------------------------------------
