@@ -22,9 +22,9 @@ package en_cl_fix_pkg is
     -----------------------------------------------------------------------------------------------
     
     type FixFormat_t is record
-        Signed      : boolean;
-        IntBits     : integer;
-        FracBits    : integer;
+        S   : natural range 0 to 1;  -- Sign bit.
+        I   : integer;               -- Integer bits.
+        F   : integer;               -- Fractional bits.
     end record;
     
     type FixFormatArray_t is array(natural range <>) of FixFormat_t;
@@ -52,7 +52,7 @@ package en_cl_fix_pkg is
     -- Format Functions
     -----------------------------------------------------------------------------------------------
     
-    function cl_fix_format(signed : boolean; intBits : integer; fracBits : integer) return FixFormat_t;
+    function cl_fix_format(S : natural; I : integer; F : integer) return FixFormat_t;
     
     function cl_fix_add_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t;
     
@@ -66,7 +66,7 @@ package en_cl_fix_pkg is
     
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; shift : integer) return FixFormat_t;
     
-    function cl_fix_width(fmt : FixFormat_t) return positive;
+    function cl_fix_width(fmt : FixFormat_t) return natural;
     
     function to_string(fmt : FixFormat_t) return string;
     
@@ -328,31 +328,6 @@ package body en_cl_fix_pkg is
         return MatchIdx_v;
     end function;
     
-    function string_parse_boolean(Str : string; StartIdx : natural) return boolean is
-            constant StrLower_c : string := toLower(Str);
-            variable TrueIdx_v  : integer;
-            variable FalseIdx_v : integer;
-        begin
-            -- Checks
-            assert StartIdx <= StrLower_c'high and StartIdx >= StrLower_c'low report "en_cl_string_parse_boolean: StartIdx out of range" severity error;
-            
-            -- Implementation
-            TrueIdx_v   := string_find_next_match(StrLower_c, "true", StartIdx);
-            FalseIdx_v  := string_find_next_match(StrLower_c, "false", StartIdx);
-            if TrueIdx_v = -1 then
-                if FalseIdx_v = -1 then
-                    report "string_parse_boolean: no boolean string found" severity error;
-                    return false;
-                else
-                    return false;
-                end if;
-            elsif FalseIdx_v = -1 then
-                return true;
-            else
-                return (TrueIdx_v < FalseIdx_v);
-            end if;
-    end function;
-    
     function string_int_from_char(Char : character) return integer is
     begin
         case Char is
@@ -417,49 +392,49 @@ package body en_cl_fix_pkg is
     -- Public Functions
     -----------------------------------------------------------------------------------------------
     
-    function cl_fix_format(signed : boolean; intBits : integer; fracBits : integer) return FixFormat_t is
+    function cl_fix_format(S : natural; I : integer; F : integer) return FixFormat_t is
     begin
-        assert intBits + fracBits >= 1
-            report "cl_fix_format : The sum of 'intBits' and 'fracBits' must be at least 1!"
+        assert S + I + F >= 0
+            report "cl_fix_format : S + I + F cannot be negative."
             severity failure;
         
-        return (signed, intBits, fracBits);
+        return (S, I, F);
     end;
     
     function cl_fix_add_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
     begin
         return (
-            a_fmt.Signed or b_fmt.Signed,
-            max(a_fmt.IntBits, b_fmt.IntBits)+1,
-            max(a_fmt.FracBits, b_fmt.FracBits)
+            max(a_fmt.S, b_fmt.S),
+            max(a_fmt.I, b_fmt.I)+1,
+            max(a_fmt.F, b_fmt.F)
         );
     end;
     
     function cl_fix_sub_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
     begin
         return (
-            true,
-            max(a_fmt.IntBits, b_fmt.IntBits + toInteger(b_fmt.Signed)),
-            max(a_fmt.FracBits, b_fmt.FracBits)
+            1,
+            max(a_fmt.I, b_fmt.I + b_fmt.S),
+            max(a_fmt.F, b_fmt.F)
         );
     end;
     
     function cl_fix_mult_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
-        constant Signed_c   : boolean := a_fmt.Signed or b_fmt.Signed;
+        constant Signed_c   : natural := max(a_fmt.S, b_fmt.S);
     begin
         return (
             Signed_c,
-            a_fmt.IntBits + b_fmt.IntBits + toInteger(Signed_c),
-            a_fmt.FracBits + b_fmt.FracBits
+            a_fmt.I + b_fmt.I + Signed_c,
+            a_fmt.F + b_fmt.F
         );
     end;
     
     function cl_fix_neg_fmt(a_fmt : FixFormat_t) return FixFormat_t is
     begin
         return (
-            true,
-            a_fmt.IntBits + toInteger(a_fmt.Signed),
-            a_fmt.FracBits
+            1,
+            a_fmt.I + a_fmt.S,
+            a_fmt.F
         );
     end;
     
@@ -468,9 +443,9 @@ package body en_cl_fix_pkg is
         assert min_shift <= max_shift report "min_shift must be <= max_shift" severity Failure;
         
         return (
-            a_fmt.Signed,
-            a_fmt.IntBits + max_shift,
-            a_fmt.FracBits - min_shift
+            a_fmt.S,
+            a_fmt.I + max_shift,
+            a_fmt.F - min_shift
         );
     end;
     
@@ -479,18 +454,14 @@ package body en_cl_fix_pkg is
         return cl_fix_shift_fmt(a_fmt, shift, shift);
     end;
     
-    function cl_fix_width(fmt : FixFormat_t) return positive is
+    function cl_fix_width(fmt : FixFormat_t) return natural is
     begin
-        assert (fmt.IntBits+fmt.FracBits) > 0
-            report "cl_fix_width : The sum of 'IntBits' and 'FracBits' must be at least 1!"
-            severity failure;
-
-        return toInteger(fmt.Signed)+fmt.IntBits+fmt.FracBits;
+        return fmt.S + fmt.I + fmt.F;
     end;
     
     function to_string(fmt : FixFormat_t) return string is
     begin
-        return "(" & boolean'image(fmt.Signed) & "," & integer'image(fmt.IntBits) & "," & integer'image(fmt.FracBits) & ")";
+        return "(" & natural'image(fmt.S) & "," & integer'image(fmt.I) & "," & integer'image(fmt.F) & ")";
     end;
     
     function cl_fix_format_from_string(Str : string) return FixFormat_t is
@@ -505,23 +476,23 @@ package body en_cl_fix_pkg is
             severity error;
         -- Allow signedness to be specified as an integer
         if Str(Index_v+1) = '0' then
-            Format_v.Signed := false;
+            Format_v.S := 0;
         elsif Str(Index_v+1) = '1' then
-            Format_v.Signed := true;
+            Format_v.S := 1;
         else
             -- Parse signedness as boolean
-            Format_v.Signed := string_parse_boolean(Str, Index_v+1);
+            Format_v.S := string_parse_int(Str, Index_v+1);
         end if;
         Index_v := string_find_next_match(Str, ',', Index_v+1);
         assert Index_v > 0
-            report "cl_fix_format_from_string: wrong Format, missing ',' between IsSigned and IntBits "
+            report "cl_fix_format_from_string: wrong Format, missing ',' between IsSigned and I "
             severity error;
-        Format_v.IntBits := string_parse_int(Str, Index_v+1);
+        Format_v.I := string_parse_int(Str, Index_v+1);
         Index_v := string_find_next_match(Str, ',', Index_v+1);
         assert Index_v > 0
-            report "cl_fix_format_from_string: wrong Format, missing ',' between IntBits and FracBits "
+            report "cl_fix_format_from_string: wrong Format, missing ',' between I and F "
             severity error;
-        Format_v.FracBits := string_parse_int(Str, Index_v+1);
+        Format_v.F := string_parse_int(Str, Index_v+1);
         Index_v := string_find_next_match(Str, ')', Index_v+1);
         assert Index_v > 0
             report "cl_fix_format_from_string: wrong Format, missing ')'"
@@ -573,7 +544,7 @@ package body en_cl_fix_pkg is
         variable result_v : std_logic_vector(cl_fix_width(fmt)-1 downto 0);
     begin
         result_v := (others => '1');
-        if fmt.Signed then
+        if fmt.S = 1 then
             result_v(result_v'high) := '0';
         end if;
         return result_v;
@@ -582,7 +553,7 @@ package body en_cl_fix_pkg is
     function cl_fix_min_value(fmt : FixFormat_t) return std_logic_vector is
         variable result_v : std_logic_vector(cl_fix_width(fmt)-1 downto 0);
     begin
-        if fmt.Signed then
+        if fmt.S = 1 then
             result_v := (others => '0');
             result_v(result_v'left) := '1';
         else
@@ -594,16 +565,16 @@ package body en_cl_fix_pkg is
     function cl_fix_max_real(fmt : FixFormat_t) return real is
         variable Range_v, Lsb_v : real;
     begin
-        Range_v := 2.0**fmt.IntBits;
-        Lsb_v := 2.0**(-fmt.FracBits);
+        Range_v := 2.0**fmt.I;
+        Lsb_v := 2.0**(-fmt.F);
         return Range_v-Lsb_v;
     end function;
     
     function cl_fix_min_real(fmt : FixFormat_t)return real is
         variable Range_v : real;
     begin
-        if fmt.Signed then
-            Range_v := 2.0**fmt.IntBits;
+        if fmt.S = 1 then
+            Range_v := 2.0**fmt.I;
             return -Range_v;
         else
             return 0.0;
@@ -614,7 +585,7 @@ package body en_cl_fix_pkg is
         variable a_v : std_logic_vector(a'length-1 downto 0);
     begin
         a_v := a;
-        if a_fmt.Signed then
+        if a_fmt.S = 1 then
             return a_v(a_v'high);
         else
             return '0';
@@ -638,7 +609,7 @@ package body en_cl_fix_pkg is
         end if;
         
         -- Rescale to appropriate fractional bits
-        ASat_v := round(ASat_v * 2.0**(result_fmt.FracBits));
+        ASat_v := round(ASat_v * 2.0**(result_fmt.F));
         
         -- Convert to fixed-point in chunks
         for i in 0 to ChunkCount_c-1 loop
@@ -665,9 +636,9 @@ package body en_cl_fix_pkg is
         a_v := a;
         
         -- Handle sign bit
-        if a_fmt.Signed and a_v(ABits_c-1) = '1' then
+        if a_fmt.S = 1 and a_v(ABits_c-1) = '1' then
             a_v(ABits_c-1) := '0'; -- Clear sign bit.
-            Correction_v := -2.0**(ABits_c-1 - a_fmt.FracBits); -- Remember its weight.
+            Correction_v := -2.0**(ABits_c-1 - a_fmt.F); -- Remember its weight.
         end if;
         
         -- Resize to an integer number of chunks
@@ -677,7 +648,7 @@ package body en_cl_fix_pkg is
         for i in ChunkCount_c-1 downto 0 loop
             result_v := result_v * 2.0**ChunkSize_c; -- Shift to next chunk.
             Chunk_v := apad_v((i+1)*ChunkSize_c-1 downto i*ChunkSize_c);
-            result_v := result_v + real(to_integer(Chunk_v)) * 2.0**(-a_fmt.FracBits);
+            result_v := result_v + real(to_integer(Chunk_v)) * 2.0**(-a_fmt.F);
         end loop;
         
         -- Add sign bit contribution
@@ -688,7 +659,7 @@ package body en_cl_fix_pkg is
     
     function cl_fix_from_bits_as_int(a : integer; aFmt : FixFormat_t) return std_logic_vector is
     begin
-        if aFmt.Signed then
+        if aFmt.S = 1 then
             return std_logic_vector(to_signed(a, cl_fix_width(aFmt)));
         else
             return std_logic_vector(to_unsigned(a, cl_fix_width(aFmt)));
@@ -697,7 +668,7 @@ package body en_cl_fix_pkg is
     
     function cl_fix_get_bits_as_int(a : std_logic_vector; aFmt : FixFormat_t) return integer is
     begin
-        if aFmt.Signed then
+        if aFmt.S = 1 then
             return to_integer(signed(a));
         else
             return to_integer(unsigned(a));
@@ -711,12 +682,12 @@ package body en_cl_fix_pkg is
         round       : FixRound_t    := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        constant DropFracBits_c     : integer := a_fmt.FracBits - result_fmt.FracBits;
+        constant DropFracBits_c     : integer := a_fmt.F - result_fmt.F;
         constant NeedRound_c        : boolean := round /= Trunc_s and DropFracBits_c > 0;
         -- Rounding addition is performed with an additional integer bit (carry bit)
         constant CarryBit_c         : boolean := NeedRound_c and saturate /= None_s;
         -- It is not clear what this extra bit is for (undocumented)
-        constant AddSignBit_c       : boolean := ((a_fmt.Signed = false) and (result_fmt.Signed = false) and (saturate /= None_s));
+        constant AddSignBit_c       : boolean := ((a_fmt.S = 0) and (result_fmt.S = 0) and (saturate /= None_s));
         -- Several rounding methods use the largest value smaller than the tie weight ("half").
         -- The required integer value is 2**(DropFracBits_c-1)-1, but to support >32 bits, we use unsigned.
         function GetHalfMinusDelta return unsigned is
@@ -733,14 +704,14 @@ package body en_cl_fix_pkg is
         constant HalfMinusDelta_c   : unsigned := GetHalfMinusDelta;
         constant TempFmt_c : FixFormat_t :=
             (
-                Signed      => a_fmt.Signed or result_fmt.Signed, -- must stay like this!
-                IntBits     => max(a_fmt.IntBits + toInteger(CarryBit_c), result_fmt.IntBits) + toInteger(AddSignBit_c),
-                FracBits    => max(a_fmt.FracBits, result_fmt.FracBits)
+                S   => max(a_fmt.S, result_fmt.S), -- must stay like this!
+                I   => max(a_fmt.I + toInteger(CarryBit_c), result_fmt.I) + toInteger(AddSignBit_c),
+                F   => max(a_fmt.F, result_fmt.F)
             );
         constant TempWidth_c        : positive := cl_fix_width(TempFmt_c);
         constant ResultWidth_c      : positive := cl_fix_width(result_fmt);
-        constant MoreFracBits_c     : natural := TempFmt_c.FracBits - a_fmt.FracBits;
-        constant CutFracBits_c      : natural := TempFmt_c.FracBits - result_fmt.FracBits;
+        constant MoreFracBits_c     : natural := TempFmt_c.F - a_fmt.F;
+        constant CutFracBits_c      : natural := TempFmt_c.F - result_fmt.F;
         constant CutIntSignBits_c   : integer := TempWidth_c - (ResultWidth_c+CutFracBits_c);
         
         variable a_v        : std_logic_vector(a'length-1 downto 0);
@@ -748,17 +719,17 @@ package body en_cl_fix_pkg is
         variable sign_v     : std_logic;
         variable result_v   : std_logic_vector(ResultWidth_c-1 downto 0);
     begin
-        -- TODO: Rounding addition could be less wide when result_fmt.IntBits > a_fmt.IntWidth
+        -- TODO: Rounding addition could be less wide when result_fmt.I > a_fmt.IntWidth
         -- TODO: saturate = Warn_s could use no carry bit for synthesis.
         a_v := a;
         temp_v := (others => '0');
-        if a_fmt.Signed then
+        if a_fmt.S = 1 then
             temp_v(temp_v'high downto MoreFracBits_c) := unsigned(resize(signed(a_v), TempWidth_c-MoreFracBits_c));
         else
             temp_v(temp_v'high downto MoreFracBits_c) := resize(unsigned(a_v), TempWidth_c-MoreFracBits_c);
         end if;
         if NeedRound_c then -- rounding required
-            if a_fmt.Signed then
+            if a_fmt.S = 1 then
                 sign_v := a_v(a_v'high);
             else
                 sign_v := '0';
@@ -784,7 +755,7 @@ package body en_cl_fix_pkg is
             end case;
         end if;
         if CutIntSignBits_c > 0 and saturate /= None_s then -- saturation required
-            if result_fmt.Signed then -- signed output
+            if result_fmt.S = 1 then -- signed output
                 if to_01(temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c)) /= 0 and
                         not temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c) /= 0 then
                     assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
@@ -808,11 +779,11 @@ package body en_cl_fix_pkg is
     
     function cl_fix_fix(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
         constant ResultFmt_c    : FixFormat_t :=
-                                                (
-                                                    Signed      => a_fmt.Signed,
-                                                    IntBits     => a_fmt.IntBits,
-                                                    FracBits    => 0
-                                                );
+            (
+                S   => a_fmt.S,
+                I   => a_fmt.I,
+                F   => 0
+            );
     begin
         return cl_fix_resize(a, a_fmt, ResultFmt_c, SymZero_s, None_s);
     end;
@@ -820,9 +791,9 @@ package body en_cl_fix_pkg is
     function cl_fix_floor(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
         constant ResultFmt_c    : FixFormat_t :=
             (
-                Signed      => a_fmt.Signed,
-                IntBits     => a_fmt.IntBits,
-                FracBits    => 0
+                S   => a_fmt.S,
+                I   => a_fmt.I,
+                F   => 0
             );
     begin
         return cl_fix_resize(a, a_fmt, ResultFmt_c, NonSymNeg_s, None_s);
@@ -831,9 +802,9 @@ package body en_cl_fix_pkg is
     function cl_fix_ceil(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
         constant ResultFmt_c    : FixFormat_t :=
             (
-                Signed      => a_fmt.Signed,
-                IntBits     => a_fmt.IntBits,
-                FracBits    => 0
+                S   => a_fmt.S,
+                I   => a_fmt.I,
+                F   => 0
             );
     begin
         return cl_fix_resize(a, a_fmt, ResultFmt_c, NonSymPos_s, None_s);
@@ -842,9 +813,9 @@ package body en_cl_fix_pkg is
     function cl_fix_round(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
         constant ResultFmt_c    : FixFormat_t :=
             (
-                Signed      => a_fmt.Signed,
-                IntBits     => a_fmt.IntBits,
-                FracBits    => 0
+                S   => a_fmt.S,
+                I   => a_fmt.I,
+                F   => 0
             );
     begin
         return cl_fix_resize(a, a_fmt, ResultFmt_c, SymInf_s, None_s);
@@ -859,9 +830,9 @@ package body en_cl_fix_pkg is
         -- Note: This matches the python implementation
         constant rndFmt_c : FixFormat_t :=
             (
-                Signed      => a_fmt.Signed,
-                IntBits     => a_fmt.IntBits + 1,
-                FracBits    => result_fmt.FracBits
+                S   => a_fmt.S,
+                I   => a_fmt.I + 1,
+                F   => result_fmt.F
             );
         
         -- Apply rounding
@@ -880,15 +851,15 @@ package body en_cl_fix_pkg is
     ) return std_logic_vector is
         constant TempFmt_c  : FixFormat_t :=
             (
-                Signed      => a_fmt.Signed,
-                IntBits     => a_fmt.IntBits+toInteger(a_fmt.Signed),
-                FracBits    => a_fmt.FracBits
+                S   => a_fmt.S,
+                I   => a_fmt.I + a_fmt.S,
+                F   => a_fmt.F
             );
         variable a_v        : std_logic_vector(a'length-1 downto 0);
         variable temp_v     : std_logic_vector(cl_fix_width(TempFmt_c)-1 downto 0);
     begin
         a_v := a;
-        if a_fmt.Signed then
+        if a_fmt.S = 1 then
             temp_v := a_v(a_v'high) & a_v;
             if a_v(a_v'high) = '1' then
                 temp_v := std_logic_vector(unsigned(not temp_v) + 1);
@@ -907,7 +878,7 @@ package body en_cl_fix_pkg is
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        constant AFullFmt_c : FixFormat_t := (true, a_fmt.IntBits+ toInteger(a_fmt.Signed), a_fmt.FracBits);
+        constant AFullFmt_c : FixFormat_t := (1, a_fmt.I + a_fmt.S, a_fmt.F);
         variable AFull_v    : std_logic_vector(cl_fix_width(AFullFmt_c)-1 downto 0);
         variable Neg_v      : std_logic_vector(cl_fix_width(AFullFmt_c)-1 downto 0);
     begin
@@ -923,7 +894,7 @@ package body en_cl_fix_pkg is
         b_fmt       : FixFormat_t;
         add         : std_logic
     ) return std_logic_vector is
-        constant IsSigned_c : boolean := a_fmt.Signed or b_fmt.Signed;
+        constant IsSigned_c : boolean := (a_fmt.S = 1) or (b_fmt.S = 1);
         variable result_v   : std_logic_vector(a'range);
     begin
         -- Synthesis tools may create problems if correct signed/unsigned type
@@ -954,7 +925,7 @@ package body en_cl_fix_pkg is
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
         constant CarryBit_c : boolean := -- addition performed with an additional integer bit
-            result_fmt.IntBits > max(a_fmt.IntBits, b_fmt.IntBits) or (saturate = Sat_s or
+            result_fmt.I > max(a_fmt.I, b_fmt.I) or (saturate = Sat_s or
         -- synthesis translate_off
             saturate = Warn_s or
         -- synthesis translate_on
@@ -962,9 +933,9 @@ package body en_cl_fix_pkg is
             -- TODO: CarryBit in cl_fix_resize not needed in all cases
         constant TempFmt_c  : FixFormat_t :=
             (
-                Signed      => a_fmt.Signed or b_fmt.Signed,
-                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + toInteger(CarryBit_c),
-                FracBits    => max(a_fmt.FracBits, b_fmt.FracBits)
+                S   => max(a_fmt.S, b_fmt.S),
+                I   => max(a_fmt.I, b_fmt.I) + toInteger(CarryBit_c),
+                F   => max(a_fmt.F, b_fmt.F)
             );
         constant TempWidth_c: positive := cl_fix_width(TempFmt_c);
         variable a_v        : std_logic_vector(TempWidth_c-1 downto 0);
@@ -993,20 +964,20 @@ package body en_cl_fix_pkg is
             saturate = Warn_s or
         -- synthesis translate_on
             saturate = SatWarn_s);
-        constant Grow_c     : boolean := result_fmt.IntBits > max(a_fmt.IntBits, b_fmt.IntBits);
+        constant Grow_c     : boolean := result_fmt.I > max(a_fmt.I, b_fmt.I);
         -- Use correct signed/unsigned type for subtraction (else synthesis tools can cause problems)
         constant SubFmt_c   : FixFormat_t :=
             (
-                Signed      => a_fmt.Signed or b_fmt.Signed,
-                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + toInteger(Grow_c or Saturate_c),
-                FracBits    => max(a_fmt.FracBits, b_fmt.FracBits)
+                S   => max(a_fmt.S, b_fmt.S),
+                I   => max(a_fmt.I, b_fmt.I) + toInteger(Grow_c or Saturate_c),
+                F   => max(a_fmt.F, b_fmt.F)
             );
         -- Switch to signed for final resize if saturating
         constant ReszFmt_c  : FixFormat_t :=
             (
-                Signed      => SubFmt_c.Signed or Saturate_c,
-                IntBits     => SubFmt_c.IntBits,
-                FracBits    => SubFmt_c.FracBits
+                S   => max(SubFmt_c.S, toInteger(Saturate_c)),
+                I   => SubFmt_c.I,
+                F   => SubFmt_c.F
             );
         constant SubWidth_c : positive := cl_fix_width(SubFmt_c);
         variable a_v        : std_logic_vector(SubWidth_c-1 downto 0);
@@ -1051,9 +1022,9 @@ package body en_cl_fix_pkg is
     ) return std_logic_vector is
         constant TempFmt_c  : FixFormat_t :=
             (
-                Signed      => result_fmt.Signed,
-                IntBits     => result_fmt.IntBits - shift,
-                FracBits    => result_fmt.FracBits + shift
+                S   => result_fmt.S,
+                I   => result_fmt.I - shift,
+                F   => result_fmt.F + shift
             );
     begin
         return cl_fix_resize(a, a_fmt, TempFmt_c, round, saturate);
@@ -1068,12 +1039,12 @@ package body en_cl_fix_pkg is
         round       : FixRound_t    := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        constant TempSigned_c : boolean := a_fmt.Signed or b_fmt.Signed;
-        constant TempFmt_c  : FixFormat_t :=
+        constant TempSigned_c   : natural := max(a_fmt.S, b_fmt.S);
+        constant TempFmt_c      : FixFormat_t :=
             (
-                Signed      => TempSigned_c,
-                IntBits     => a_fmt.IntBits + b_fmt.IntBits + toInteger(TempSigned_c),
-                FracBits    => a_fmt.FracBits + b_fmt.FracBits
+                S   => TempSigned_c,
+                I   => a_fmt.I + b_fmt.I + TempSigned_c,
+                F   => a_fmt.F + b_fmt.F
             );
         variable a_v        : std_logic_vector(a'length-1 downto 0);
         variable b_v        : std_logic_vector(b'length-1 downto 0);
@@ -1082,14 +1053,14 @@ package body en_cl_fix_pkg is
     begin
         a_v := a;
         b_v := b;
-        if a_fmt.Signed then
-            if b_fmt.Signed then
+        if a_fmt.S = 1 then
+            if b_fmt.S = 1 then
                 temp_v := std_logic_vector(signed(a_v) * signed(b_v));
             else
                 temp_v := std_logic_vector(signed(a_v) * ("0" & signed(b_v)));
             end if;
         else
-            if b_fmt.Signed then
+            if b_fmt.S = 1 then
                 temp_v := std_logic_vector(("0" & signed(a_v)) * signed(b_v));
             else
                 temp_v := std_logic_vector(unsigned(a_v) * unsigned(b_v));
@@ -1106,7 +1077,7 @@ package body en_cl_fix_pkg is
         b           : std_logic_vector;
         bFmt        : FixFormat_t
     ) return boolean is
-        constant FullFmt_c  : FixFormat_t   := (aFmt.Signed or bFmt.Signed, max(aFmt.IntBits, bFmt.IntBits), max(aFmt.FracBits, bFmt.FracBits));
+        constant FullFmt_c  : FixFormat_t   := (max(aFmt.S, bFmt.S), max(aFmt.I, bFmt.I), max(aFmt.F, bFmt.F));
         variable AFull_v    : std_logic_vector(cl_fix_width(FullFmt_c)-1 downto 0);
         variable BFull_v    : std_logic_vector(cl_fix_width(FullFmt_c)-1 downto 0);
     begin
@@ -1114,7 +1085,7 @@ package body en_cl_fix_pkg is
         AFull_v := cl_fix_resize(a, aFmt, FullFmt_c);
         BFull_v := cl_fix_resize(b, bFmt, FullFmt_c);
         -- Convert to unsigned representation with offset
-        if FullFmt_c.Signed then
+        if FullFmt_c.S = 1 then
             AFull_v(AFull_v'high) := not AFull_v(AFull_v'high);
             BFull_v(BFull_v'high) := not BFull_v(BFull_v'high);
         end if;
