@@ -68,7 +68,7 @@ package en_cl_fix_pkg is
     
     function cl_fix_width(fmt : FixFormat_t) return positive;
     
-    function cl_fix_string_from_format(fmt : FixFormat_t) return string;
+    function to_string(fmt : FixFormat_t) return string;
     
     function cl_fix_format_from_string(Str : string) return FixFormat_t;
     
@@ -563,7 +563,7 @@ package body en_cl_fix_pkg is
         return toInteger(fmt.Signed)+fmt.IntBits+fmt.FracBits;
     end;
     
-    function cl_fix_string_from_format(fmt : FixFormat_t) return string is
+    function to_string(fmt : FixFormat_t) return string is
     begin
         return "(" & boolean'image(fmt.Signed) & "," & integer'image(fmt.IntBits) & "," & integer'image(fmt.FracBits) & ")";
     end;
