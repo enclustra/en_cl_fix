@@ -43,7 +43,6 @@ architecture sim of en_cl_fix_pkg_tb is
     procedure CheckFmt( expected : FixFormat_t;
                         actual   : FixFormat_t;
                         msg      : string) is
-        alias to_string is cl_fix_string_from_format[FixFormat_t return string];
     begin
         assert expected = actual
             report "###ERROR### " & msg & " [expected: " & to_string(expected) & ", got: " & to_string(actual) & "]"
@@ -214,16 +213,16 @@ begin
                     
         CheckStdlv( "010", cl_fix_resize("0101", (true, 2, 1), (true, 2, 0), Trunc_s),
                     "cl_fix_resize: Remove Frac Bit 1 Trunc");
-        CheckStdlv( "011", cl_fix_resize("0101", (true, 2, 1), (true, 2, 0), Round_s),
+        CheckStdlv( "011", cl_fix_resize("0101", (true, 2, 1), (true, 2, 0), NonSymPos_s),
                     "cl_fix_resize: Remove Frac Bit 1 Round");
         CheckStdlv( "010", cl_fix_resize("0100", (true, 2, 1), (true, 2, 0), Trunc_s),
                     "cl_fix_resize: Remove Frac Bit 0 Trunc");
-        CheckStdlv( "010", cl_fix_resize("0100", (true, 2, 1), (true, 2, 0), Round_s),
+        CheckStdlv( "010", cl_fix_resize("0100", (true, 2, 1), (true, 2, 0), NonSymPos_s),
                     "cl_fix_resize: Remove Frac Bit 0 Round");
                     
-        CheckStdlv( "01000", cl_fix_resize("0100", (true, 2, 1), (true, 2, 2), Round_s),
+        CheckStdlv( "01000", cl_fix_resize("0100", (true, 2, 1), (true, 2, 2), NonSymPos_s),
                     "cl_fix_resize: Add Fractional Bit Signed");
-        CheckStdlv( "1000", cl_fix_resize("100", (false, 2, 1), (false, 2, 2), Round_s),
+        CheckStdlv( "1000", cl_fix_resize("100", (false, 2, 1), (false, 2, 2), NonSymPos_s),
                     "cl_fix_resize: Add Fractional Bit Unsigned");
                     
         CheckStdlv( "0111", cl_fix_resize("00111", (true, 3, 1), (true, 2, 1), Trunc_s, None_s),
@@ -253,13 +252,13 @@ begin
         CheckStdlv( "0000", cl_fix_resize("10011", (true, 3, 1), (false, 3, 1), Trunc_s, Sat_s),
                     "cl_fix_resize: Remove Sign Bit, Signed, Sat, Negative");
                     
-        CheckStdlv( "1000", cl_fix_resize("01111", (true, 3, 1), (true, 3, 0), Round_s, None_s),
+        CheckStdlv( "1000", cl_fix_resize("01111", (true, 3, 1), (true, 3, 0), NonSymPos_s, None_s),
                     "cl_fix_resize: Overflow due rounding, Signed, Wrap");
-        CheckStdlv( "0111", cl_fix_resize("01111", (true, 3, 1), (true, 3, 0), Round_s, Sat_s),
+        CheckStdlv( "0111", cl_fix_resize("01111", (true, 3, 1), (true, 3, 0), NonSymPos_s, Sat_s),
                     "cl_fix_resize: Overflow due rounding, Signed, Sat");
-        CheckStdlv( "000", cl_fix_resize("1111", (false, 3, 1), (false, 3, 0), Round_s, None_s),
+        CheckStdlv( "000", cl_fix_resize("1111", (false, 3, 1), (false, 3, 0), NonSymPos_s, None_s),
                     "cl_fix_resize: Overflow due rounding, Unsigned, Wrap");
-        CheckStdlv( "111", cl_fix_resize("1111", (false, 3, 1), (false, 3, 0), Round_s, Sat_s),
+        CheckStdlv( "111", cl_fix_resize("1111", (false, 3, 1), (false, 3, 0), NonSymPos_s, Sat_s),
                     "cl_fix_resize: Overflow due rounding, Unsigned, Sat");
                     
         CheckStdlv( "1111", cl_fix_resize("11111", (true, 3, 1), (true, 3, 0), NonSymNeg_s, None_s),
@@ -363,12 +362,12 @@ begin
         CheckStdlv( cl_fix_from_real(5.0, (false, 5, 0)),
                     cl_fix_add( cl_fix_from_real(0.75, (false, 0, 4)), (false, 0, 4),
                                 cl_fix_from_real(4.0, (false, 4, -1)), (false, 4, -1),
-                                (false, 5, 0), Round_s),
+                                (false, 5, 0), NonSymPos_s),
                     "cl_fix_add: Round");
         CheckStdlv( cl_fix_from_real(15.0, (false, 4, 0)),
                     cl_fix_add( cl_fix_from_real(0.75, (false, 0, 4)), (false, 0, 4),
                                 cl_fix_from_real(15.0, (false, 4, 0)), (false, 4, 0),
-                                (false, 4, 0), Round_s, Sat_s),
+                                (false, 4, 0), NonSymPos_s, Sat_s),
                     "cl_fix_add: Satturate");
                     
         -- *** cl_fix_sub ***
@@ -411,32 +410,32 @@ begin
         CheckStdlv( cl_fix_from_real(4.0, (false, 5, 0)),
                     cl_fix_sub( cl_fix_from_real(4.0, (false, 4, -1)), (false, 4, -1),
                                 cl_fix_from_real(0.25, (false, 0, 4)), (false, 0, 4),
-                                (false, 5, 0), Round_s),
+                                (false, 5, 0), NonSymPos_s),
                     "cl_fix_sub: Round");
         CheckStdlv( cl_fix_from_real(0.0, (false, 4, 0)),
                     cl_fix_sub( cl_fix_from_real(0.75, (false, 0, 4)), (false, 0, 4),
                                 cl_fix_from_real(5.0, (false, 4, 0)), (false, 4, 0),
-                                (false, 4, 0), Round_s, Sat_s),
+                                (false, 4, 0), NonSymPos_s, Sat_s),
                     "cl_fix_sub: Satturate");
         CheckStdlv( cl_fix_from_real(-16.0, (true, 4, 0)),
                     cl_fix_sub( cl_fix_from_real(0.0, (true, 4, 0)), (true, 4, 0),
                                 cl_fix_from_real(-16.0, (true, 4, 0)), (true, 4, 0),
-                                (true, 4, 0), Round_s, None_s),
+                                (true, 4, 0), NonSymPos_s, None_s),
                     "cl_fix_sub: Invert most negative signed, noSat");
         CheckStdlv( cl_fix_from_real(15.0, (true, 4, 0)),
                     cl_fix_sub( cl_fix_from_real(0.0, (true, 4, 0)), (true, 4, 0),
                                 cl_fix_from_real(-16.0, (true, 4, 0)), (true, 4, 0),
-                                (true, 4, 0), Round_s, Sat_s),
+                                (true, 4, 0), NonSymPos_s, Sat_s),
                     "cl_fix_sub: Invert most negative signed, Sat");
         CheckStdlv( cl_fix_from_real(1.0, (false, 4, 0)),
                     cl_fix_sub( cl_fix_from_real(0.0, (false, 4, 0)), (false, 4, 0),
                                 cl_fix_from_real(15.0, (false, 4, 0)), (false, 4, 0),
-                                (false, 4, 0), Round_s, None_s),
+                                (false, 4, 0), NonSymPos_s, None_s),
                     "cl_fix_sub: Invert most negative unsigned, noSat");
         CheckStdlv( cl_fix_from_real(0.0, (false, 4, 0)),
                     cl_fix_sub( cl_fix_from_real(0.0, (false, 4, 0)), (false, 4, 0),
                                 cl_fix_from_real(15.0, (false, 4, 0)), (false, 4, 0),
-                                (false, 4, 0), Round_s, Sat_s),
+                                (false, 4, 0), NonSymPos_s, Sat_s),
                     "cl_fix_sub: Invert unsigned, Sat");
                     
         -- *** cl_fix_mult ***
@@ -668,15 +667,15 @@ begin
                         "unsigned -> signed OK");
         CheckBoolean(   false,
                         cl_fix_in_range(cl_fix_from_real(15.5, (false, 4, 2)), (false, 4, 2),
-                                        (true, 4, 0), Round_s),
+                                        (true, 4, 0), NonSymPos_s),
                         "rounding OOR");
         CheckBoolean(   true,
                         cl_fix_in_range(cl_fix_from_real(15.5, (false, 4, 2)), (false, 4, 2),
-                                        (true, 4, 1), Round_s),
+                                        (true, 4, 1), NonSymPos_s),
                         "rounding OK 1");
         CheckBoolean(   true,
                         cl_fix_in_range(cl_fix_from_real(15.5, (false, 4, 2)), (false, 4, 2),
-                                        (false, 5, 0), Round_s),
+                                        (false, 5, 0), NonSymPos_s),
                         "rounding OK 2");
                         
         -- *** cl_fix_compare ***
@@ -782,67 +781,6 @@ begin
         CheckStdl(  '0', cl_fix_sign(cl_fix_from_real(3.25, (false, 2, 2)), (false,2,2)), "Unsigned");
         CheckStdl(  '1', cl_fix_sign(cl_fix_from_real(-1.25, (true, 2, 2)), (true,2,2)), "SignedOne");
         CheckStdl(  '0', cl_fix_sign(cl_fix_from_real(3.25, (true, 2, 2)), (true,2,2)), "SignedZero");
-        
-        -- *** cl_fix_int ***
-        print("*** cl_fix_int ***");
-        CheckStdlv( "11", cl_fix_int(cl_fix_from_real(3.25, (false, 2, 2)), (false,2,2)), "Unsigned");
-        CheckStdlv( "11", cl_fix_int(cl_fix_from_real(3.25, (true, 2, 2)), (true,2,2)), "SignedOne");
-        CheckStdlv( "10", cl_fix_int(cl_fix_from_real(-1.25, (true, 2, 2)), (true,2,2)), "SignedZero");
-        
-        -- *** cl_fix_frac ***
-        print("*** cl_fix_frac ***");
-        CheckStdlv( "010", cl_fix_frac(cl_fix_from_real(3.25, (false, 2, 3)), (false,2,3)), "Test");
-        
-        -- *** cl_fix_combine ***
-        print("*** cl_fix_combine ***");
-        CheckStdlv( cl_fix_from_real(-3.25, (True,2,2)),
-                    cl_fix_combine('1', "00", "11", (True,2,2)), "Test");
-                    
-        -- *** cl_fix_get_msb ***
-        print("*** cl_fix_get_msb ***");
-        CheckStdl(  '1', cl_fix_get_msb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 2), "One");
-        CheckStdl(  '0', cl_fix_get_msb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 1), "Zero");
-        
-        -- *** cl_fix_get_lsb ***
-        print("*** cl_fix_get_lsb ***");
-        CheckStdl(  '1', cl_fix_get_lsb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 1), "One");
-        CheckStdl(  '0', cl_fix_get_lsb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 2), "Zero");
-        
-        -- *** cl_fix_set_msb ***
-        print("*** cl_fix_set_msb ***");
-        CheckStdlv( cl_fix_from_real(2.25, (true,3,3)),
-                    cl_fix_set_msb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 2, '1'), "SetOne");
-        CheckStdlv( cl_fix_from_real(6.25, (true,3,3)),
-                    cl_fix_set_msb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 1, '1'), "SetZero");
-        CheckStdlv( cl_fix_from_real(0.25, (true,3,3)),
-                    cl_fix_set_msb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 2, '0'), "ClearOne");
-        CheckStdlv( cl_fix_from_real(2.25, (true,3,3)),
-                    cl_fix_set_msb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 1, '0'), "ClearZero");
-                    
-        -- *** cl_fix_set_lsb ***
-        print("*** cl_fix_set_lsb ***");
-        CheckStdlv( cl_fix_from_real(2.25, (true,3,3)),
-                    cl_fix_set_lsb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 1, '1'), "SetOne");
-        CheckStdlv( cl_fix_from_real(2.75, (true,3,3)),
-                    cl_fix_set_lsb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 2, '1'), "SetZero");
-        CheckStdlv( cl_fix_from_real(2.0, (true,3,3)),
-                    cl_fix_set_lsb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 1, '0'), "ClearOne");
-        CheckStdlv( cl_fix_from_real(2.25, (true,3,3)),
-                    cl_fix_set_lsb(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), 2, '0'), "ClearZero");
-                    
-        -- *** cl_fix_sabs ***
-        print("*** cl_fix_sabs ***");
-        CheckStdlv( cl_fix_from_real(2.25, (false,2,2)),
-                    cl_fix_sabs(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), (false,2,2)), "Positive");
-        CheckStdlv( cl_fix_from_real(2.0, (false,2,2)),
-                    cl_fix_sabs(cl_fix_from_real(-2.25, (true, 3, 3)), (true,3,3), (false,2,2)), "Negative");
-                    
-        -- *** cl_fix_sneg ***
-        print("*** cl_fix_sneg ***");
-        CheckStdlv( cl_fix_from_real(-2.5, (true,3,2)),
-                    cl_fix_sneg(cl_fix_from_real(2.25, (true, 3, 3)), (true,3,3), '1', (true,3,2)), "Pos");
-        CheckStdlv( cl_fix_from_real(2.0, (true,3,2)),
-                    cl_fix_sneg(cl_fix_from_real(-2.25, (true, 3, 3)), (true,3,3), '1', (true,3,2)), "Neg");
                     
         -- *** cl_fix_addsub ***
         print("*** cl_fix_addsub ***");
@@ -852,15 +790,6 @@ begin
         CheckStdlv( cl_fix_from_real(1.0, (true,3,3)),
                     cl_fix_addsub(  cl_fix_from_real(1.25, (true,3,3)), (true,3,3),
                                     cl_fix_from_real(0.25, (true,3,3)), (true,3,3), '0', (true,3,3)), "Sub");
-                                    
-        -- *** cl_fix_saddsub ***
-        print("*** cl_fix_saddsub ***");
-        CheckStdlv( cl_fix_from_real(1.75, (true,3,2)),
-                    cl_fix_saddsub( cl_fix_from_real(1.0, (true,3,2)), (true,3,2),
-                                    cl_fix_from_real(0.75, (true,3,2)), (true,3,2), '1', (true,3,2)), "Add");
-        CheckStdlv( cl_fix_from_real(0.75, (true,3,2)),
-                    cl_fix_saddsub( cl_fix_from_real(1.25, (true,3,2)), (true,3,2),
-                                    cl_fix_from_real(0.25, (true,3,2)), (true,3,2), '0', (true,3,2)), "Sub");
         wait;
     end process;
     
