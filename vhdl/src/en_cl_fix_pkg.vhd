@@ -576,7 +576,7 @@ package body en_cl_fix_pkg is
         Index_v := Str'low;
         Index_v := string_find_next_match(Str, '(', Index_v);
         assert Index_v > 0
-            report "cl_fix_string_from_format: wrong Format, missing '('"
+            report "cl_fix_format_from_string: wrong Format, missing '('"
             severity error;
         -- Allow signedness to be specified as an integer
         if Str(Index_v+1) = '0' then
@@ -589,17 +589,17 @@ package body en_cl_fix_pkg is
         end if;
         Index_v := string_find_next_match(Str, ',', Index_v+1);
         assert Index_v > 0
-            report "cl_fix_string_from_format: wrong Format, missing ',' between IsSigned and IntBits "
+            report "cl_fix_format_from_string: wrong Format, missing ',' between IsSigned and IntBits "
             severity error;
         Format_v.IntBits := string_parse_int(Str, Index_v+1);
         Index_v := string_find_next_match(Str, ',', Index_v+1);
         assert Index_v > 0
-            report "cl_fix_string_from_format: wrong Format, missing ',' between IntBits and FracBits "
+            report "cl_fix_format_from_string: wrong Format, missing ',' between IntBits and FracBits "
             severity error;
         Format_v.FracBits := string_parse_int(Str, Index_v+1);
         Index_v := string_find_next_match(Str, ')', Index_v+1);
         assert Index_v > 0
-            report "cl_fix_string_from_format: wrong Format, missing ')'"
+            report "cl_fix_format_from_string: wrong Format, missing ')'"
             severity error;
         return Format_v;
     end;
