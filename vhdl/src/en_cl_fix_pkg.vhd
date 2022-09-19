@@ -164,24 +164,7 @@ package en_cl_fix_pkg is
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector;
     
-    function cl_fix_sabs(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
-    ) return std_logic_vector;
-    
     function cl_fix_neg(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        enable      : std_logic := '1';
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
-    ) return std_logic_vector;
-    
-    function cl_fix_sneg(
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
         enable      : std_logic := '1';
@@ -216,38 +199,6 @@ package en_cl_fix_pkg is
         b           : std_logic_vector;
         b_fmt       : FixFormat_t;
         add         : std_logic;
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
-    ) return std_logic_vector;
-    
-    function cl_fix_saddsub(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        b           : std_logic_vector;
-        b_fmt       : FixFormat_t;
-        add         : std_logic;
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
-    ) return std_logic_vector;
-    
-    function cl_fix_mean(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        b           : std_logic_vector;
-        b_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
-    ) return std_logic_vector;
-    
-    function cl_fix_mean_angle(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        b           : std_logic_vector;
-        b_fmt       : FixFormat_t;
-        precise     : boolean;
         result_fmt  : FixFormat_t;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
@@ -1285,35 +1236,6 @@ package body en_cl_fix_pkg is
         return cl_fix_resize(temp_v, TempFmt_c, result_fmt, round, saturate);
     end;
     
-    function cl_fix_sabs(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
-    ) return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t :=
-            (
-                Signed      => a_fmt.Signed,
-                IntBits     => a_fmt.IntBits,
-                FracBits    => max(a_fmt.FracBits, result_fmt.FracBits)
-            );
-        variable a_v        : std_logic_vector(a'length-1 downto 0);
-        variable temp_v     : std_logic_vector(cl_fix_width(TempFmt_c)-1 downto 0);
-        variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
-    begin
-        if a_fmt.Signed then
-            temp_v := cl_fix_resize(a, a_fmt, TempFmt_c, Trunc_s, None_s);
-            if temp_v(temp_v'high) = '1' then
-                temp_v := not temp_v;
-            end if;
-            result_v := cl_fix_resize(temp_v, TempFmt_c, result_fmt, round, saturate);
-        else
-            result_v := cl_fix_resize(a, a_fmt, result_fmt, round, saturate);
-        end if;
-        return result_v;
-    end;
-    
     function cl_fix_neg(
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
@@ -1329,36 +1251,6 @@ package body en_cl_fix_pkg is
         AFull_v := cl_fix_resize(a, a_fmt, AFullFmt_c);
         Neg_v   := std_logic_vector(-signed(AFull_v));
         return cl_fix_resize(Neg_v, AFullFmt_c, result_fmt, round, saturate);
-    end;
-    
-    function cl_fix_sneg(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        enable      : std_logic := '1';
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
-    ) return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t :=
-            (
-                Signed      => a_fmt.Signed,
-                IntBits     => a_fmt.IntBits,
-                FracBits    => max(a_fmt.FracBits, result_fmt.FracBits)
-            );
-        variable a_v        : std_logic_vector(a'length-1 downto 0);
-        variable temp_v     : std_logic_vector(cl_fix_width(TempFmt_c)-1 downto 0);
-        variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
-    begin
-        assert a_fmt.Signed
-            report "cl_fix_sneg : Cannot negate an unsigned value."
-            severity failure;
-
-        temp_v := cl_fix_resize(a, a_fmt, TempFmt_c, Trunc_s, None_s);
-        if to01(enable) = '1' then
-            temp_v := not temp_v;
-        end if;
-        result_v := cl_fix_resize(temp_v, TempFmt_c, result_fmt, round, saturate);
-        return result_v;
     end;
     
     function cl_fix_addsub_internal(
@@ -1483,114 +1375,6 @@ package body en_cl_fix_pkg is
         else
             result_v := cl_fix_sub(a, a_fmt, b, b_fmt, result_fmt, round, saturate);
         end if;
-        return result_v;
-    end;
-    
-    function cl_fix_saddsub(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        b           : std_logic_vector;
-        b_fmt       : FixFormat_t;
-        add         : std_logic;
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
-    ) return std_logic_vector is
-        constant CarryBit_c : boolean := -- addition performed with an additional integer bit
-            result_fmt.IntBits > max(a_fmt.IntBits, b_fmt.IntBits) or (saturate = Sat_s or
-        -- synthesis translate_off
-            saturate = Warn_s or
-        -- synthesis translate_on
-            saturate = SatWarn_s);
-        constant TempFmt_c  : FixFormat_t :=
-            (
-                Signed      => a_fmt.Signed or b_fmt.Signed,
-                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + toInteger(CarryBit_c),
-                FracBits    => max(a_fmt.FracBits, b_fmt.FracBits)
-            );
-        constant TempWidth_c: positive := cl_fix_width(TempFmt_c);
-        variable a_v        : std_logic_vector(TempWidth_c-1 downto 0);
-        variable b_v        : std_logic_vector(TempWidth_c-1 downto 0);
-        variable temp_v     : std_logic_vector(TempWidth_c-1 downto 0);
-        variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
-    begin
-        a_v := cl_fix_resize(a, a_fmt, TempFmt_c, Trunc_s, None_s);
-        b_v := cl_fix_resize(b, b_fmt, TempFmt_c, Trunc_s, None_s);
-        if to01(add) = '0' then
-            b_v := not b_v;
-        end if;
-        temp_v := cl_fix_addsub_internal(a_v, a_fmt, b_v, b_fmt, '1');
-        result_v := cl_fix_resize(temp_v, TempFmt_c, result_fmt, round, saturate);
-        return result_v;
-    end;
-    
-    function cl_fix_mean(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        b           : std_logic_vector;
-        b_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
-    ) return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t :=
-            (
-                Signed      => a_fmt.Signed or b_fmt.Signed,
-                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + 1,
-                FracBits    => max(a_fmt.FracBits, b_fmt.FracBits)
-            );
-        constant TempWidth_c: positive := cl_fix_width(TempFmt_c);
-        variable temp_v     : std_logic_vector(TempWidth_c-1 downto 0);
-        variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
-    begin
-        temp_v := cl_fix_add(a, a_fmt, b, b_fmt, TempFmt_c, Trunc_s, None_s);
-        result_v := cl_fix_shift(temp_v, TempFmt_c, -1, result_fmt, round, saturate);
-        return result_v;
-    end;
-    
-    function cl_fix_mean_angle(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        b           : std_logic_vector;
-        b_fmt       : FixFormat_t;
-        precise     : boolean;
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
-    ) return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t :=
-            (
-                Signed      => a_fmt.Signed or b_fmt.Signed,
-                IntBits     => max(a_fmt.IntBits, b_fmt.IntBits) + 1,
-                FracBits    => max(a_fmt.FracBits, b_fmt.FracBits)
-            );
-        constant TempWidth_c: positive := cl_fix_width(TempFmt_c);
-        variable a_v        : std_logic_vector(cl_fix_width(a_fmt)-1 downto 0);
-        variable b_v        : std_logic_vector(cl_fix_width(b_fmt)-1 downto 0);
-        variable temp_v     : std_logic_vector(TempWidth_c-1 downto 0);
-        variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
-        variable differentSigns_v   : boolean;
-    begin
-        assert a_fmt.Signed = b_fmt.Signed and a_fmt.IntBits = b_fmt.IntBits
-            report "cl_fix_mean_angle : Signed and IntBits of 'a' and 'b' must be identical."
-            severity failure;
-        assert cl_fix_width(a_fmt) >= 2 and cl_fix_width(b_fmt) >= 2
-            report "cl_fix_mean_angle : The widths of 'a' and 'b' must be at least 2 bits each."
-            severity failure;
-
-        a_v := a;
-        b_v := b;
-        differentSigns_v := a_v(a_v'high) /= b_v(b_v'high);
-        if differentSigns_v and
-                a_v(a_v'high) /= a_v(a_v'high-1) and b_v(b_v'high) /= b_v(b_v'high-1) then
-            a_v(a_v'high) := not a_v(a_v'high);
-        end if;
-        temp_v := cl_fix_add(a, a_fmt, b, b_fmt, TempFmt_c, Trunc_s, None_s);
-        if precise and differentSigns_v and a_v(a_v'high-1) = b_v(b_v'high-1) and
-                temp_v(temp_v'high-2) = a_v(a_v'high-1) then
-            temp_v(temp_v'high) := not temp_v(temp_v'high);
-        end if;
-        result_v := cl_fix_resize(temp_v, TempFmt_c, result_fmt, round, saturate);
         return result_v;
     end;
     
