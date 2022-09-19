@@ -76,8 +76,6 @@ package en_cl_fix_pkg is
     
     function cl_fix_saturate_from_string(Str : string) return FixSaturate_t;
     
-    function cl_fix_zero_value(fmt : FixFormat_t) return std_logic_vector;
-    
     function cl_fix_max_value(fmt : FixFormat_t) return std_logic_vector;
     
     function cl_fix_min_value(fmt : FixFormat_t) return std_logic_vector;
@@ -87,44 +85,14 @@ package en_cl_fix_pkg is
     function cl_fix_min_real(fmt : FixFormat_t) return real;
     
     function cl_fix_sign(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic;
-    
-    function cl_fix_int(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
-    
-    function cl_fix_frac(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
-    
-    function cl_fix_combine(sign : std_logic; int : std_logic_vector; frac : std_logic_vector; result_fmt : FixFormat_t) return std_logic_vector;
-
-    -----------------------------------------------------------------------------------------------
-    -- Bit Manipulation
-    -----------------------------------------------------------------------------------------------
-    
-    function cl_fix_get_msb(a : std_logic_vector; a_fmt : FixFormat_t; index : natural) return std_logic;
-    
-    function cl_fix_get_lsb(a : std_logic_vector; a_fmt : FixFormat_t; index : natural) return std_logic;
-    
-    function cl_fix_set_msb(a : std_logic_vector; a_fmt : FixFormat_t; index : natural; value : std_logic) return std_logic_vector;
-    
-    function cl_fix_set_lsb(a : std_logic_vector; a_fmt : FixFormat_t; index : natural; value : std_logic) return std_logic_vector;
 
     -----------------------------------------------------------------------------------------------
     -- Conversion To/From Other Formats
     -----------------------------------------------------------------------------------------------
     
-    function cl_fix_from_int(a : integer; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector;
-    
-    function cl_fix_to_int(a : std_logic_vector; a_fmt : FixFormat_t) return integer;
-    
     function cl_fix_from_real(a : real; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector;
     
     function cl_fix_to_real(a : std_logic_vector; a_fmt : FixFormat_t) return real;
-    
-    function cl_fix_from_bin(a : string; result_fmt : FixFormat_t) return std_logic_vector;
-    
-    function cl_fix_to_bin(a : std_logic_vector; a_fmt : FixFormat_t) return string;
-    
-    function cl_fix_from_hex(a : string; result_fmt : FixFormat_t) return std_logic_vector;
-    
-    function cl_fix_to_hex(a : std_logic_vector; a_fmt : FixFormat_t) return string;
     
     function cl_fix_get_bits_as_int(a : std_logic_vector; aFmt : FixFormat_t) return integer;
     
@@ -256,15 +224,6 @@ package body en_cl_fix_pkg is
     function max(a, b : integer) return integer is
     begin
         if a >= b then
-            return a;
-        else
-            return b;
-        end if;
-    end;
-    
-    function min(a, b : integer) return integer is
-    begin
-        if a <= b then
             return a;
         else
             return b;
@@ -464,30 +423,6 @@ package body en_cl_fix_pkg is
         end if;
     end function;
     
-    function toString(value : std_logic_vector) return string is
-        variable s          : string(1 to value'length);
-        variable value_i    : std_logic_vector(value'length-1 downto 0);
-    begin
-        value_i := value;
-        for ptr in 1 to value'length loop
-            s(ptr) := StdLogicCharacter_c(std_logic'pos(value_i(value'length-ptr)));
-        end loop;
-        return s;
-    end;
-    
-    function toHexString(value : std_logic_vector) return string is
-        variable s          : string(1 to (value'length-1)/4+1);
-        variable value_i    : bit_vector((value'length-1)/4*4+3 downto 0);
-    begin
-        value_i := (others => '0');
-        value_i(value'length-1 downto 0) := to_bitvector(value);
-        for ptr in 1 to s'length loop
-            s(ptr) := HexCharacter_c(to_integer('0' & unsigned(to_stdlogicvector(
-                value_i((s'length-ptr)*4+3 downto (s'length-ptr)*4)))+1));
-        end loop;
-        return s;
-    end;
-    
     -----------------------------------------------------------------------------------------------
     -- Public Functions
     -----------------------------------------------------------------------------------------------
@@ -644,13 +579,6 @@ package body en_cl_fix_pkg is
         return None_s;
     end;
     
-    function cl_fix_zero_value(fmt : FixFormat_t) return std_logic_vector is
-        variable result_v : std_logic_vector(cl_fix_width(fmt)-1 downto 0);
-    begin
-        result_v := (others => '0');
-        return result_v;
-    end;
-    
     function cl_fix_max_value(fmt : FixFormat_t) return std_logic_vector is
         variable result_v : std_logic_vector(cl_fix_width(fmt)-1 downto 0);
     begin
@@ -700,173 +628,6 @@ package body en_cl_fix_pkg is
             return a_v(a_v'high);
         else
             return '0';
-        end if;
-    end;
-    
-    function cl_fix_int(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
-        variable a_v        : std_logic_vector(a'length-1 downto 0);
-        variable result_v   : std_logic_vector(max(1, a_fmt.IntBits)-1 downto 0);
-    begin
-        a_v := a;
-        result_v := (others => '0');
-        if a_fmt.IntBits > 0 then
-            if a_fmt.FracBits >= 0 then
-                result_v(a_fmt.IntBits-1 downto 0) :=
-                    a_v(a_fmt.IntBits+a_fmt.FracBits-1 downto a_fmt.FracBits);
-            else
-                result_v(a_fmt.IntBits-1 downto -a_fmt.FracBits) :=
-                    a_v(a_fmt.IntBits-1 downto -a_fmt.FracBits);
-            end if;
-        end if;
-        return result_v;
-    end;
-    
-    function cl_fix_frac(a : std_logic_vector; a_fmt : FixFormat_t)
-            return std_logic_vector is
-        variable a_v        : std_logic_vector(a'length-1 downto 0);
-        variable result_v   : std_logic_vector(max(1, a_fmt.FracBits)-1 downto 0);
-    begin
-        a_v := a;
-        result_v := (others => '0');
-        if a_fmt.FracBits > 0 then
-            if a_fmt.IntBits >= 0 then
-                result_v(a_fmt.FracBits-1 downto 0) :=
-                    a_v(a_fmt.FracBits-1 downto 0);
-            else
-                result_v(a_fmt.FracBits+a_fmt.IntBits-1 downto 0) :=
-                    a_v(a_fmt.FracBits+a_fmt.IntBits-1 downto 0);
-            end if;
-        end if;
-        return result_v;
-    end;
-    
-    function cl_fix_combine(sign : std_logic; int : std_logic_vector; frac : std_logic_vector; result_fmt : FixFormat_t) return std_logic_vector is
-        variable int_v : std_logic_vector(int'length-1 downto 0);
-        variable frac_v : std_logic_vector(frac'length-1 downto 0);
-        variable result_v : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
-    begin
-        int_v := int;
-        frac_v := frac;
-        result_v := (others => '0');
-        if result_fmt.Signed then
-            if result_fmt.IntBits > 0 then
-                if result_fmt.FracBits > 0 then
-                    result_v := sign & int_v(result_fmt.IntBits-1 downto 0) &
-                        frac_v(result_fmt.FracBits-1 downto 0);
-                else
-                    result_v := sign & int_v(result_fmt.IntBits-1 downto -result_fmt.FracBits);
-                end if;
-            else
-                result_v := sign & frac_v(result_fmt.FracBits+result_fmt.IntBits-1 downto 0);
-            end if;
-        else
-            assert sign = '0'
-                report "cl_fix_combine : sign may not be set for an unsigned format!"
-                severity failure;
-            if result_fmt.IntBits > 0 then
-                if result_fmt.FracBits > 0 then
-                    result_v := int_v(result_fmt.IntBits-1 downto 0) &
-                        frac_v(result_fmt.FracBits-1 downto 0);
-                else
-                    result_v := int_v(result_fmt.IntBits-1 downto -result_fmt.FracBits);
-                end if;
-            else
-                result_v := frac_v(result_fmt.FracBits+result_fmt.IntBits-1 downto 0);
-            end if;
-        end if;
-        return result_v;
-    end;
-    
-    function cl_fix_get_msb(a : std_logic_vector; a_fmt : FixFormat_t; index : natural) return std_logic is
-    begin
-        return a(a'high-index);
-    end;
-    
-    function cl_fix_get_lsb(a : std_logic_vector; a_fmt : FixFormat_t; index : natural) return std_logic is
-    begin
-        return a(index);
-    end;
-    
-    function cl_fix_set_msb(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        index       : natural;
-        value       : std_logic
-    ) return std_logic_vector is
-        variable a_v : std_logic_vector(a'length-1 downto 0);
-    begin
-        a_v := a;
-        a_v(a_v'high-index) := value;
-        return a_v;
-    end;
-    
-    function cl_fix_set_lsb(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        index       : natural;
-        value       : std_logic
-    ) return std_logic_vector is
-        variable a_v : std_logic_vector(a'length-1 downto 0);
-    begin
-        a_v := a;
-        a_v(index) := value;
-        return a_v;
-    end;
-    
-    function cl_fix_from_int(a : integer; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector is
-        variable a_v        : integer;
-        variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
-    begin
-        result_v := (others => '0');
-        a_v := a;
-        if result_fmt.Signed then
-            assert not ((saturate = Warn_s or saturate = SatWarn_s) and
-                    (a_v >= 2**result_fmt.IntBits or a_v < -2**result_fmt.IntBits))
-                report "cl_fix_from_int : Saturation Warning!"
-                severity warning;
-            if saturate = Sat_s or saturate = SatWarn_s then
-                a_v := max(min(a_v, 2**result_fmt.IntBits-1), -2**result_fmt.IntBits);
-            end if;
-            result_v(result_v'high downto result_fmt.FracBits) :=
-                std_logic_vector(to_signed(a_v, result_fmt.IntBits+1));
-        else
-            assert not ((saturate = Warn_s or saturate = SatWarn_s) and (a_v >= 2**result_fmt.IntBits or a_v < 0))
-                report "cl_fix_from_int : Saturation Warning!"
-                severity warning;
-            if saturate = Sat_s or saturate = SatWarn_s then
-                a_v := max(min(a_v, 2**result_fmt.IntBits-1), 0);
-            end if;
-            result_v(result_v'high downto result_fmt.FracBits) :=
-                std_logic_vector(to_unsigned(a_v, result_fmt.IntBits));
-        end if;
-        return result_v;
-    end;
-    
-    function cl_fix_to_int(a : std_logic_vector; a_fmt : FixFormat_t) return integer is
-        variable a_v : std_logic_vector(a'length-1 downto 0);
-    begin
-        a_v := a;
-        -- TODO: range check on a!
-        if a_fmt.Signed then
-            if a_fmt.IntBits > 0 then
-                if a_fmt.FracBits >= 0 then
-                    return to_integer(signed(a_v(a_v'high downto a_fmt.FracBits)));
-                else
-                    return to_integer(signed(a_v)) * 2**(-a_fmt.FracBits);
-                end if;
-            else
-                return 0;
-            end if;
-        else
-            if a_fmt.IntBits > 0 then
-                if a_fmt.FracBits >= 0 then
-                    return to_integer(unsigned(a_v(a_v'high downto a_fmt.FracBits)));
-                else
-                    return to_integer(unsigned(a_v)) * 2**(-a_fmt.FracBits);
-                end if;
-            else
-                return 0;
-            end if;
         end if;
     end;
     
@@ -933,94 +694,6 @@ package body en_cl_fix_pkg is
         result_v := result_v + Correction_v;
         
         return result_v;
-    end;
-    
-    function cl_fix_from_bin(a : string; result_fmt : FixFormat_t) return std_logic_vector is
-        variable a_v : string(1 to a'length);
-        variable result_v : std_logic_vector(a'length-1 downto 0);
-        variable pos_v : natural;
-    begin
-        a_v := a;
-        pos_v := a'length;
-        for i in 1 to a'length loop
-            case a_v(i) is
-            when '0' =>
-                pos_v := pos_v - 1;
-                result_v(pos_v) := '0';
-            when '1' =>
-                pos_v := pos_v - 1;
-                result_v(pos_v) := '1';
-            when 'b' | 'B'  =>
-                if i = 2 and a_v(1) = '0' then
-                    pos_v := a'length;
-                end if;
-            when '_' =>
-            when others =>
-                report "cl_fix_from_bin : Illegal character in binary string!"
-                    severity error;
-            end case;
-        end loop;
-        assert a'length-pos_v = cl_fix_width(result_fmt);
-            report "cl_fix_from_bin : The binary string doesn't have the correct length!"
-            severity error;
-        return result_v(a'length-1 downto pos_v);
-    end;
-    
-    function cl_fix_to_bin(a : std_logic_vector; a_fmt : FixFormat_t) return string is
-    begin
-        return toString(a);
-    end;
-    
-    function cl_fix_from_hex(a : string; result_fmt : FixFormat_t) return std_logic_vector is
-        constant ResultWidth_c : positive := cl_fix_width(result_fmt);
-        variable a_v : string(1 to a'length);
-        variable result_v : std_logic_vector(a'length*4-1 downto 0);
-        variable pos_v : natural;
-    begin
-        a_v := a;
-        pos_v := a'length;
-        for i in 1 to a_v'length loop
-            case a_v(i) is
-            when '0'        => result_v(pos_v*4+3 downto pos_v*4) := "0000"; pos_v := pos_v - 1;
-            when '1'        => result_v(pos_v*4+3 downto pos_v*4) := "0001"; pos_v := pos_v - 1;
-            when '2'        => result_v(pos_v*4+3 downto pos_v*4) := "0010"; pos_v := pos_v - 1;
-            when '3'        => result_v(pos_v*4+3 downto pos_v*4) := "0011"; pos_v := pos_v - 1;
-            when '4'        => result_v(pos_v*4+3 downto pos_v*4) := "0100"; pos_v := pos_v - 1;
-            when '5'        => result_v(pos_v*4+3 downto pos_v*4) := "0101"; pos_v := pos_v - 1;
-            when '6'        => result_v(pos_v*4+3 downto pos_v*4) := "0110"; pos_v := pos_v - 1;
-            when '7'        => result_v(pos_v*4+3 downto pos_v*4) := "0111"; pos_v := pos_v - 1;
-            when '8'        => result_v(pos_v*4+3 downto pos_v*4) := "1000"; pos_v := pos_v - 1;
-            when '9'        => result_v(pos_v*4+3 downto pos_v*4) := "1001"; pos_v := pos_v - 1;
-            when 'a' | 'A'  => result_v(pos_v*4+3 downto pos_v*4) := "1010"; pos_v := pos_v - 1;
-            when 'b' | 'B'  => result_v(pos_v*4+3 downto pos_v*4) := "1011"; pos_v := pos_v - 1;
-            when 'c' | 'C'  => result_v(pos_v*4+3 downto pos_v*4) := "1100"; pos_v := pos_v - 1;
-            when 'd' | 'D'  => result_v(pos_v*4+3 downto pos_v*4) := "1101"; pos_v := pos_v - 1;
-            when 'e' | 'E'  => result_v(pos_v*4+3 downto pos_v*4) := "1110"; pos_v := pos_v - 1;
-            when 'f' | 'F'  => result_v(pos_v*4+3 downto pos_v*4) := "1111"; pos_v := pos_v - 1;
-            when 'x' | 'X'  =>
-                if i = 2 and a_v(1) = '0' then
-                    pos_v := a'length;
-                end if;
-            when '_' =>
-            when others =>
-                report "cl_fix_from_hex : Illegal character in hexadecimal string!"
-                    severity error;
-            end case;
-        end loop;
-        assert 4*(a'length-pos_v) >= ResultWidth_c and 4*(a'length-pos_v-1) < ResultWidth_c;
-            report "cl_fix_from_hex : The hexadecimal string doesn't have the correct length!"
-            severity error;
-        if ResultWidth_c/4*4 < ResultWidth_c then
-            assert unsigned(result_v(a'length*4-1 downto pos_v*4+ResultWidth_c)) = 0
-                report "cl_fix_from_hex : The unused bits in the hexadecimal string are not all equal to zero!"
-                severity error;
-        end if;
-        return result_v(pos_v*4+ResultWidth_c-1 downto pos_v*4);
-    end;
-    
-    function cl_fix_to_hex(a : std_logic_vector; a_fmt : FixFormat_t) return string is
-    begin
-        return toHexString(a);
     end;
     
     function cl_fix_from_bits_as_int(a : integer; aFmt : FixFormat_t) return std_logic_vector is
