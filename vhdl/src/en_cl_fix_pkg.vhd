@@ -119,7 +119,7 @@ package en_cl_fix_pkg is
     function cl_fix_round(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
     
     function cl_fix_in_range(a : std_logic_vector; a_fmt : FixFormat_t; result_fmt : FixFormat_t; round : FixRound_t := Trunc_s) return boolean;
-        
+    
     -----------------------------------------------------------------------------------------------
     -- Math Functions
     -----------------------------------------------------------------------------------------------
@@ -1089,7 +1089,7 @@ package body en_cl_fix_pkg is
             AFull_v(AFull_v'high) := not AFull_v(AFull_v'high);
             BFull_v(BFull_v'high) := not BFull_v(BFull_v'high);
         end if;
-        -- Copare
+        -- Compare
         if    comparison = "a=b"  then return unsigned(AFull_v) = unsigned(BFull_v);
         elsif comparison = "a<b"  then return unsigned(AFull_v) < unsigned(BFull_v);
         elsif comparison = "a>b"  then return unsigned(AFull_v) > unsigned(BFull_v);
