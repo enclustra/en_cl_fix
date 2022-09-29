@@ -4,7 +4,7 @@
 #  Authors: Oliver Bruendler
 ########################################################################################################################
 import sys
-sys.path.append("../src")
+sys.path.append("../../models/python")
 from en_cl_fix_pkg import *
 
 import unittest
