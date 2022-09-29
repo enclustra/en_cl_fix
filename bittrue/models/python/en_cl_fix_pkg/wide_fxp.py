@@ -68,7 +68,7 @@ class wide_fxp:
                 warnings.warn(f"FromFloat: Number {amin_float} exceeds minimum for format {rFmt}", Warning)
         
         # Quantize. Always use half-up rounding.
-        x = (a*(2.0**rFmt.FracBits)+0.5).astype('object')
+        x = (a*(2.0**rFmt.F)+0.5).astype('object')
         x = np.floor(x)
         x = wide_fxp(x, rFmt)
         
@@ -85,7 +85,7 @@ class wide_fxp:
     def FromNarrowFxp(data : np.ndarray, fmt : FixFormat):
         data = np.array(data, ndmin=1)
         assert data.dtype == float, "FromNarrowFxp : requires input dtype == float."
-        int_data = (data*2.0**fmt.FracBits).astype(object)
+        int_data = (data*2.0**fmt.F).astype(object)
         int_data = np.floor(int_data)
         return wide_fxp(int_data, fmt)
     
@@ -108,22 +108,22 @@ class wide_fxp:
         weights = 2**(64*np.arange(data.shape[0]).astype(object))
         val = np.matmul(weights, data)
         # Handle the sign bit
-        val = np.where(val >= 2**(fmt.IntBits+fmt.FracBits), val - 2**(fmt.IntBits+fmt.FracBits+1), val)
+        val = np.where(val >= 2**(fmt.I+fmt.F), val - 2**(fmt.I+fmt.F+1), val)
         return wide_fxp(val, fmt)
     
     
     # Calculate maximum representable internal data value (wide_fxp._data) for a given FixFormat.
     @staticmethod
     def MaxValue(fmt : FixFormat):
-        val = 2**(fmt.IntBits+fmt.FracBits)-1
+        val = 2**(fmt.I+fmt.F)-1
         return wide_fxp._FromIntScalar(val, fmt)
     
     
     # Calculate minimum representable internal data value (wide_fxp._data) for a given FixFormat.
     @staticmethod
     def MinValue(fmt : FixFormat):
-        if fmt.Signed:
-            val = -2**(fmt.IntBits+fmt.FracBits)
+        if fmt.S == 1:
+            val = -2**(fmt.I+fmt.F)
         else:
             val = 0
         return wide_fxp._FromIntScalar(val, fmt)
@@ -134,11 +134,11 @@ class wide_fxp:
     @staticmethod
     def AlignBinaryPoints(WfxpList):
         # Find the maximum number of frac bits
-        Fmax = max(Array.fmt.FracBits for Array in WfxpList)
+        Fmax = max(Array.fmt.F for Array in WfxpList)
 
         # Resize every input to align binary points
         for i, Wfxp in enumerate(WfxpList):
-            rFmt = FixFormat(Wfxp.fmt.Signed, Wfxp.fmt.IntBits, Fmax)
+            rFmt = FixFormat(Wfxp.fmt.S, Wfxp.fmt.I, Fmax)
             WfxpList[i] = Wfxp.resize(rFmt)
 
         return WfxpList
@@ -174,8 +174,8 @@ class wide_fxp:
     # Get data in human-readable floating-point format (with loss of precision), with bounds checks
     def to_float(self):
         # To avoid this warning, call to_narrow_fxp() directly.
-        if (self.fmt.Signed and (np.any(self.data < -2**52) or np.any(self.data >= 2**52))) \
-            or (not self.fmt.Signed and np.any(self.data >= 2**53)):
+        if (self.fmt.S == 1 and (np.any(self.data < -2**52) or np.any(self.data >= 2**52))) \
+            or (self.fmt.S == 0 and np.any(self.data >= 2**53)):
             warnings.warn("to_float : Possible loss of precision when converting wide_fxp data to float!", Warning)
         return self.to_narrow_fxp()
     
@@ -183,7 +183,7 @@ class wide_fxp:
     # Get narrow (double-precision float) representation of data. No bounds checks.
     def to_narrow_fxp(self):
         # Note: This function performs no range/precision checks.
-        return np.array(self._data/2.0**self._fmt.FracBits).astype(float)
+        return np.array(self._data/2.0**self._fmt.F).astype(float)
 
 
     # Pack data into uint64 array (e.g. for passing to MATLAB).
@@ -233,8 +233,8 @@ class wide_fxp:
         fmt = self._fmt
         
         # Shorthand
-        f = fmt.FracBits
-        fr = rFmt.FracBits
+        f = fmt.F
+        fr = rFmt.F
         
         # Rounding
         if fr < f:
@@ -291,8 +291,8 @@ class wide_fxp:
         # Saturation
         if sat == FixSaturate.None_s or sat == FixSaturate.Warn_s:
             # Wrap
-            satSpan = 2**(rFmt.IntBits + fr)
-            if rFmt.Signed:
+            satSpan = 2**(rFmt.I + fr)
+            if rFmt.S == 1:
                 val = ((val + satSpan) % (2*satSpan)) - satSpan
             else:
                 val = val % satSpan
@@ -309,7 +309,7 @@ class wide_fxp:
         if np.any(value > 1) or np.any(value < 0):
             raise Exception("wide_fxp.set_msb: only 1 and 0 allowed for value")
         fmt = self.fmt
-        if fmt.Signed and index == 0:
+        if fmt.S == 1 and index == 0:
             weight = -2**(fmt.width()-1-index)
         else:
             weight = 2**(fmt.width()-1-index)
@@ -320,7 +320,7 @@ class wide_fxp:
     # Get most significant bit (- index)
     def get_msb(self, index):
         fmt = self._fmt
-        if fmt.Signed and index == 0:
+        if fmt.S == 1 and index == 0:
             return (self._data < 0).astype(int)
         else:
             shift = fmt.width()-1 - index
@@ -330,11 +330,11 @@ class wide_fxp:
     # Discard fractional bits (keeping integer bits). Rounds towards -Inf.
     def floor(self):
         fmt = self._fmt
-        rFmt = FixFormat(fmt.Signed, fmt.IntBits, 0)
-        if fmt.FracBits >= 0:
-            return wide_fxp(self._data >> fmt.FracBits, rFmt)
+        rFmt = FixFormat(fmt.S, fmt.I, 0)
+        if fmt.F >= 0:
+            return wide_fxp(self._data >> fmt.F, rFmt)
         else:
-            return wide_fxp(self._data << -fmt.FracBits, rFmt)
+            return wide_fxp(self._data << -fmt.F, rFmt)
     
     
     # Get the integer part
@@ -343,14 +343,14 @@ class wide_fxp:
     
     
     # Get the fractional part.
-    # Note: Result has implicit frac bits if IntBits<0.
+    # Note: Result has implicit frac bits if I<0.
     def frac_part(self):
         fmt = self._fmt
-        rFmt = FixFormat(False, min(fmt.IntBits, 0), fmt.FracBits)
+        rFmt = FixFormat(False, min(fmt.I, 0), fmt.F)
         # Drop the sign bit
         val = self._data
-        if fmt.Signed:
-            offset = 2**(fmt.FracBits+fmt.IntBits)
+        if fmt.S == 1:
+            offset = 2**(fmt.F+fmt.I)
             val = np.where(val < 0, val + offset, val)
         # Retain fractional LSBs
         val = val % 2**rFmt.width()

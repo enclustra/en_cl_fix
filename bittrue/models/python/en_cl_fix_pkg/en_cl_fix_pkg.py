@@ -31,7 +31,7 @@ def cl_fix_is_wide(fmt : FixFormat) -> bool:
     # The values +0 and -0 are supported as special cases (exponent = 0x000). This means integers
     # on [-2**53, 2**53] can be represented exactly. In other words, if we assume the exponent
     # is never overflowed, then 54-bit signed numbers and 53-bit unsigned numbers are guaranteed to
-    # be represented exactly. In theory, this would mean: return fmt.IntBits + fmt.FracBits > 53.
+    # be represented exactly. In theory, this would mean: return fmt.I + fmt.F > 53.
     # However, handling wrapping of signed numbers (when saturation is disabled) is made simpler if
     # we reserve an extra integer bit for signed numbers. This gives a consistent 53-bit limit for
     # both signed and unsigned numbers.
@@ -44,19 +44,19 @@ def cl_fix_max_value(rFmt : FixFormat):
     if cl_fix_is_wide(rFmt):
         return wide_fxp.MaxValue(rFmt)
     else:
-        return 2.0**rFmt.IntBits-2.0**(-rFmt.FracBits)
+        return 2.0**rFmt.I-2.0**(-rFmt.F)
 
 def cl_fix_min_value(rFmt : FixFormat):
     if cl_fix_is_wide(rFmt):
         return wide_fxp.MinValue(rFmt)
     else:
-        if rFmt.Signed:
-            return -2.0**rFmt.IntBits
+        if rFmt.S == 1:
+            return -2.0**rFmt.I
         else:
             return 0.0
 
 def cl_fix_sign(a, aFmt : FixFormat):
-    if not aFmt.Signed:
+    if aFmt.S == 0:
         return 0
     else:
         return np.where(a < 0, 1, 0)
@@ -71,9 +71,9 @@ def cl_fix_int(a, aFmt : FixFormat):
         else:
             return r.to_narrow_fxp()
     else:
-        rFmt = FixFormat(aFmt.Signed, aFmt.IntBits, 0)
+        rFmt = FixFormat(aFmt.S, aFmt.I, 0)
         r = np.floor(a)
-        # Handle expansion to wide_fxp (FracBits < 0).
+        # Handle expansion to wide_fxp (F < 0).
         if cl_fix_is_wide(rFmt):
             return wide_fxp.FromNarrowFxp(r, rFmt)
         else:
@@ -81,7 +81,7 @@ def cl_fix_int(a, aFmt : FixFormat):
 
 def cl_fix_frac(a, aFmt : FixFormat):
     # Extract the fractional part of the data values.
-    # Note: Result has implicit frac bits if IntBits<0.
+    # Note: Result has implicit frac bits if I<0.
     if type(a) == wide_fxp:
         r = a.frac_part()
         
@@ -91,38 +91,38 @@ def cl_fix_frac(a, aFmt : FixFormat):
         else:
             return r.to_narrow_fxp()
     else:
-        if aFmt.Signed and aFmt.FracBits > 53:
+        if aFmt.S == 1 and aFmt.F > 53:
             warnings.warn("cl_fix_frac : Possible loss of precision. Consider using wide_fxp.", Warning)
         
         # Drop the sign bit
-        if aFmt.Signed:
-            offset = 2**aFmt.IntBits
+        if aFmt.S == 1:
+            offset = 2**aFmt.I
             a = np.where(a < 0, a + offset, a)
         
         # Retain fractional LSBs
-        return a % 2**min(aFmt.IntBits, 0)
+        return a % 2**min(aFmt.I, 0)
         
-def cl_fix_combine(sign : int, intbits : int, fracbits : int, rFmt : FixFormat):
+def cl_fix_combine(sign : int, I : int, F : int, rFmt : FixFormat):
     # Combines separate {sign_bit, integer_part, fractional_part} into a fixed-point number.
     # For example: combine(0, 5, 1, FixFormat(True, 4, 2)) <==> 5.25
     if cl_fix_is_wide(rFmt):
-        val = -sign*2**(rFmt.IntBits+rFmt.FracBits) + intbits*2**rFmt.FracBits + fracbits
+        val = -sign*2**(rFmt.I+rFmt.F) + I*2**rFmt.F + F
         return wide_fxp(val, rFmt)
     else:
-        return -sign*2.0**rFmt.IntBits + intbits + fracbits*2.0**-rFmt.FracBits
+        return -sign*2.0**rFmt.I + I + F*2.0**-rFmt.F
 
 def cl_fix_get_msb(a, aFmt : FixFormat, index : int):
     if type(a) == wide_fxp:
         return a.get_msb(index)
     else:
         a = np.array(a)
-        if aFmt.Signed:
+        if aFmt.S == 1:
             if index == 0:
                 return (a < 0).astype(int)
             else:
-                return ((a * 2.0 ** (index - aFmt.IntBits - 1)) % 1 >= 0.5).astype(int)
+                return ((a * 2.0 ** (index - aFmt.I - 1)) % 1 >= 0.5).astype(int)
         else:
-            return ((a * 2.0 ** (index - aFmt.IntBits)) % 1 >= 0.5).astype(int)
+            return ((a * 2.0 ** (index - aFmt.I)) % 1 >= 0.5).astype(int)
 
 def cl_fix_get_lsb(a, aFmt : FixFormat, index : int):
     return cl_fix_get_msb(a, aFmt, cl_fix_width(aFmt)-1-index)
@@ -135,13 +135,13 @@ def cl_fix_set_msb(a, aFmt : FixFormat, index : int, value):
             raise Exception("cl_fix_set_msb: only 1 and 0 allowed for value")
         value = int(value)
         current = cl_fix_get_msb(a, aFmt, index)
-        if aFmt.Signed:
+        if aFmt.S == 1:
             if index == 0:
-                return ((value - 0.5) - (current - 0.5)) * -2.0 ** (aFmt.IntBits) + a
+                return ((value - 0.5) - (current - 0.5)) * -2.0 ** (aFmt.I) + a
             else:
-                return ((value - 0.5) - (current - 0.5)) * 2.0 ** (aFmt.IntBits - index) + a
+                return ((value - 0.5) - (current - 0.5)) * 2.0 ** (aFmt.I - index) + a
         else:
-            return ((value - 0.5) - (current - 0.5)) * 2.0 ** (aFmt.IntBits - index - 1) + a
+            return ((value - 0.5) - (current - 0.5)) * 2.0 ** (aFmt.I - index - 1) + a
 
 def cl_fix_set_lsb(a, aFmt : FixFormat, index : int, value):
     return cl_fix_set_msb(a, aFmt, cl_fix_width(aFmt)-1-index, value)
@@ -161,7 +161,7 @@ def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.S
                 warnings.warn(f"cl_fix_from_real: Number {amin} exceeds minimum for format {rFmt}", Warning)
         
         # Quantize. Always use half-up rounding.
-        x = np.floor(a*(2.0**rFmt.FracBits)+0.5)/2.0**rFmt.FracBits
+        x = np.floor(a*(2.0**rFmt.F)+0.5)/2.0**rFmt.F
         
         # Saturate
         if (saturate == FixSaturate.Sat_s) or (saturate == FixSaturate.SatWarn_s):
@@ -179,7 +179,7 @@ def cl_fix_from_bits_as_int(a : int, aFmt : FixFormat):
             raise ValueError("cl_fix_from_bits_as_int: Value not in number format range")
         return wide_fxp(a, aFmt)
     else:
-        value = np.array(a/2**aFmt.FracBits, np.float64)
+        value = np.array(a/2**aFmt.F, np.float64)
         if not np.all(cl_fix_in_range(value, aFmt, aFmt)):
             raise ValueError("cl_fix_from_bits_as_int: Value not in number format range")
         return value
@@ -188,7 +188,7 @@ def cl_fix_get_bits_as_int(a, aFmt : FixFormat):
     if type(a) == wide_fxp:
         return a.data
     else:
-        return np.array(np.round(a*2.0**aFmt.FracBits),'int64')
+        return np.array(np.round(a*2.0**aFmt.F),'int64')
 
 def cl_fix_resize(  a, aFmt : FixFormat,
                     rFmt : FixFormat,
@@ -205,34 +205,34 @@ def cl_fix_resize(  a, aFmt : FixFormat,
         a = np.array(a)
         # Rounding
         bitGrowth = 0
-        if rFmt.FracBits < aFmt.FracBits:
+        if rFmt.F < aFmt.F:
             if rnd is FixRound.Trunc_s:
                 # No offset is applied, so no bit-growth
                 bitGrowth = 0
             elif rnd is FixRound.NonSymPos_s:
-                a = a + 2.0 ** (-rFmt.FracBits - 1)
+                a = a + 2.0 ** (-rFmt.F - 1)
                 bitGrowth = 1
             elif rnd is FixRound.NonSymNeg_s:
-                a = a + 2.0 ** (-rFmt.FracBits - 1) - 2.0 ** -aFmt.FracBits
+                a = a + 2.0 ** (-rFmt.F - 1) - 2.0 ** -aFmt.F
                 bitGrowth = 1
             elif rnd is FixRound.SymInf_s:
-                a = a + 2.0 ** (-rFmt.FracBits - 1) - 2.0 ** -aFmt.FracBits * (a < 0).astype(int)
+                a = a + 2.0 ** (-rFmt.F - 1) - 2.0 ** -aFmt.F * (a < 0).astype(int)
                 bitGrowth = 1
             elif rnd is FixRound.SymZero_s:
-                a = a + 2.0 ** (-rFmt.FracBits - 1) - 2.0 ** -aFmt.FracBits * (a >= 0).astype(int)
+                a = a + 2.0 ** (-rFmt.F - 1) - 2.0 ** -aFmt.F * (a >= 0).astype(int)
                 bitGrowth = 1
             elif rnd is FixRound.ConvEven_s:
-                a = a + 2.0 ** (-rFmt.FracBits - 1) - 2.0 ** -aFmt.FracBits * ((np.floor(a * 2 ** rFmt.FracBits) + 1) % 2)
+                a = a + 2.0 ** (-rFmt.F - 1) - 2.0 ** -aFmt.F * ((np.floor(a * 2 ** rFmt.F) + 1) % 2)
                 bitGrowth = 1
             elif rnd is FixRound.ConvOdd_s:
-                a = a + 2.0 ** (-rFmt.FracBits - 1) - 2.0 ** -aFmt.FracBits * ((np.floor(a * 2 ** rFmt.FracBits)) % 2)
+                a = a + 2.0 ** (-rFmt.F - 1) - 2.0 ** -aFmt.F * ((np.floor(a * 2 ** rFmt.F)) % 2)
                 bitGrowth = 1
             else:
                 raise Exception("cl_fix_resize : Illegal value for round!")
-        # The format after rounding is the same as after a (lossy) right shift by (aFmt.FracBits - rFmt.FracBits), but
+        # The format after rounding is the same as after a (lossy) right shift by (aFmt.F - rFmt.F), but
         # with +bitGrowth (integer bit) to support the rounding offset applied above.
-        roundedFmt = FixFormat(aFmt.Signed, aFmt.IntBits - (aFmt.FracBits - rFmt.FracBits) + bitGrowth, rFmt.FracBits)
-        rounded = np.floor(a * 2.0 ** rFmt.FracBits).astype(float) * 2.0 ** -rFmt.FracBits
+        roundedFmt = FixFormat(aFmt.S, aFmt.I - (aFmt.F - rFmt.F) + bitGrowth, rFmt.F)
+        rounded = np.floor(a * 2.0 ** rFmt.F).astype(float) * 2.0 ** -rFmt.F
 
         # Saturation warning
         fmtMax = cl_fix_max_value(rFmt)
@@ -246,9 +246,9 @@ def cl_fix_resize(  a, aFmt : FixFormat,
             # Wrap
             
             # Decide if signed wrapping calculation will fit in narrow format
-            if rFmt.Signed:
-                # We need to add: rounded + 2.0 ** rFmt.IntBits
-                offsetFmt = FixFormat(0,rFmt.IntBits+1,0)  # Format of 2.0 ** rFmt.IntBits.
+            if rFmt.S == 1:
+                # We need to add: rounded + 2.0 ** rFmt.I
+                offsetFmt = FixFormat(0,rFmt.I+1,0)  # Format of 2.0 ** rFmt.I.
                 addFmt = FixFormat.ForAdd(roundedFmt, offsetFmt)
                 convertToWide = cl_fix_is_wide(addFmt)
             else:
@@ -256,20 +256,20 @@ def cl_fix_resize(  a, aFmt : FixFormat,
             
             if convertToWide:
                 # Do intermediate calculation in wide_fxp (int) to avoid loss of precision
-                rounded = np.floor(rounded.astype(object) * 2**rFmt.FracBits)
-                satSpan = 2**(rFmt.IntBits + rFmt.FracBits)
-                if rFmt.Signed:
+                rounded = np.floor(rounded.astype(object) * 2**rFmt.F)
+                satSpan = 2**(rFmt.I + rFmt.F)
+                if rFmt.S == 1:
                     result = ((rounded + satSpan) % (2*satSpan)) - satSpan
                 else:
                     result = rounded % satSpan
                 # Convert back to narrow fixed-point
-                result = (result / 2**rFmt.FracBits).astype(float)
+                result = (result / 2**rFmt.F).astype(float)
             else:
                 # Calculate in float64 without loss of precision
-                if rFmt.Signed:
-                    result = ((rounded + 2.0 ** rFmt.IntBits) % (2.0 ** (rFmt.IntBits + 1))) - 2.0 ** rFmt.IntBits
+                if rFmt.S == 1:
+                    result = ((rounded + 2.0 ** rFmt.I) % (2.0 ** (rFmt.I + 1))) - 2.0 ** rFmt.I
                 else:
-                    result = rounded % (2.0**rFmt.IntBits)
+                    result = rounded % (2.0**rFmt.I)
         else:
             # Saturate
             result = np.where(rounded > fmtMax, fmtMax, rounded)
@@ -280,7 +280,7 @@ def cl_fix_resize(  a, aFmt : FixFormat,
 def cl_fix_in_range(    a, aFmt : FixFormat,
                         rFmt : FixFormat,
                         rnd: FixRound = FixRound.Trunc_s):
-    rndFmt = FixFormat(aFmt.Signed, aFmt.IntBits+1, rFmt.FracBits)
+    rndFmt = FixFormat(aFmt.S, aFmt.I+1, rFmt.F)
     valRnd = cl_fix_resize(a, aFmt, rndFmt, rnd, FixSaturate.Sat_s)
     lo = np.where(valRnd < cl_fix_min_value(rFmt), False, True)
     hi = np.where(valRnd > cl_fix_max_value(rFmt), False, True)
@@ -317,13 +317,13 @@ def cl_fix_sneg(a, aFmt : FixFormat,
                 rFmt : FixFormat,
                 rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
     enable = np.array(enable)
-    temp_fmt = FixFormat(True, aFmt.IntBits, max(aFmt.FracBits, rFmt.FracBits))
+    temp_fmt = FixFormat(True, aFmt.I, max(aFmt.F, rFmt.F))
     temp = cl_fix_resize(a, aFmt, temp_fmt, FixRound.Trunc_s, FixSaturate.None_s)
     if type(temp) == wide_fxp:
         temp = -(enable.astype(int)) + (-1) ** enable.astype(int)*temp.data
         temp = wide_fxp(temp, temp_fmt)
     else:
-        temp = -(enable.astype(int))*2 ** -temp_fmt.FracBits + (-1.0) ** enable.astype(int)*temp
+        temp = -(enable.astype(int))*2 ** -temp_fmt.F + (-1.0) ** enable.astype(int)*temp
         temp = temp.astype(float)
     return cl_fix_resize(temp, temp_fmt, rFmt, rnd, sat)
 
@@ -375,7 +375,7 @@ def cl_fix_saddsub( a, aFmt : FixFormat,
     else:
         temp_fmt = FixFormat.ForAdd(aFmt, bFmt)
         notAdd = np.array(np.logical_not(add),dtype="int32")
-        temp = a + (-1.0) ** notAdd * b - notAdd * 2.0 ** -temp_fmt.FracBits
+        temp = a + (-1.0) ** notAdd * b - notAdd * 2.0 ** -temp_fmt.F
         return cl_fix_resize(temp, temp_fmt, rFmt, rnd, sat)
 
 def cl_fix_mean(a, aFmt : FixFormat,
@@ -474,7 +474,7 @@ def cl_fix_random(n : int, fmt : FixFormat):
 
         return wide_fxp(xint, fmt)
     else:
-        intLo = fmtLo*2**fmt.FracBits
-        intHi = fmtHi*2**fmt.FracBits
+        intLo = fmtLo*2**fmt.F
+        intHi = fmtHi*2**fmt.F
         xint = np.random.randint(intLo, intHi+1, (n,), 'int64')
-        return (xint / 2**fmt.FracBits).astype(float)
+        return (xint / 2**fmt.F).astype(float)
