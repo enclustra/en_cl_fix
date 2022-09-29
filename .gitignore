@@ -1,9 +1,9 @@
-#Modelsim Library
-/sim/work
+# Modelsim Library
+/sim/lib_en_cl_fix
 
-#Modelsim transcript files
+# Modelsim transcript files
 *.transcript
 
-#Pycharm project files
+# Pycharm project files
 **/.idea
 *.pyc
