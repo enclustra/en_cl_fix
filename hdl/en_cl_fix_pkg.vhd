@@ -1057,7 +1057,6 @@ package body en_cl_fix_pkg is
         round       : FixRound_t    := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        
         -- VHDL doesn't define a * operator for mixed signed*unsigned or unsigned*signed.
         -- Just inside cl_fix_mult, it is safe to define them for local use.
         function "*"(x : signed; y : unsigned) return signed is
@@ -1076,19 +1075,16 @@ package body en_cl_fix_pkg is
         variable mid_v          : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
         variable result_v       : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
-        if a_fmt.S = 1 then
-            if b_fmt.S = 1 then
-                mid_v := std_logic_vector(signed(a) * signed(b));
-            else
-                mid_v := std_logic_vector(signed(a) * unsigned(b));
-            end if;
+        if a_fmt.S = 0 and b_fmt.S = 0 then
+            mid_v := std_logic_vector(unsigned(a) * unsigned(b));
+        elsif a_fmt.S = 0 and b_fmt.S = 1 then
+            mid_v := std_logic_vector(unsigned(a) *   signed(b));
+        elsif a_fmt.S = 1 and b_fmt.S = 0 then
+            mid_v := std_logic_vector(  signed(a) * unsigned(b));
         else
-            if b_fmt.S = 1 then
-                mid_v := std_logic_vector(unsigned(a) * signed(b));
-            else
-                mid_v := std_logic_vector(unsigned(a) * unsigned(b));
-            end if;
+            mid_v := std_logic_vector(  signed(a) *   signed(b));
         end if;
+        
         return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
     end;
     
