@@ -127,7 +127,6 @@ package en_cl_fix_pkg is
     function cl_fix_neg(
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
-        enable      : std_logic := '1';
         result_fmt  : FixFormat_t;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
@@ -497,22 +496,14 @@ package body en_cl_fix_pkg is
     
     function cl_fix_neg_fmt(a_fmt : FixFormat_t) return FixFormat_t is
     begin
-        return (
-            1,
-            a_fmt.I + a_fmt.S,
-            a_fmt.F
-        );
+        return (1, a_fmt.I + a_fmt.S, a_fmt.F);
     end;
     
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; min_shift : integer; max_shift : integer) return FixFormat_t is
     begin
         assert min_shift <= max_shift report "min_shift must be <= max_shift" severity Failure;
         
-        return (
-            a_fmt.S,
-            a_fmt.I + max_shift,
-            a_fmt.F - min_shift
-        );
+        return (a_fmt.S, a_fmt.I + max_shift, a_fmt.F - min_shift);
     end;
     
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; shift : integer) return FixFormat_t is
@@ -867,18 +858,17 @@ package body en_cl_fix_pkg is
     function cl_fix_neg(
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
-        enable      : std_logic := '1';
         result_fmt  : FixFormat_t;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        constant AFullFmt_c : FixFormat_t := (1, a_fmt.I + a_fmt.S, a_fmt.F);
-        variable AFull_v    : std_logic_vector(cl_fix_width(AFullFmt_c)-1 downto 0);
-        variable Neg_v      : std_logic_vector(cl_fix_width(AFullFmt_c)-1 downto 0);
+        constant mid_fmt_c  : FixFormat_t := cl_fix_neg_fmt(a_fmt);
+        variable a_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
+        variable mid_v      : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
     begin
-        AFull_v := cl_fix_resize(a, a_fmt, AFullFmt_c);
-        Neg_v   := std_logic_vector(-signed(AFull_v));
-        return cl_fix_resize(Neg_v, AFullFmt_c, result_fmt, round, saturate);
+        a_v := cl_fix_resize(a, a_fmt, mid_fmt_c);
+        mid_v := std_logic_vector(-signed(a_v));
+        return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
     end;
     
     function cl_fix_add(

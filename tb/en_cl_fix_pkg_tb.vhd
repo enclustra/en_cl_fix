@@ -504,31 +504,31 @@ begin
         -- *** cl_fix_neg ***
         print("*** cl_fix_neg ***");
         CheckStdlv( cl_fix_from_real(-2.5, (1, 5, 5)),
-                    cl_fix_neg( cl_fix_from_real(2.5, (1, 5, 1)), (1, 5, 1), '1',
+                    cl_fix_neg( cl_fix_from_real(2.5, (1, 5, 1)), (1, 5, 1),
                                 (1, 5, 5)),
                     "cl_fix_neg: positive to negative (signed -> signed)");
         CheckStdlv( cl_fix_from_real(-2.5, (1, 5, 5)),
-                    cl_fix_neg( cl_fix_from_real(2.5, (0, 5, 1)), (0, 5, 1), '1',
+                    cl_fix_neg( cl_fix_from_real(2.5, (0, 5, 1)), (0, 5, 1),
                                 (1, 5, 5)),
                     "cl_fix_neg: positive to negative (unsigned -> signed)");
         CheckStdlv( cl_fix_from_real(2.5, (1, 5, 5)),
-                    cl_fix_neg( cl_fix_from_real(-2.5, (1, 5, 1)), (1, 5, 1), '1',
+                    cl_fix_neg( cl_fix_from_real(-2.5, (1, 5, 1)), (1, 5, 1),
                                 (1, 5, 5)),
                     "cl_fix_neg: negative to positive (signed -> signed)");
         CheckStdlv( cl_fix_from_real(2.5, (0, 5, 5)),
-                    cl_fix_neg( cl_fix_from_real(-2.5, (1, 5, 1)), (1, 5, 1), '1',
+                    cl_fix_neg( cl_fix_from_real(-2.5, (1, 5, 1)), (1, 5, 1),
                                 (0, 5, 5)),
                     "cl_fix_neg: negative to positive (signed -> unsigned)");
         CheckStdlv( cl_fix_from_real(3.75, (1, 2, 2)),
-                    cl_fix_neg( cl_fix_from_real(-4.0, (1, 2, 4)), (1, 2, 4), '1',
+                    cl_fix_neg( cl_fix_from_real(-4.0, (1, 2, 4)), (1, 2, 4),
                                 (1, 2, 2), Trunc_s, Sat_s),
                     "cl_fix_neg: saturation (signed -> signed)");
         CheckStdlv( cl_fix_from_real(-4.0, (1, 2, 2)),
-                    cl_fix_neg( cl_fix_from_real(-4.0, (1, 2, 4)), (1, 2, 4), '1',
+                    cl_fix_neg( cl_fix_from_real(-4.0, (1, 2, 4)), (1, 2, 4),
                                 (1, 2, 2), Trunc_s, None_s),
                     "cl_fix_neg: wrap (signed -> signed)");
         CheckStdlv( cl_fix_from_real(0.0, (0, 5, 5)),
-                    cl_fix_neg( cl_fix_from_real(2.5, (1, 5, 1)), (1, 5, 1), '1',
+                    cl_fix_neg( cl_fix_from_real(2.5, (1, 5, 1)), (1, 5, 1),
                                 (0, 5, 5), Trunc_s, Sat_s),
                     "cl_fix_neg: positive to negative saturate (signed -> unsigned)");
                     

@@ -5,7 +5,7 @@
 ###################################################################################################
 # Description:
 #
-# This scripts checks the FixFormat.For* functions to ensure they all provide optimal (sufficient
+# This script checks the FixFormat.For* functions to ensure they all provide optimal (sufficient
 # and necessary) formats.
 ###################################################################################################
 
@@ -19,23 +19,11 @@ root = dirname(__file__)
 sys.path.append(join(root, "../../models/python"))
 from en_cl_fix_pkg import *
 
-import random
 import numpy as np
-
-# Make results repeatable
-random.seed(0)
-np.random.seed(0)
 
 ###################################################################################################
 # Config
 ###################################################################################################
-
-# Create data directory
-DATA_DIR = join(root, "data")
-try:
-    os.mkdir(DATA_DIR)
-except FileExistsError:
-    pass
 
 # aFmt test points
 aS_values = [0,1]
@@ -162,4 +150,26 @@ for aS in aS_values:
                 smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
                 assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "mult: Format is excessively wide." \
                     + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
-                
+            
+            ##############
+            # cl_fix_neg #
+            ##############
+            
+            # Calculate the extreme results
+            rmax = -amin
+            rmin = -amax
+            
+            # Format to test
+            rFmt = FixFormat.ForNeg(aFmt)
+            
+            # Check int bits are sufficient
+            assert rmax <= cl_fix_max_value(rFmt), "neg: Max value exceeded" \
+                + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+            assert rmin >= cl_fix_min_value(rFmt), "neg: Min value exceeded" \
+                + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+            
+            # Check int bits are necessary
+            smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
+            assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "neg: Format is excessively wide." \
+                + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+            
