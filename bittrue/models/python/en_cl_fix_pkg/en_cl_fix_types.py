@@ -20,18 +20,51 @@ class FixFormat:
     # Format for result of addition
     @staticmethod
     def ForAdd(aFmt, bFmt):
-        return FixFormat(max(aFmt.S, bFmt.S), max(aFmt.I, bFmt.I)+1, max(aFmt.F, bFmt.F))
+        # We must consider both extremes:
+        
+        # rmax = amax+bmax
+        #      = (2**aFmt.I - 2**-aFmt.F) + (2**bFmt.I - 2**-bFmt.F)
+        # We get 1 bit of growth if 
+        if aFmt.I >= bFmt.I:
+            rmax_growth = 1 if bFmt.I > -aFmt.F else 0
+        else:
+            rmax_growth = 1 if aFmt.I > -bFmt.F else 0
+        
+        # rmin = amin+bmin
+        #     If aFmt.S = 0 and bFmt.S = 0: 0 + 0
+        #     If aFmt.S = 0 and bFmt.S = 1: 0 + -2**bFmt.I
+        #     If aFmt.S = 1 and bFmt.S = 0: -2**aFmt.I + 0
+        #     If aFmt.S = 1 and bFmt.S = 1: -2**aFmt.I + -2**bFmt.I
+        rmin_growth = 1 if aFmt.S == 1 and bFmt.S == 1 else 0
+        
+        return FixFormat(max(aFmt.S, bFmt.S), max(aFmt.I, bFmt.I) + max(rmin_growth, rmax_growth), max(aFmt.F, bFmt.F))
     
     # Format for result of subtraction
     @staticmethod
     def ForSub(aFmt, bFmt):
-        return FixFormat(True, max(aFmt.I, bFmt.I+bFmt.S), max(aFmt.F, bFmt.F))
+        # We must consider both extremes:
+        
+        # rmax = amax-bmin
+        #     If bFmt.S = 0: rmax = (2**aFmt.I - 2**-aFmt.F) - 0
+        #     If bFmt.S = 1: rmax = (2**aFmt.I - 2**-aFmt.F) + 2**bFmt.I
+        # We get 1 bit of growth in the signed case if -2**-aFmt.F + 2**bFmt.I >= 0.
+        rmax_growth = bFmt.S if bFmt.I >= -aFmt.F else 0
+        
+        # rmin = amin-bmax
+        #     If aFmt.S = 0: rmin = 0 - (2**bFmt.I - 2**-bFmt.F)
+        #     If aFmt.S = 1: rmin = -2**aFmt.I - (2**bFmt.I - 2**-bFmt.F)
+        # We get 1 bit of growth in the signed case if -2**aFmt.I + 2**-bFmt.F < 0.
+        rmin_growth = aFmt.S if aFmt.I > -bFmt.F else 0
+        
+        return FixFormat(True, max(aFmt.I, bFmt.I) + max(rmin_growth, rmax_growth), max(aFmt.F, bFmt.F))
     
     # Format for result of multiplication
     @staticmethod
     def ForMult(aFmt, bFmt):
+        # We get 1 bit of growth for signed*signed (rmax = -2**aFmt.I * -2**bFmt.I = ).
+        growth = min(aFmt.S, bFmt.S)
         signed = max(aFmt.S, bFmt.S)
-        return FixFormat(signed, aFmt.I+bFmt.I+signed, aFmt.F+bFmt.F)
+        return FixFormat(signed, aFmt.I+bFmt.I+growth, aFmt.F+bFmt.F)
     
     # Format for result of negation
     @staticmethod
