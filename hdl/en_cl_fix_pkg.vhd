@@ -1073,23 +1073,23 @@ package body en_cl_fix_pkg is
         end function;
         
         constant mid_fmt_c      : FixFormat_t := cl_fix_mult_fmt(a_fmt, b_fmt);
-        variable temp_v         : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
+        variable mid_v          : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
         variable result_v       : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
         if a_fmt.S = 1 then
             if b_fmt.S = 1 then
-                temp_v := std_logic_vector(signed(a) * signed(b));
+                mid_v := std_logic_vector(signed(a) * signed(b));
             else
-                temp_v := std_logic_vector(signed(a) * unsigned(b));
+                mid_v := std_logic_vector(signed(a) * unsigned(b));
             end if;
         else
             if b_fmt.S = 1 then
-                temp_v := std_logic_vector(unsigned(a) * signed(b));
+                mid_v := std_logic_vector(unsigned(a) * signed(b));
             else
-                temp_v := std_logic_vector(unsigned(a) * unsigned(b));
+                mid_v := std_logic_vector(unsigned(a) * unsigned(b));
             end if;
         end if;
-        return cl_fix_resize(temp_v, mid_fmt_c, result_fmt, round, saturate);
+        return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
     end;
     
     function cl_fix_compare(
