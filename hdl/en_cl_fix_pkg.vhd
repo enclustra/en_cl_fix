@@ -70,6 +70,10 @@ package en_cl_fix_pkg is
     
     function to_string(fmt : FixFormat_t) return string;
     
+    function to_string(rnd : FixRound_t) return string;
+    
+    function to_string(sat : FixSaturate_t) return string;
+    
     function cl_fix_format_from_string(Str : string) return FixFormat_t;
     
     function cl_fix_round_from_string(Str : string) return FixRound_t;
@@ -462,6 +466,35 @@ package body en_cl_fix_pkg is
     function to_string(fmt : FixFormat_t) return string is
     begin
         return "(" & natural'image(fmt.S) & "," & integer'image(fmt.I) & "," & integer'image(fmt.F) & ")";
+    end;
+    
+    function to_string(rnd : FixRound_t) return string is
+    begin
+        -- Some synthesis tools do not support FixRound_t'image(), so we implement explicitly.
+        case rnd is
+            when Trunc_s     => return "Trunc_s";
+            when NonSymPos_s => return "NonSymPos_s";
+            when NonSymNeg_s => return "NonSymNeg_s";
+            when SymInf_s    => return "SymInf_s";
+            when SymZero_s   => return "SymZero_s";
+            when ConvEven_s  => return "ConvEven_s";
+            when ConvOdd_s   => return "ConvOdd_s";
+            when others => report "to_string(FixRound_t) : Unsupported input." severity Failure;
+        end case;
+        return "";
+    end;
+    
+    function to_string(sat : FixSaturate_t) return string is
+    begin
+        -- Some synthesis tools do not support FixSaturate_t'image(), so we implement explicitly.
+        case sat is
+            when None_s    => return "None_s";
+            when Warn_s    => return "Warn_s";
+            when Sat_s     => return "Sat_s";
+            when SatWarn_s => return "SatWarn_s";
+            when others => report "to_string(FixSaturate_t) : Unsupported input." severity Failure;
+        end case;
+        return "";
     end;
     
     function cl_fix_format_from_string(Str : string) return FixFormat_t is
