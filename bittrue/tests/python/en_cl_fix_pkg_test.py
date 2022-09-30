@@ -665,97 +665,6 @@ class cl_fix_in_range_Test(unittest.TestCase):
     def test_Rounding_InRange2(self):
         self.assertEqual(True, cl_fix_in_range(15.5, FixFormat(False,4,2), FixFormat(False,5,0), FixRound.NonSymPos_s))
 
-### cl_fix_sign ###
-class cl_fix_sign_Test(unittest.TestCase):
-    def test_Unsigned(self):
-        self.assertEqual(0, cl_fix_sign(3.25, FixFormat(False, 2, 2)))
-
-    def test_SignedOne(self):
-        self.assertEqual(1, cl_fix_sign(-1.25, FixFormat(True, 2, 2)))
-
-    def test_SignedZero(self):
-        self.assertEqual(0, cl_fix_sign(3.25, FixFormat(True, 2, 2)))
-
-### cl_fix_int ###
-class cl_fix_int_Test(unittest.TestCase):
-    def test_Unsigned(self):
-        self.assertEqual(3, cl_fix_int(3.25, FixFormat(False, 2, 2)))
-
-    def test_SignedPos(self):
-        self.assertEqual(3, cl_fix_int(3.25, FixFormat(True, 2, 2)))
-
-    def test_SignedNeg(self):
-        self.assertEqual(-2, cl_fix_int(-1.25, FixFormat(True, 2, 2)))
-
-### cl_fix_frac ###
-class cl_fix_frac_Test(unittest.TestCase):
-    def test_Unsigned(self):
-        self.assertEqual(0.25, cl_fix_frac(3.25, FixFormat(False, 2, 3)))
-
-### cl_fix_combine ###
-class cl_fix_combine_Test(unittest.TestCase):
-    def test_Unsigned(self):
-        self.assertEqual(-3.25, cl_fix_combine(1, 0, 3, FixFormat(True,2,2)))
-
-### cl_fix_get_msb ###
-class cl_fix_get_msb_Test(unittest.TestCase):
-    def test_One(self):
-        self.assertEqual(1, cl_fix_get_msb(2.25, FixFormat(True, 3, 3), 2))
-
-    def test_Zero(self):
-        self.assertEqual(0, cl_fix_get_msb(2.25, FixFormat(True, 3, 3), 1))
-
-### cl_fix_get_lsb ###
-class cl_fix_get_lsb_Test(unittest.TestCase):
-    def test_One(self):
-        self.assertEqual(1, cl_fix_get_lsb(2.25, FixFormat(True, 3, 3), 1))
-
-    def test_Zero(self):
-        self.assertEqual(0, cl_fix_get_lsb(2.25, FixFormat(True, 3, 3), 2))
-
-### cl_fix_set_msb ###
-class cl_fix_set_msb_Test(unittest.TestCase):
-    def test_SetOne(self):
-        self.assertEqual(2.25, cl_fix_set_msb(2.25, FixFormat(True, 3, 3), 2, 1))
-
-    def test_SetZero(self):
-        self.assertEqual(6.25, cl_fix_set_msb(2.25, FixFormat(True, 3, 3), 1, 1))
-
-    def test_ClearOne(self):
-        self.assertEqual(0.25, cl_fix_set_msb(2.25, FixFormat(True, 3, 3), 2, 0))
-
-    def test_ClearZero(self):
-        self.assertEqual(2.25, cl_fix_set_msb(2.25, FixFormat(True, 3, 3), 1, 0))
-
-### cl_fix_set_lsb ###
-class cl_fix_set_lsb_Test(unittest.TestCase):
-    def test_SetOne(self):
-        self.assertEqual(2.25, cl_fix_set_lsb(2.25, FixFormat(True, 3, 3), 1, 1))
-
-    def test_SetZero(self):
-        self.assertEqual(2.75, cl_fix_set_lsb(2.25, FixFormat(True, 3, 3), 2, 1))
-
-    def test_ClearOne(self):
-        self.assertEqual(2.0, cl_fix_set_lsb(2.25, FixFormat(True, 3, 3), 1, 0))
-
-    def test_ClearZero(self):
-        self.assertEqual(2.25, cl_fix_set_lsb(2.25, FixFormat(True, 3, 3), 2, 0))
-
-### cl_fix_sabs ###
-class cl_fix_sabs_Test(unittest.TestCase):
-    def test_Positive(self):
-        self.assertEqual(2.25, cl_fix_sabs(2.25, FixFormat(True, 3, 3), FixFormat(False, 2, 2)))
-
-    def test_Negative(self):
-        self.assertEqual(2.0, cl_fix_sabs(-2.25, FixFormat(True, 3, 3), FixFormat(False, 2, 2)))
-
-### cl_fix_sneg ###
-class cl_fix_sneg_Test(unittest.TestCase):
-    def test_Array(self):
-        result = cl_fix_sneg(np.array([2.25, -2.25]), FixFormat(True, 3, 3), True, FixFormat(True, 3, 2))
-        self.assertEqual(-2.5, result[0])
-        self.assertEqual(2.0, result[1])
-
 ### cl_fix_addsub ###
 class cl_fix_addsub_Test(unittest.TestCase):
     def test_Array(self):
@@ -764,15 +673,6 @@ class cl_fix_addsub_Test(unittest.TestCase):
                                np.array([True, False]), FixFormat(True, 3, 3))
         self.assertEqual(1.75, result[0])
         self.assertEqual(1.0, result[1])
-
-### cl_fix_saddsub ###
-class cl_fix_saddsub_Test(unittest.TestCase):
-    def test_Array(self):
-        result = cl_fix_saddsub(np.array([1.0, 1.25]), FixFormat(True, 3, 2),
-                                np.array([0.75, 0.25]), FixFormat(True, 3, 2),
-                                np.array([True, False]), FixFormat(True, 3, 2))
-        self.assertEqual(1.75, result[0])
-        self.assertEqual(0.75, result[1])
 
 ### cl_fix_Indexing_Test ###
 class cl_fix_Indexing_Test(unittest.TestCase):
