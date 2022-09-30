@@ -8,11 +8,15 @@
 ###################################################################################################
 
 from enum import Enum
+import warnings
 
 class FixFormat:
     def __init__(self, S : int, I : int, F : int):
         assert S == 0 or S == 1, "S must be 0 or 1"
-        assert S+I+F >= 0, "Format width cannot be negative"
+        if S+I+F < 0:
+            Inew = -(S+F)
+            warnings.warn(f"Format width cannot be negative. Changing ({S}, {I}, {F}) to ({S}, {Inew}, {F})", Warning)
+            I = Inew
         self.S = int(S)
         self.I = int(I)
         self.F = int(F)
@@ -56,7 +60,7 @@ class FixFormat:
         # We get 1 bit of growth in the signed case if -2**aFmt.I + 2**-bFmt.F < 0.
         rmin_growth = aFmt.S if aFmt.I > -bFmt.F else 0
         
-        return FixFormat(True, max(aFmt.I, bFmt.I) + max(rmin_growth, rmax_growth), max(aFmt.F, bFmt.F))
+        return FixFormat(1, max(aFmt.I, bFmt.I) + max(rmin_growth, rmax_growth), max(aFmt.F, bFmt.F))
     
     # Format for result of multiplication
     @staticmethod
@@ -69,7 +73,7 @@ class FixFormat:
     # Format for result of negation
     @staticmethod
     def ForNeg(aFmt):
-        return FixFormat(True, aFmt.I+aFmt.S, aFmt.F)
+        return FixFormat(1, aFmt.I+aFmt.S, aFmt.F)
     
     # Format for result of left-shift
     @staticmethod

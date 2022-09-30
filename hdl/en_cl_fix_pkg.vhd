@@ -215,6 +215,14 @@ package body en_cl_fix_pkg is
     -- Internally used functions
     -----------------------------------------------------------------------------------------------
     
+    function choose(condition : boolean; if_true : integer; if_false : integer) return integer is
+    begin
+        if condition then
+            return if_true;
+        end if;
+        return if_false;
+    end function;
+    
     function max(a, b : integer) return integer is
     begin
         if a >= b then
@@ -415,10 +423,23 @@ package body en_cl_fix_pkg is
     end;
     
     function cl_fix_sub_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
+        -- We must consider both extremes:
+        
+        -- rmax = amax-bmin
+        --     If bFmt.S = 0: rmax = (2**aFmt.I - 2**-aFmt.F) - 0
+        --     If bFmt.S = 1: rmax = (2**aFmt.I - 2**-aFmt.F) + 2**bFmt.I
+        -- We get 1 bit of growth in the signed case if -2**-aFmt.F + 2**bFmt.I >= 0.
+        constant rmax_growth_c  : natural := choose(b_fmt.I >= -a_fmt.F, b_fmt.S, 0);
+        
+        -- rmin = amin-bmax
+        --     If aFmt.S = 0: rmin = 0 - (2**bFmt.I - 2**-bFmt.F)
+        --     If aFmt.S = 1: rmin = -2**aFmt.I - (2**bFmt.I - 2**-bFmt.F)
+        -- We get 1 bit of growth in the signed case if -2**aFmt.I + 2**-bFmt.F < 0.
+        constant rmin_growth_c  : natural := choose(a_fmt.I > -b_fmt.F, a_fmt.S, 0);
     begin
         return (
             1,
-            max(a_fmt.I, b_fmt.I + b_fmt.S),
+            max(a_fmt.I, b_fmt.I) + max(rmin_growth_c, rmax_growth_c),
             max(a_fmt.F, b_fmt.F)
         );
     end;
@@ -992,37 +1013,15 @@ package body en_cl_fix_pkg is
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        constant Saturate_c : boolean := (saturate = Sat_s or
-        -- synthesis translate_off
-            saturate = Warn_s or
-        -- synthesis translate_on
-            saturate = SatWarn_s);
-        constant Grow_c     : boolean := result_fmt.I > max(a_fmt.I, b_fmt.I);
-        -- Use correct signed/unsigned type for subtraction (else synthesis tools can cause problems)
-        constant SubFmt_c   : FixFormat_t :=
-            (
-                S   => max(a_fmt.S, b_fmt.S),
-                I   => max(a_fmt.I, b_fmt.I) + toInteger(Grow_c or Saturate_c),
-                F   => max(a_fmt.F, b_fmt.F)
-            );
-        -- Switch to signed for final resize if saturating
-        constant ReszFmt_c  : FixFormat_t :=
-            (
-                S   => max(SubFmt_c.S, toInteger(Saturate_c)),
-                I   => SubFmt_c.I,
-                F   => SubFmt_c.F
-            );
-        constant SubWidth_c : positive := cl_fix_width(SubFmt_c);
-        variable a_v        : std_logic_vector(SubWidth_c-1 downto 0);
-        variable b_v        : std_logic_vector(SubWidth_c-1 downto 0);
-        variable temp_v     : std_logic_vector(SubWidth_c-1 downto 0);
-        variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
+        constant mid_fmt_c  : FixFormat_t := cl_fix_sub_fmt(a_fmt, b_fmt);
+        variable a_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
+        variable b_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
+        variable mid_v      : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
     begin
-        a_v := cl_fix_resize(a, a_fmt, SubFmt_c, Trunc_s, None_s);
-        b_v := cl_fix_resize(b, b_fmt, SubFmt_c, Trunc_s, None_s);
-        temp_v := cl_fix_addsub_internal(a_v, a_fmt, b_v, b_fmt, '0');
-        result_v := cl_fix_resize(temp_v, ReszFmt_c, result_fmt, round, saturate);
-        return result_v;
+        a_v := cl_fix_resize(a, a_fmt, mid_fmt_c, Trunc_s, None_s);
+        b_v := cl_fix_resize(b, b_fmt, mid_fmt_c, Trunc_s, None_s);
+        mid_v := cl_fix_addsub_internal(a_v, mid_fmt_c, b_v, mid_fmt_c, '0');
+        return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
     end;
     
     function cl_fix_addsub(

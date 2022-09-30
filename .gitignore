@@ -1,8 +1,11 @@
-# Modelsim Library
-/sim/lib_en_cl_fix
+# VUnit
+sim/vunit_out
 
 # Modelsim transcript files
 *.transcript
+
+# Cosim data
+bittrue/cosim/cl_fix_sub/data
 
 # Pycharm project files
 **/.idea
