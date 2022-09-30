@@ -12,12 +12,7 @@ root = dirname(__file__)
 sys.path.append(join(root, "../../models/python"))
 from en_cl_fix_pkg import *
 
-import random
 import numpy as np
-
-# Make results repeatable
-random.seed(0)
-np.random.seed(0)
 
 ###################################################################################################
 # Config
