@@ -633,16 +633,6 @@ begin
         CheckStdlv( "0000", cl_fix_min_value((0,2,2)), "unsigned");
         CheckStdlv( "1000", cl_fix_min_value((1,1,2)), "signed");
         
-        -- *** cl_fix_max_real ***
-        print("*** cl_fix_max_real ***");
-        CheckReal(  3.75, cl_fix_max_real((0,2,2)), "unsigned");
-        CheckReal(  1.75, cl_fix_max_real((1,1,2)), "signed");
-        
-        -- *** cl_fix_min_real ***
-        print("*** cl_fix_min_real ***");
-        CheckReal(  0.0, cl_fix_min_real((0,2,2)), "unsigned");
-        CheckReal(  -2.0, cl_fix_min_real((1,1,2)), "signed");
-        
         -- *** cl_fix_in_range ***
         print("*** cl_fix_in_range ***");
         CheckBoolean(   true,
@@ -775,12 +765,6 @@ begin
                                         cl_fix_from_real(2.5, (0, 4, 2)), (0, 4, 2),
                                         cl_fix_from_real(-1.5, (1, 2, 1)), (1, 2, 1)),
                         "a!=b unsigned signed true");
-                        
-        -- *** cl_fix_sign ***
-        print("*** cl_fix_sign ***");
-        CheckStdl(  '0', cl_fix_sign(cl_fix_from_real(3.25, (0, 2, 2)), (0,2,2)), "Unsigned");
-        CheckStdl(  '1', cl_fix_sign(cl_fix_from_real(-1.25, (1, 2, 2)), (1,2,2)), "SignedOne");
-        CheckStdl(  '0', cl_fix_sign(cl_fix_from_real(3.25, (1, 2, 2)), (1,2,2)), "SignedZero");
                     
         -- *** cl_fix_addsub ***
         print("*** cl_fix_addsub ***");
