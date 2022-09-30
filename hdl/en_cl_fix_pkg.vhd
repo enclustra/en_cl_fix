@@ -54,6 +54,12 @@ package en_cl_fix_pkg is
     
     function cl_fix_format(S : natural; I : integer; F : integer) return FixFormat_t;
     
+    function cl_fix_width(fmt : FixFormat_t) return natural;
+    
+    function cl_fix_max_value(fmt : FixFormat_t) return std_logic_vector;
+    
+    function cl_fix_min_value(fmt : FixFormat_t) return std_logic_vector;
+    
     function cl_fix_add_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t;
     
     function cl_fix_sub_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t;
@@ -66,7 +72,9 @@ package en_cl_fix_pkg is
     
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; shift : integer) return FixFormat_t;
     
-    function cl_fix_width(fmt : FixFormat_t) return natural;
+    -----------------------------------------------------------------------------------------------
+    -- String Conversions
+    -----------------------------------------------------------------------------------------------
     
     function to_string(fmt : FixFormat_t) return string;
     
@@ -80,10 +88,6 @@ package en_cl_fix_pkg is
     
     function cl_fix_saturate_from_string(Str : string) return FixSaturate_t;
     
-    function cl_fix_max_value(fmt : FixFormat_t) return std_logic_vector;
-    
-    function cl_fix_min_value(fmt : FixFormat_t) return std_logic_vector;
-    
     function cl_fix_max_real(fmt : FixFormat_t) return real;
     
     function cl_fix_min_real(fmt : FixFormat_t) return real;
@@ -91,7 +95,7 @@ package en_cl_fix_pkg is
     function cl_fix_sign(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic;
 
     -----------------------------------------------------------------------------------------------
-    -- Conversion To/From Other Formats
+    -- Type Conversions
     -----------------------------------------------------------------------------------------------
     
     function cl_fix_from_real(a : real; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector;
@@ -422,6 +426,33 @@ package body en_cl_fix_pkg is
         return (S, I, F);
     end;
     
+    function cl_fix_width(fmt : FixFormat_t) return natural is
+    begin
+        return fmt.S + fmt.I + fmt.F;
+    end;
+    
+    function cl_fix_max_value(fmt : FixFormat_t) return std_logic_vector is
+        variable result_v : std_logic_vector(cl_fix_width(fmt)-1 downto 0);
+    begin
+        result_v := (others => '1');
+        if fmt.S = 1 then
+            result_v(result_v'high) := '0';
+        end if;
+        return result_v;
+    end;
+    
+    function cl_fix_min_value(fmt : FixFormat_t) return std_logic_vector is
+        variable result_v : std_logic_vector(cl_fix_width(fmt)-1 downto 0);
+    begin
+        if fmt.S = 1 then
+            result_v := (others => '0');
+            result_v(result_v'left) := '1';
+        else
+            result_v := (others => '0');
+        end if;
+        return result_v;
+    end;
+    
     function cl_fix_add_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
         -- We must consider both extremes:
         
@@ -498,11 +529,6 @@ package body en_cl_fix_pkg is
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; shift : integer) return FixFormat_t is
     begin
         return cl_fix_shift_fmt(a_fmt, shift, shift);
-    end;
-    
-    function cl_fix_width(fmt : FixFormat_t) return natural is
-    begin
-        return fmt.S + fmt.I + fmt.F;
     end;
     
     function to_string(fmt : FixFormat_t) return string is
@@ -613,28 +639,6 @@ package body en_cl_fix_pkg is
         
         report "cl_fix_saturate_from_string: unrecognized format " & Str severity failure;
         return None_s;
-    end;
-    
-    function cl_fix_max_value(fmt : FixFormat_t) return std_logic_vector is
-        variable result_v : std_logic_vector(cl_fix_width(fmt)-1 downto 0);
-    begin
-        result_v := (others => '1');
-        if fmt.S = 1 then
-            result_v(result_v'high) := '0';
-        end if;
-        return result_v;
-    end;
-    
-    function cl_fix_min_value(fmt : FixFormat_t) return std_logic_vector is
-        variable result_v : std_logic_vector(cl_fix_width(fmt)-1 downto 0);
-    begin
-        if fmt.S = 1 then
-            result_v := (others => '0');
-            result_v(result_v'left) := '1';
-        else
-            result_v := (others => '0');
-        end if;
-        return result_v;
     end;
     
     function cl_fix_max_real(fmt : FixFormat_t) return real is
