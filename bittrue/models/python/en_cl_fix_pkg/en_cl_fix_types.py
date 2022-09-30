@@ -28,7 +28,8 @@ class FixFormat:
         
         # rmax = amax+bmax
         #      = (2**aFmt.I - 2**-aFmt.F) + (2**bFmt.I - 2**-bFmt.F)
-        # We get 1 bit of growth if 
+        # If we denote the format with max(aFmt.I, bFmt.I) int bits as "maxFmt" and the other
+        # format as "minFmt", then we get 1 bit of growth if 2**minFmt.I > 2**-maxFmt.F.
         if aFmt.I >= bFmt.I:
             rmax_growth = 1 if bFmt.I > -aFmt.F else 0
         else:

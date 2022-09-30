@@ -414,10 +414,24 @@ package body en_cl_fix_pkg is
     end;
     
     function cl_fix_add_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
+        -- We must consider both extremes:
+        
+        -- rmax = amax+bmax
+        --      = (2**aFmt.I - 2**-aFmt.F) + (2**bFmt.I - 2**-bFmt.F)
+        -- If we denote the format with max(aFmt.I, bFmt.I) int bits as "maxFmt" and the other
+        -- format as "minFmt", then we get 1 bit of growth if 2**minFmt.I > 2**-maxFmt.F.
+        constant rmax_growth_c  : natural := choose((a_fmt.I >= b_fmt.I and b_fmt.I > -a_fmt.F) or (a_fmt.I < b_fmt.I and a_fmt.I > -b_fmt.F), 1, 0);
+        
+        -- rmin = amin+bmin
+        --     If aFmt.S = 0 and bFmt.S = 0: 0 + 0
+        --     If aFmt.S = 0 and bFmt.S = 1: 0 + -2**bFmt.I
+        --     If aFmt.S = 1 and bFmt.S = 0: -2**aFmt.I + 0
+        --     If aFmt.S = 1 and bFmt.S = 1: -2**aFmt.I + -2**bFmt.I
+        constant rmin_growth_c  : natural := choose(a_fmt.S = 1 and b_fmt.S = 1, 1, 0);
     begin
         return (
             max(a_fmt.S, b_fmt.S),
-            max(a_fmt.I, b_fmt.I)+1,
+            max(a_fmt.I, b_fmt.I) + max(rmin_growth_c, rmax_growth_c),
             max(a_fmt.F, b_fmt.F)
         );
     end;
@@ -941,34 +955,6 @@ package body en_cl_fix_pkg is
         return cl_fix_resize(Neg_v, AFullFmt_c, result_fmt, round, saturate);
     end;
     
-    function cl_fix_addsub_internal(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        b           : std_logic_vector;
-        b_fmt       : FixFormat_t;
-        add         : std_logic
-    ) return std_logic_vector is
-        constant IsSigned_c : boolean := (a_fmt.S = 1) or (b_fmt.S = 1);
-        variable result_v   : std_logic_vector(a'range);
-    begin
-        -- Synthesis tools may create problems if correct signed/unsigned type
-        -- is not used for addition.
-        if to01(add) = '1' then
-            if IsSigned_c then
-                result_v := std_logic_vector(  signed(a) +   signed(b));
-            else
-                result_v := std_logic_vector(unsigned(a) + unsigned(b));
-            end if;
-        else
-            if IsSigned_c then
-                result_v := std_logic_vector(  signed(a) -   signed(b));
-            else
-                result_v := std_logic_vector(unsigned(a) - unsigned(b));
-            end if;
-        end if;
-        return result_v;
-    end function;
-    
     function cl_fix_add(
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
@@ -978,30 +964,19 @@ package body en_cl_fix_pkg is
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        constant CarryBit_c : boolean := -- addition performed with an additional integer bit
-            result_fmt.I > max(a_fmt.I, b_fmt.I) or (saturate = Sat_s or
-        -- synthesis translate_off
-            saturate = Warn_s or
-        -- synthesis translate_on
-            saturate = SatWarn_s);
-            -- TODO: CarryBit in cl_fix_resize not needed in all cases
-        constant TempFmt_c  : FixFormat_t :=
-            (
-                S   => max(a_fmt.S, b_fmt.S),
-                I   => max(a_fmt.I, b_fmt.I) + toInteger(CarryBit_c),
-                F   => max(a_fmt.F, b_fmt.F)
-            );
-        constant TempWidth_c: positive := cl_fix_width(TempFmt_c);
-        variable a_v        : std_logic_vector(TempWidth_c-1 downto 0);
-        variable b_v        : std_logic_vector(TempWidth_c-1 downto 0);
-        variable temp_v     : std_logic_vector(TempWidth_c-1 downto 0);
-        variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
+        constant mid_fmt_c  : FixFormat_t := cl_fix_add_fmt(a_fmt, b_fmt);
+        variable a_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
+        variable b_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
+        variable mid_v      : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
     begin
-        a_v := cl_fix_resize(a, a_fmt, TempFmt_c, Trunc_s, None_s);
-        b_v := cl_fix_resize(b, b_fmt, TempFmt_c, Trunc_s, None_s);
-        temp_v := cl_fix_addsub_internal(a_v, a_fmt, b_v, b_fmt, '1');
-        result_v := cl_fix_resize(temp_v, TempFmt_c, result_fmt, round, saturate);
-        return result_v;
+        a_v := cl_fix_resize(a, a_fmt, mid_fmt_c, Trunc_s, None_s);
+        b_v := cl_fix_resize(b, b_fmt, mid_fmt_c, Trunc_s, None_s);
+        -- Signed/unsigned addition/subtraction are identical when using two's complement.
+        -- However, a long-standing Vivado bug causes incorrect post-synthesis behavior in DSP
+        -- slices (pre-add or post-add) if numeric_std.unsigned is used. There are no known issues
+        -- for numeric_std.signed, so we always use that.
+        mid_v := std_logic_vector(signed(a_v) + signed(b_v));
+        return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
     end;
     
     function cl_fix_sub(
@@ -1020,7 +995,11 @@ package body en_cl_fix_pkg is
     begin
         a_v := cl_fix_resize(a, a_fmt, mid_fmt_c, Trunc_s, None_s);
         b_v := cl_fix_resize(b, b_fmt, mid_fmt_c, Trunc_s, None_s);
-        mid_v := cl_fix_addsub_internal(a_v, mid_fmt_c, b_v, mid_fmt_c, '0');
+        -- Signed/unsigned addition/subtraction are identical when using two's complement.
+        -- However, a long-standing Vivado bug causes incorrect post-synthesis behavior in DSP
+        -- slices (pre-add or post-add) if numeric_std.unsigned is used. There are no known issues
+        -- for numeric_std.signed, so we always use that.
+        mid_v := std_logic_vector(signed(a_v) - signed(b_v));
         return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
     end;
     

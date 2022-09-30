@@ -5,7 +5,7 @@ sim/vunit_out
 *.transcript
 
 # Cosim data
-bittrue/cosim/cl_fix_sub/data
+bittrue/cosim/*/data
 
 # Pycharm project files
 **/.idea

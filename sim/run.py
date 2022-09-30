@@ -45,6 +45,17 @@ def create_test_suite(vu, args):
             super().__init__(args.disable_cosim, target)
     
     ##############
+    # cl_fix_add #
+    ##############
+    cl_fix_add_cosim = cosim("cl_fix_add")
+    cl_fix_add_tb = lib.test_bench("cl_fix_add_tb")
+    
+    for test in cl_fix_add_tb.get_tests("test"):
+        test.add_config(name=(f"Test"),
+                        generics=dict(),
+                        pre_config=cl_fix_add_cosim.run)
+    
+    ##############
     # cl_fix_sub #
     ##############
     cl_fix_sub_cosim = cosim("cl_fix_sub")
