@@ -66,7 +66,7 @@ class FixFormat:
     # Format for result of multiplication
     @staticmethod
     def ForMult(aFmt, bFmt):
-        # We get 1 bit of growth for signed*signed (rmax = -2**aFmt.I * -2**bFmt.I = ).
+        # We get 1 bit of growth for signed*signed (rmax = -2**aFmt.I * -2**bFmt.I).
         growth = min(aFmt.S, bFmt.S)
         signed = max(aFmt.S, bFmt.S)
         return FixFormat(signed, aFmt.I+bFmt.I+growth, aFmt.F+bFmt.F)

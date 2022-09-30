@@ -232,6 +232,15 @@ package body en_cl_fix_pkg is
         end if;
     end;
     
+    function min(a, b : integer) return integer is
+    begin
+        if a <= b then
+            return a;
+        else
+            return b;
+        end if;
+    end;
+    
     function to01(sl : std_logic) return std_logic is
         variable result_v : std_logic;
     begin
@@ -459,13 +468,11 @@ package body en_cl_fix_pkg is
     end;
     
     function cl_fix_mult_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
+        -- We get 1 bit of growth for signed*signed (rmax = -2**aFmt.I * -2**bFmt.I).
+        constant Growth_c   : natural := min(a_fmt.S, b_fmt.S);
         constant Signed_c   : natural := max(a_fmt.S, b_fmt.S);
     begin
-        return (
-            Signed_c,
-            a_fmt.I + b_fmt.I + Signed_c,
-            a_fmt.F + b_fmt.F
-        );
+        return (Signed_c, a_fmt.I + b_fmt.I + Growth_c, a_fmt.F + b_fmt.F);
     end;
     
     function cl_fix_neg_fmt(a_fmt : FixFormat_t) return FixFormat_t is
@@ -1050,35 +1057,39 @@ package body en_cl_fix_pkg is
         round       : FixRound_t    := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        constant TempSigned_c   : natural := max(a_fmt.S, b_fmt.S);
-        constant TempFmt_c      : FixFormat_t :=
-            (
-                S   => TempSigned_c,
-                I   => a_fmt.I + b_fmt.I + TempSigned_c,
-                F   => a_fmt.F + b_fmt.F
-            );
-        variable a_v        : std_logic_vector(a'length-1 downto 0);
-        variable b_v        : std_logic_vector(b'length-1 downto 0);
-        variable temp_v     : std_logic_vector(cl_fix_width(TempFmt_c)-1 downto 0);
-        variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
+        
+        -- VHDL doesn't define a * operator for mixed signed*unsigned or unsigned*signed.
+        -- Just inside cl_fix_mult, it is safe to define them for local use.
+        function "*"(x : signed; y : unsigned) return signed is
+            constant Temp_c : signed := x * ('0' & signed(y));
+        begin
+            -- Drop the redundant MSB
+            return Temp_c(Temp_c'high-1 downto Temp_c'low);
+        end function;
+        
+        function "*"(x : unsigned; y : signed) return signed is
+        begin
+            return y * x;
+        end function;
+        
+        constant mid_fmt_c      : FixFormat_t := cl_fix_mult_fmt(a_fmt, b_fmt);
+        variable temp_v         : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
+        variable result_v       : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
-        a_v := a;
-        b_v := b;
         if a_fmt.S = 1 then
             if b_fmt.S = 1 then
-                temp_v := std_logic_vector(signed(a_v) * signed(b_v));
+                temp_v := std_logic_vector(signed(a) * signed(b));
             else
-                temp_v := std_logic_vector(signed(a_v) * ("0" & signed(b_v)));
+                temp_v := std_logic_vector(signed(a) * unsigned(b));
             end if;
         else
             if b_fmt.S = 1 then
-                temp_v := std_logic_vector(("0" & signed(a_v)) * signed(b_v));
+                temp_v := std_logic_vector(unsigned(a) * signed(b));
             else
-                temp_v := std_logic_vector(unsigned(a_v) * unsigned(b_v));
+                temp_v := std_logic_vector(unsigned(a) * unsigned(b));
             end if;
         end if;
-        result_v := cl_fix_resize(temp_v, TempFmt_c, result_fmt, round, saturate);
-        return result_v;
+        return cl_fix_resize(temp_v, mid_fmt_c, result_fmt, round, saturate);
     end;
     
     function cl_fix_compare(

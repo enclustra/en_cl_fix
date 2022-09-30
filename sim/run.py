@@ -66,6 +66,17 @@ def create_test_suite(vu, args):
                         generics=dict(),
                         pre_config=cl_fix_sub_cosim.run)
     
+    ###############
+    # cl_fix_mult #
+    ###############
+    cl_fix_mult_cosim = cosim("cl_fix_mult")
+    cl_fix_mult_tb = lib.test_bench("cl_fix_mult_tb")
+    
+    for test in cl_fix_mult_tb.get_tests("test"):
+        test.add_config(name=(f"Test"),
+                        generics=dict(),
+                        pre_config=cl_fix_mult_cosim.run)
+    
     ###############################################################################################
     # Set compile and simulation options
     ###############################################################################################
