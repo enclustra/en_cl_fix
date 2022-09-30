@@ -52,8 +52,6 @@ package en_cl_fix_pkg is
     -- Format Functions
     -----------------------------------------------------------------------------------------------
     
-    function cl_fix_format(S : natural; I : integer; F : integer) return FixFormat_t;
-    
     function cl_fix_width(fmt : FixFormat_t) return natural;
     
     function cl_fix_max_value(fmt : FixFormat_t) return std_logic_vector;
@@ -87,12 +85,6 @@ package en_cl_fix_pkg is
     function cl_fix_round_from_string(Str : string) return FixRound_t;
     
     function cl_fix_saturate_from_string(Str : string) return FixSaturate_t;
-    
-    function cl_fix_max_real(fmt : FixFormat_t) return real;
-    
-    function cl_fix_min_real(fmt : FixFormat_t) return real;
-    
-    function cl_fix_sign(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic;
 
     -----------------------------------------------------------------------------------------------
     -- Type Conversions
@@ -117,14 +109,6 @@ package en_cl_fix_pkg is
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector;
-    
-    function cl_fix_fix(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
-    
-    function cl_fix_floor(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
-    
-    function cl_fix_ceil(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
-    
-    function cl_fix_round(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector;
     
     function cl_fix_in_range(a : std_logic_vector; a_fmt : FixFormat_t; result_fmt : FixFormat_t; round : FixRound_t := Trunc_s) return boolean;
     
@@ -244,6 +228,20 @@ package body en_cl_fix_pkg is
             return b;
         end if;
     end;
+    
+    function max_real(fmt : FixFormat_t) return real is
+    begin
+        return 2.0**fmt.I - 2.0**(-fmt.F);
+    end function;
+    
+    function min_real(fmt : FixFormat_t)return real is
+    begin
+        if fmt.S = 1 then
+            return -2.0**fmt.I;
+        else
+            return 0.0;
+        end if;
+    end function;
     
     function to01(sl : std_logic) return std_logic is
         variable result_v : std_logic;
@@ -416,15 +414,6 @@ package body en_cl_fix_pkg is
     -----------------------------------------------------------------------------------------------
     -- Public Functions
     -----------------------------------------------------------------------------------------------
-    
-    function cl_fix_format(S : natural; I : integer; F : integer) return FixFormat_t is
-    begin
-        assert S + I + F >= 0
-            report "cl_fix_format : S + I + F cannot be negative."
-            severity failure;
-        
-        return (S, I, F);
-    end;
     
     function cl_fix_width(fmt : FixFormat_t) return natural is
     begin
@@ -641,36 +630,6 @@ package body en_cl_fix_pkg is
         return None_s;
     end;
     
-    function cl_fix_max_real(fmt : FixFormat_t) return real is
-        variable Range_v, Lsb_v : real;
-    begin
-        Range_v := 2.0**fmt.I;
-        Lsb_v := 2.0**(-fmt.F);
-        return Range_v-Lsb_v;
-    end function;
-    
-    function cl_fix_min_real(fmt : FixFormat_t)return real is
-        variable Range_v : real;
-    begin
-        if fmt.S = 1 then
-            Range_v := 2.0**fmt.I;
-            return -Range_v;
-        else
-            return 0.0;
-        end if;
-    end function;
-    
-    function cl_fix_sign(a : std_logic_vector; a_fmt: FixFormat_t) return std_logic is
-        variable a_v : std_logic_vector(a'length-1 downto 0);
-    begin
-        a_v := a;
-        if a_fmt.S = 1 then
-            return a_v(a_v'high);
-        else
-            return '0';
-        end if;
-    end;
-    
     function cl_fix_from_real(a : real; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector is
         constant ChunkSize_c    : positive := 30;
         constant ChunkCount_c   : positive := (cl_fix_width(result_fmt) + ChunkSize_c - 1)/ChunkSize_c;
@@ -679,10 +638,10 @@ package body en_cl_fix_pkg is
         variable Result_v       : std_logic_vector(ChunkSize_c*ChunkCount_c-1 downto 0);
     begin
         -- Limit
-        if a > cl_fix_max_real(result_fmt) then
-            ASat_v := cl_fix_max_real(result_fmt);
-        elsif a < cl_fix_min_real(result_fmt) then
-            ASat_v := cl_fix_min_real(result_fmt);
+        if a > max_real(result_fmt) then
+            ASat_v := max_real(result_fmt);
+        elsif a < min_real(result_fmt) then
+            ASat_v := min_real(result_fmt);
         else
             ASat_v := a;
         end if;
@@ -854,50 +813,6 @@ package body en_cl_fix_pkg is
         end if;
         result_v := std_logic_vector(temp_v(ResultWidth_c+CutFracBits_c-1 downto CutFracBits_c));
         return result_v;
-    end;
-    
-    function cl_fix_fix(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
-        constant ResultFmt_c    : FixFormat_t :=
-            (
-                S   => a_fmt.S,
-                I   => a_fmt.I,
-                F   => 0
-            );
-    begin
-        return cl_fix_resize(a, a_fmt, ResultFmt_c, SymZero_s, None_s);
-    end;
-    
-    function cl_fix_floor(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
-        constant ResultFmt_c    : FixFormat_t :=
-            (
-                S   => a_fmt.S,
-                I   => a_fmt.I,
-                F   => 0
-            );
-    begin
-        return cl_fix_resize(a, a_fmt, ResultFmt_c, NonSymNeg_s, None_s);
-    end;
-    
-    function cl_fix_ceil(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
-        constant ResultFmt_c    : FixFormat_t :=
-            (
-                S   => a_fmt.S,
-                I   => a_fmt.I,
-                F   => 0
-            );
-    begin
-        return cl_fix_resize(a, a_fmt, ResultFmt_c, NonSymPos_s, None_s);
-    end;
-    
-    function cl_fix_round(a : std_logic_vector; a_fmt : FixFormat_t) return std_logic_vector is
-        constant ResultFmt_c    : FixFormat_t :=
-            (
-                S   => a_fmt.S,
-                I   => a_fmt.I,
-                F   => 0
-            );
-    begin
-        return cl_fix_resize(a, a_fmt, ResultFmt_c, SymInf_s, None_s);
     end;
     
     function cl_fix_in_range(
