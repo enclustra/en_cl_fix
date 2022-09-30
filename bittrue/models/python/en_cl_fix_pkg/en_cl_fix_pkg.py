@@ -37,7 +37,7 @@ def cl_fix_is_wide(fmt : FixFormat) -> bool:
     # both signed and unsigned numbers.
     return cl_fix_width(fmt) > 53
 
-def cl_fix_string_from_format(fmt : FixFormat) -> str:
+def cl_fix_format_to_string(fmt : FixFormat) -> str:
     return str(fmt)
 
 def cl_fix_max_value(rFmt : FixFormat):
@@ -54,97 +54,6 @@ def cl_fix_min_value(rFmt : FixFormat):
             return -2.0**rFmt.I
         else:
             return 0.0
-
-def cl_fix_sign(a, aFmt : FixFormat):
-    if aFmt.S == 0:
-        return 0
-    else:
-        return np.where(a < 0, 1, 0)
-
-def cl_fix_int(a, aFmt : FixFormat):
-    # Extract the integer part of the data values.
-    if type(a) == wide_fxp:
-        r = a.floor()
-        # Handle truncation to narrow representation.
-        if cl_fix_is_wide(r.fmt):
-            return r
-        else:
-            return r.to_narrow_fxp()
-    else:
-        rFmt = FixFormat(aFmt.S, aFmt.I, 0)
-        r = np.floor(a)
-        # Handle expansion to wide_fxp (F < 0).
-        if cl_fix_is_wide(rFmt):
-            return wide_fxp.FromNarrowFxp(r, rFmt)
-        else:
-            return r
-
-def cl_fix_frac(a, aFmt : FixFormat):
-    # Extract the fractional part of the data values.
-    # Note: Result has implicit frac bits if I<0.
-    if type(a) == wide_fxp:
-        r = a.frac_part()
-        
-        # Handle truncation to narrow representation.
-        if cl_fix_is_wide(r.fmt):
-            return r
-        else:
-            return r.to_narrow_fxp()
-    else:
-        if aFmt.S == 1 and aFmt.F > 53:
-            warnings.warn("cl_fix_frac : Possible loss of precision. Consider using wide_fxp.", Warning)
-        
-        # Drop the sign bit
-        if aFmt.S == 1:
-            offset = 2**aFmt.I
-            a = np.where(a < 0, a + offset, a)
-        
-        # Retain fractional LSBs
-        return a % 2**min(aFmt.I, 0)
-        
-def cl_fix_combine(sign : int, I : int, F : int, rFmt : FixFormat):
-    # Combines separate {sign_bit, integer_part, fractional_part} into a fixed-point number.
-    # For example: combine(0, 5, 1, FixFormat(True, 4, 2)) <==> 5.25
-    if cl_fix_is_wide(rFmt):
-        val = -sign*2**(rFmt.I+rFmt.F) + I*2**rFmt.F + F
-        return wide_fxp(val, rFmt)
-    else:
-        return -sign*2.0**rFmt.I + I + F*2.0**-rFmt.F
-
-def cl_fix_get_msb(a, aFmt : FixFormat, index : int):
-    if type(a) == wide_fxp:
-        return a.get_msb(index)
-    else:
-        a = np.array(a)
-        if aFmt.S == 1:
-            if index == 0:
-                return (a < 0).astype(int)
-            else:
-                return ((a * 2.0 ** (index - aFmt.I - 1)) % 1 >= 0.5).astype(int)
-        else:
-            return ((a * 2.0 ** (index - aFmt.I)) % 1 >= 0.5).astype(int)
-
-def cl_fix_get_lsb(a, aFmt : FixFormat, index : int):
-    return cl_fix_get_msb(a, aFmt, cl_fix_width(aFmt)-1-index)
-
-def cl_fix_set_msb(a, aFmt : FixFormat, index : int, value):
-    if type(a) == wide_fxp:
-        return a.set_msb(index, value)
-    else:
-        if np.any(value > 1) or np.any(value < 0):
-            raise Exception("cl_fix_set_msb: only 1 and 0 allowed for value")
-        value = int(value)
-        current = cl_fix_get_msb(a, aFmt, index)
-        if aFmt.S == 1:
-            if index == 0:
-                return ((value - 0.5) - (current - 0.5)) * -2.0 ** (aFmt.I) + a
-            else:
-                return ((value - 0.5) - (current - 0.5)) * 2.0 ** (aFmt.I - index) + a
-        else:
-            return ((value - 0.5) - (current - 0.5)) * 2.0 ** (aFmt.I - index - 1) + a
-
-def cl_fix_set_lsb(a, aFmt : FixFormat, index : int, value):
-    return cl_fix_set_msb(a, aFmt, cl_fix_width(aFmt)-1-index, value)
 
 def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.SatWarn_s):
     
@@ -296,11 +205,6 @@ def cl_fix_abs( a, aFmt : FixFormat,
     a = np.where(a < 0, aNeg, aPos)
     return cl_fix_resize(a, midFmt, rFmt, rnd, sat)
 
-def cl_fix_sabs(a, aFmt : FixFormat,
-                rFmt : FixFormat,
-                rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
-    return cl_fix_sneg(a, aFmt, a < 0, rFmt, rnd, sat)
-
 def cl_fix_neg(a, aFmt : FixFormat,
               rFmt : FixFormat,
               rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
@@ -311,21 +215,6 @@ def cl_fix_neg(a, aFmt : FixFormat,
         a = cl_fix_resize(a, aFmt, midFmt)
     
     return cl_fix_resize(-a, midFmt, rFmt, rnd, sat)
-
-def cl_fix_sneg(a, aFmt : FixFormat,
-                enable : bool,
-                rFmt : FixFormat,
-                rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
-    enable = np.array(enable)
-    temp_fmt = FixFormat(True, aFmt.I, max(aFmt.F, rFmt.F))
-    temp = cl_fix_resize(a, aFmt, temp_fmt, FixRound.Trunc_s, FixSaturate.None_s)
-    if type(temp) == wide_fxp:
-        temp = -(enable.astype(int)) + (-1) ** enable.astype(int)*temp.data
-        temp = wide_fxp(temp, temp_fmt)
-    else:
-        temp = -(enable.astype(int))*2 ** -temp_fmt.F + (-1.0) ** enable.astype(int)*temp
-        temp = temp.astype(float)
-    return cl_fix_resize(temp, temp_fmt, rFmt, rnd, sat)
 
 def cl_fix_add( a, aFmt : FixFormat,
                 b, bFmt : FixFormat,
@@ -363,35 +252,6 @@ def cl_fix_addsub(  a, aFmt : FixFormat,
     radd = cl_fix_add(a, aFmt, b, bFmt, rFmt, rnd, sat)
     rsub = cl_fix_sub(a, aFmt, b, bFmt, rFmt, rnd, sat)
     return np.where(add, radd, rsub)
-
-def cl_fix_saddsub( a, aFmt : FixFormat,
-                    b, bFmt : FixFormat,
-                    add,    #bool or bool array
-                    rFmt : FixFormat,
-                    rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
-    if type(a) == wide_fxp or type(b) == wide_fxp:
-        # TODO
-        raise NotImplementedError()
-    else:
-        temp_fmt = FixFormat.ForAdd(aFmt, bFmt)
-        notAdd = np.array(np.logical_not(add),dtype="int32")
-        temp = a + (-1.0) ** notAdd * b - notAdd * 2.0 ** -temp_fmt.F
-        return cl_fix_resize(temp, temp_fmt, rFmt, rnd, sat)
-
-def cl_fix_mean(a, aFmt : FixFormat,
-                b, bFmt : FixFormat,
-                rFmt : FixFormat,
-                rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
-    temp_fmt = FixFormat.ForAdd(aFmt, bFmt)
-    temp = cl_fix_add(a, aFmt, b, bFmt, temp_fmt, FixRound.Trunc_s, FixSaturate.None_s)
-    return cl_fix_shift(temp, temp_fmt, -1, rFmt, rnd, sat)
-
-def cl_fix_mean_angle(  a, aFmt : FixFormat,
-                        b, bFmt : FixFormat,
-                        precise : bool,
-                        rFmt : FixFormat,
-                        rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
-    raise NotImplementedError()
 
 def cl_fix_shift(  a, aFmt : FixFormat,
                    shift : int,
@@ -457,7 +317,7 @@ def cl_fix_write_formats(fmts, names, filename):
             fmts = np.array(fmts, ndmin=1)
         
         for fmt in fmts:
-            fid.write(cl_fix_string_from_format(fmt) + "\n")
+            fid.write(cl_fix_format_to_string(fmt) + "\n")
     
 ########################################################################################################################
 # Simulation utility functions (not available in VHDL)
