@@ -35,6 +35,10 @@ bS_values = [0,1]
 bI_values = np.arange(-6,1+6)
 bIplusF = 4
 
+# shift test points
+min_shift_values = np.arange(-3,1+3)
+shift_range_values = np.arange(5)
+
 ###################################################################################################
 # Run
 ###################################################################################################
@@ -173,3 +177,31 @@ for aS in aS_values:
             assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "neg: Format is excessively wide." \
                 + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
             
+            ################
+            # cl_fix_shift #
+            ################
+            for min_shift in min_shift_values:
+                for shift_range in shift_range_values:
+                    max_shift = min_shift + shift_range
+                    
+                    # Calculate the extreme results
+                    rmax = amax * 2.0**max_shift
+                    if amax < 0:
+                        rmin = amin * 2.0**max_shift
+                    else:
+                        rmin = amin * 2.0**min_shift
+                    
+                    # Format to test
+                    rFmt = FixFormat.ForShift(aFmt, min_shift, max_shift)
+                    
+                    # Check int bits are sufficient
+                    assert rmax <= cl_fix_max_value(rFmt), "shift: Max value exceeded" \
+                        + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                    assert rmin >= cl_fix_min_value(rFmt), "shift: Min value exceeded" \
+                        + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                    
+                    # Check int bits are necessary
+                    smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
+                    assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "shift: Format is excessively wide." \
+                        + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                    

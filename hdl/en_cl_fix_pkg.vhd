@@ -947,14 +947,13 @@ package body en_cl_fix_pkg is
         round       : FixRound_t    := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t :=
-            (
-                S   => result_fmt.S,
-                I   => result_fmt.I - shift,
-                F   => result_fmt.F + shift
-            );
+        -- Implicitly shift by resizing to a dummy format, then reinterpreting as result_fmt.
+        constant dummy_fmt_c  : FixFormat_t := (result_fmt.S, result_fmt.I - shift, result_fmt.F + shift);
     begin
-        return cl_fix_resize(a, a_fmt, TempFmt_c, round, saturate);
+        -- Note: This function performs a lossless shift (equivalent to *2.0**shift), then resizes
+        --       to the output format. The initial shift does NOT truncate any bits.
+        -- Note: "shift" direction is left. (So shift<0 shifts right).
+        return cl_fix_resize(a, a_fmt, dummy_fmt_c, round, saturate);
     end;
     
     function cl_fix_mult(
