@@ -718,6 +718,20 @@ package body en_cl_fix_pkg is
     
     function cl_fix_get_bits_as_int(a : std_logic_vector; aFmt : FixFormat_t) return integer is
     begin
+        -- Modelsim throws warnings if to_integer() is called on 1-bit signed or any 0-bit input.
+        -- We handle these special cases explicitly to avoid the warnings.
+        if cl_fix_width(aFmt) = 0 then
+            return 0;
+        elsif aFmt.S = 1 and cl_fix_width(aFmt) = 1 then
+            if a(0) = '1' then
+                -- Note: -1 in the integer representation is -2**aFmt.I in fixed point.
+                return -1;
+            else
+                return 0;
+            end if;
+        end if;
+        
+        -- Normal cases
         if aFmt.S = 1 then
             return to_integer(signed(a));
         else
