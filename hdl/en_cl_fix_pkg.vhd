@@ -579,31 +579,26 @@ package body en_cl_fix_pkg is
         Index_v := Str'low;
         Index_v := string_find_next_match(Str, '(', Index_v);
         assert Index_v > 0
-            report "cl_fix_format_from_string: wrong Format, missing '('"
-            severity error;
-        -- Allow signedness to be specified as an integer
+            report "cl_fix_format_from_string: Format string is missing '('" severity Failure;
+        -- Number of sign bits must be 0 or 1
         if Str(Index_v+1) = '0' then
             Format_v.S := 0;
         elsif Str(Index_v+1) = '1' then
             Format_v.S := 1;
         else
-            -- Parse signedness as boolean
-            Format_v.S := string_parse_int(Str, Index_v+1);
+            report "cl_fix_format_from_string: Unsupported number of sign bits: " & Str(Index_v+1) severity Failure;
         end if;
         Index_v := string_find_next_match(Str, ',', Index_v+1);
         assert Index_v > 0
-            report "cl_fix_format_from_string: wrong Format, missing ',' between IsSigned and I "
-            severity error;
+            report "cl_fix_format_from_string: Format string is missing ',' between S and I" severity Failure;
         Format_v.I := string_parse_int(Str, Index_v+1);
         Index_v := string_find_next_match(Str, ',', Index_v+1);
         assert Index_v > 0
-            report "cl_fix_format_from_string: wrong Format, missing ',' between I and F "
-            severity error;
+            report "cl_fix_format_from_string: Format string is missing ',' between I and F" severity Failure;
         Format_v.F := string_parse_int(Str, Index_v+1);
         Index_v := string_find_next_match(Str, ')', Index_v+1);
         assert Index_v > 0
-            report "cl_fix_format_from_string: wrong Format, missing ')'"
-            severity error;
+            report "cl_fix_format_from_string: Format string is missing ')'" severity Failure;
         return Format_v;
     end;
     
