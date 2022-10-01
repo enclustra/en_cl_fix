@@ -99,6 +99,17 @@ def create_test_suite(vu, args):
                         generics=dict(),
                         pre_config=cl_fix_neg_cosim.run)
     
+    ##############
+    # cl_fix_abs #
+    ##############
+    cl_fix_abs_cosim = cosim("cl_fix_abs")
+    cl_fix_abs_tb = lib.test_bench("cl_fix_abs_tb")
+    
+    for test in cl_fix_abs_tb.get_tests("test"):
+        test.add_config(name=(f"Test"),
+                        generics=dict(),
+                        pre_config=cl_fix_abs_cosim.run)
+    
     ################
     # cl_fix_shift #
     ################
