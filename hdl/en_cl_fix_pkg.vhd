@@ -316,7 +316,7 @@ package body en_cl_fix_pkg is
         variable MatchIdx_v         : integer := -1;
     begin
         -- Checks
-        assert StartIdx <= Str'high and StartIdx >= Str'low report "string_find_next_match: StartIdx out of range" severity error;
+        assert StartIdx <= Str'high and StartIdx >= Str'low report "string_find_next_match: StartIdx out of range" severity Failure;
         
         -- Implementation
         while (not Match_v) and (CurrentIdx_v <= Str'high) loop
@@ -335,7 +335,7 @@ package body en_cl_fix_pkg is
         variable MatchIdx_v         : integer := -1;
     begin
         -- Checks
-        assert StartIdx <= Str'high and StartIdx >= Str'low report "string_find_next_match: StartIdx out of range" severity error;
+        assert StartIdx <= Str'high and StartIdx >= Str'low report "string_find_next_match: StartIdx out of range" severity Failure;
         
         -- Implementation
         while (not Match_v) and (CurrentIdx_v-1 <= Str'length-Pattern'length) loop
@@ -383,7 +383,7 @@ package body en_cl_fix_pkg is
         variable AbsoluteVal_v      : integer   := 0;
     begin
         -- Checks
-        assert StartIdx <= Str'high and StartIdx >= Str'low report "string_parse_int: StartIdx out of range" severity error;
+        assert StartIdx <= Str'high and StartIdx >= Str'low report "string_parse_int: StartIdx out of range" severity Failure;
         
         -- remove leading spaces
         while Str(CurrentIdx_v) = ' ' loop
@@ -1031,21 +1031,31 @@ package body en_cl_fix_pkg is
         -- Convert to same type
         AFull_v := cl_fix_resize(a, aFmt, FullFmt_c);
         BFull_v := cl_fix_resize(b, bFmt, FullFmt_c);
-        -- Convert to unsigned representation with offset
-        if FullFmt_c.S = 1 then
-            AFull_v(AFull_v'high) := not AFull_v(AFull_v'high);
-            BFull_v(BFull_v'high) := not BFull_v(BFull_v'high);
-        end if;
+        
         -- Compare
-        if    comparison = "a=b"  then return unsigned(AFull_v) = unsigned(BFull_v);
-        elsif comparison = "a<b"  then return unsigned(AFull_v) < unsigned(BFull_v);
-        elsif comparison = "a>b"  then return unsigned(AFull_v) > unsigned(BFull_v);
-        elsif comparison = "a<=b" then return unsigned(AFull_v) <= unsigned(BFull_v);
-        elsif comparison = "a>=b" then return unsigned(AFull_v) >= unsigned(BFull_v);
-        elsif comparison = "a!=b" then return unsigned(AFull_v) /= unsigned(BFull_v);
+        if FullFmt_c.S = 1 then
+            if    comparison = "="  then return signed(AFull_v) =  signed(BFull_v);
+            elsif comparison = "!=" then return signed(AFull_v) /= signed(BFull_v);
+            elsif comparison = "<"  then return signed(AFull_v) <  signed(BFull_v);
+            elsif comparison = ">"  then return signed(AFull_v) >  signed(BFull_v);
+            elsif comparison = "<=" then return signed(AFull_v) <= signed(BFull_v);
+            elsif comparison = ">=" then return signed(AFull_v) >= signed(BFull_v);
+            else
+                report "cl_fix_compare: Unrecognized comparison type: " & comparison severity Failure;
+                return false;
+            end if;
         else
-            report "###ERROR###: cl_fix_compare illegal comparison type [" & comparison & "]" severity error;
-            return false;
+            if    comparison = "="  then return unsigned(AFull_v) =  unsigned(BFull_v);
+            elsif comparison = "!=" then return unsigned(AFull_v) /= unsigned(BFull_v);
+            elsif comparison = "<"  then return unsigned(AFull_v) <  unsigned(BFull_v);
+            elsif comparison = ">"  then return unsigned(AFull_v) >  unsigned(BFull_v);
+            elsif comparison = "<=" then return unsigned(AFull_v) <= unsigned(BFull_v);
+            elsif comparison = ">=" then return unsigned(AFull_v) >= unsigned(BFull_v);
+            else
+                report "cl_fix_compare: Unrecognized comparison type: " & comparison severity Failure;
+                return false;
+            end if;
         end if;
+        
     end function;
 end;
