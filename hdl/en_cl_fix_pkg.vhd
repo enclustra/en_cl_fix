@@ -62,9 +62,13 @@ package en_cl_fix_pkg is
     
     function cl_fix_sub_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t;
     
+    function cl_fix_addsub_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t;
+    
     function cl_fix_mult_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t;
     
     function cl_fix_neg_fmt(a_fmt : FixFormat_t) return FixFormat_t;
+    
+    function cl_fix_abs_fmt(a_fmt : FixFormat_t) return FixFormat_t;
     
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; min_shift : integer; max_shift : integer) return FixFormat_t;
     
@@ -486,6 +490,17 @@ package body en_cl_fix_pkg is
         );
     end;
     
+    function cl_fix_addsub_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
+        constant add_fmt_c  : FixFormat_t := cl_fix_add_fmt(a_fmt, b_fmt);
+        constant sub_fmt_c  : FixFormat_t := cl_fix_sub_fmt(a_fmt, b_fmt);
+    begin
+        return (
+            max(add_fmt_c.S, sub_fmt_c.S),
+            max(add_fmt_c.I, sub_fmt_c.I),
+            max(add_fmt_c.F, sub_fmt_c.F)
+        );
+    end;
+    
     function cl_fix_mult_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
         -- We get 1 bit of growth for signed*signed (rmax = -2**aFmt.I * -2**bFmt.I).
         constant Growth_c   : natural := min(a_fmt.S, b_fmt.S);
@@ -497,6 +512,16 @@ package body en_cl_fix_pkg is
     function cl_fix_neg_fmt(a_fmt : FixFormat_t) return FixFormat_t is
     begin
         return (1, a_fmt.I + a_fmt.S, a_fmt.F);
+    end;
+    
+    function cl_fix_abs_fmt(a_fmt : FixFormat_t) return FixFormat_t is
+        constant neg_fmt_c  : FixFormat_t := cl_fix_neg_fmt(a_fmt);
+    begin
+        return (
+            max(a_fmt.S, neg_fmt_c.S),
+            max(a_fmt.I, neg_fmt_c.I),
+            max(a_fmt.F, neg_fmt_c.F)
+        );
     end;
     
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; min_shift : integer; max_shift : integer) return FixFormat_t is

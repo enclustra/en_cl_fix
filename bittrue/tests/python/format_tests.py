@@ -123,6 +123,31 @@ for aS in aS_values:
                 # The optimal number of frac bits is trivial: max(aFmt.F, bFmt.F)
                 assert rFmt.F == max(aFmt.F, bFmt.F), "sub: Unexpected number of frac bits"
                 
+                #################
+                # cl_fix_addsub #
+                #################
+                
+                # Calculate the extreme results
+                rmax = max(amax + bmax, amax - bmin)
+                rmin = min(amin + bmin, amin - bmax)
+                
+                # Format to test
+                rFmt = FixFormat.ForAddsub(aFmt, bFmt)
+                
+                # Check int bits are sufficient
+                assert rmax <= cl_fix_max_value(rFmt), "addsub: Max value exceeded" \
+                    + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                assert rmin >= cl_fix_min_value(rFmt), "addsub: Min value exceeded" \
+                    + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                
+                # Check int bits are necessary
+                smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
+                assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "addsub: Format is excessively wide." \
+                    + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                
+                # The optimal number of frac bits is trivial: max(aFmt.F, bFmt.F)
+                assert rFmt.F == max(aFmt.F, bFmt.F), "addsub: Unexpected number of frac bits"
+                
                 ###############
                 # cl_fix_mult #
                 ###############
@@ -190,6 +215,31 @@ for aS in aS_values:
             
             # The optimal number of frac bits is trivial: aFmt.F
             assert rFmt.F == aFmt.F, "neg: Unexpected number of frac bits"
+            
+            ##############
+            # cl_fix_abs #
+            ##############
+            
+            # Calculate the extreme results
+            rmax = max(amax, -amin)
+            rmin = min(amin, -amax)
+            
+            # Format to test
+            rFmt = FixFormat.ForAbs(aFmt)
+            
+            # Check int bits are sufficient
+            assert rmax <= cl_fix_max_value(rFmt), "abs: Max value exceeded" \
+                + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+            assert rmin >= cl_fix_min_value(rFmt), "abs: Min value exceeded" \
+                + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+            
+            # Check int bits are necessary
+            smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
+            assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "abs: Format is excessively wide." \
+                + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+            
+            # The optimal number of frac bits is trivial: aFmt.F
+            assert rFmt.F == aFmt.F, "abs: Unexpected number of frac bits"
             
             ################
             # cl_fix_shift #

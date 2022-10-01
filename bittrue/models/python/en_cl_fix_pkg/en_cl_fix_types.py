@@ -63,6 +63,13 @@ class FixFormat:
         
         return FixFormat(1, max(aFmt.I, bFmt.I) + max(rmin_growth, rmax_growth), max(aFmt.F, bFmt.F))
     
+    # Format for result of add-subtract
+    @staticmethod
+    def ForAddsub(aFmt, bFmt):
+        addFmt = FixFormat.ForAdd(aFmt, bFmt)
+        subFmt = FixFormat.ForSub(aFmt, bFmt)
+        return FixFormat(max(addFmt.S, subFmt.S), max(addFmt.I, subFmt.I), max(addFmt.F, subFmt.F))
+    
     # Format for result of multiplication
     @staticmethod
     def ForMult(aFmt, bFmt):
@@ -75,6 +82,12 @@ class FixFormat:
     @staticmethod
     def ForNeg(aFmt):
         return FixFormat(1, aFmt.I+aFmt.S, aFmt.F)
+    
+    # Format for result of absolute value
+    @staticmethod
+    def ForAbs(aFmt):
+        negFmt = FixFormat.ForNeg(aFmt)
+        return FixFormat(max(aFmt.S, negFmt.S), max(aFmt.I, negFmt.I), max(aFmt.F, negFmt.F))
     
     # Format for result of left-shift
     @staticmethod
