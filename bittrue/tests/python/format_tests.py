@@ -95,6 +95,9 @@ for aS in aS_values:
                 assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "add: Format is excessively wide." \
                     + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
                 
+                # The optimal number of frac bits is trivial: max(aFmt.F, bFmt.F)
+                assert rFmt.F == max(aFmt.F, bFmt.F), "add: Unexpected number of frac bits"
+                
                 ##############
                 # cl_fix_sub #
                 ##############
@@ -116,6 +119,9 @@ for aS in aS_values:
                 smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
                 assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "sub: Format is excessively wide." \
                     + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                
+                # The optimal number of frac bits is trivial: max(aFmt.F, bFmt.F)
+                assert rFmt.F == max(aFmt.F, bFmt.F), "sub: Unexpected number of frac bits"
                 
                 ###############
                 # cl_fix_mult #
@@ -154,7 +160,12 @@ for aS in aS_values:
                 smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
                 assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "mult: Format is excessively wide." \
                     + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
-            
+                
+                # The optimal number of frac bits is straightforward: aFmt.F + bFmt.F. For example,
+                # if we take +/- 1 LSB in each representation: (+/- 2**-aFmt.F) * (+/- 2**-bFmt.F)
+                # = +/- 2**-(aFmt.F + bFmt.F). No other inputs could need more frac bits.
+                assert rFmt.F == aFmt.F + bFmt.F, "mult: Unexpected number of frac bits"
+                
             ##############
             # cl_fix_neg #
             ##############
@@ -176,6 +187,9 @@ for aS in aS_values:
             smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
             assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "neg: Format is excessively wide." \
                 + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+            
+            # The optimal number of frac bits is trivial: aFmt.F
+            assert rFmt.F == aFmt.F, "neg: Unexpected number of frac bits"
             
             ################
             # cl_fix_shift #
@@ -204,4 +218,7 @@ for aS in aS_values:
                     smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
                     assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "shift: Format is excessively wide." \
                         + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                    
+                    # The optimal number of frac bits is trivial: aFmt.F - min_shift
+                    assert rFmt.F == aFmt.F - min_shift, "shift: Unexpected number of frac bits"
                     
