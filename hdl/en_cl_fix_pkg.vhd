@@ -511,6 +511,7 @@ package body en_cl_fix_pkg is
     
     function cl_fix_neg_fmt(a_fmt : FixFormat_t) return FixFormat_t is
     begin
+        -- We get 1 bit of growth for signed inputs due to the asymmetry of two's complement.
         return (1, a_fmt.I + a_fmt.S, a_fmt.F);
     end;
     
