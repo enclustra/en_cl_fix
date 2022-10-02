@@ -54,7 +54,7 @@ architecture rtl of cl_fix_neg_tb is
         variable Idx_v      : natural := 0;
         variable Result_v   : std_logic_vector(cl_fix_width(RFmt_c(i))-1 downto 0);
     begin
-        -- The cosim script generates all possible values of both inputs (counters).
+        -- The cosim script generates all possible input values (counter).
         -- We repeat the same pattern here.
         for a in Amin to Amax loop
             -- Calculate result in VHDL
