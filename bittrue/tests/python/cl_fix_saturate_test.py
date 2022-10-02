@@ -32,28 +32,24 @@ def get_data(fmt : FixFormat):
     return cl_fix_from_bits_as_int(int_data, fmt)
 
 def sat_check(a, aFmt, rFmt, sat):
+    # Copy array
+    a = a.copy()
+    
+    assert rFmt.F == aFmt.F, "Number of fractional bits cannot change"
     
     if sat is FixSaturate.None_s or sat is FixSaturate.Warn_s:
-        # Get integer representation
-        a = cl_fix_get_bits_as_int(a, aFmt)
-        
-        # Interpret bits as unsigned
-        if aFmt.S == 1:
-            sign_weight = 2**(aFmt.I + aFmt.F)
-            a = np.where(a < 0, a + 2*sign_weight, a)
-        
-        # Align binary point
-        a = a * 2**(rFmt.F - aFmt.F)
-        
-        # Wrap
-        a = a % 2**cl_fix_width(rFmt)
-        
-        # Interpret bits as signed
-        if rFmt.S == 1:
-            a = np.where(a >= 2**(cl_fix_width(rFmt)-1), a - 2**cl_fix_width(rFmt), a)
-        
-        return cl_fix_from_bits_as_int(a, rFmt)
+        # No saturation. Wrap into range.
+        min_r = cl_fix_min_value(rFmt)
+        max_r = cl_fix_max_value(rFmt)
+        offset = 2.0 ** (rFmt.S + rFmt.I)
+        for i in range(len(a)):
+            while a[i] < min_r:
+                a[i] += offset
+            while a[i] > max_r:
+                a[i] -= offset
+        return a
     elif sat is FixSaturate.Sat_s or sat is FixSaturate.SatWarn_s:
+        # Saturation
         a = np.where(a > cl_fix_max_value(rFmt), cl_fix_max_value(rFmt), a)
         a = np.where(a < cl_fix_min_value(rFmt), cl_fix_min_value(rFmt), a)
         return a
@@ -103,26 +99,20 @@ for aS in aS_values:
                         rFmt = FixFormat(rS, rI, rF)
                     except AssertionError:
                         continue
-                
+                    
                     for sat in FixSaturate:
                         # Calculate using cl_fix_saturate
                         r = cl_fix_saturate(a, aFmt, rFmt, sat)
                         
                         # Repeat using wide_fxp (but still with narrow data)
-                        # r_wide = cl_fix_round(wide_fxp.FromNarrowFxp(a, aFmt), aFmt, rFmt, rnd)
+                        r_wide = cl_fix_saturate(wide_fxp.FromNarrowFxp(a, aFmt), aFmt, rFmt, sat)
                         
                         # Local checker function
                         expected = sat_check(a, aFmt, rFmt, sat)
                         
                         # Check numerical correctness
-                        # assert np.array_equal(r, expected), "Numerical error detected."
-                        # assert np.array_equal(r_wide, expected), "Numerical error detected (wide_fxp)."
-                        
-                        if not np.array_equal(r, expected):
-                            print(f"{a} {aFmt} --> {rFmt} {sat}")
-                            print(r)
-                            print(expected)
-                            assert False
+                        assert np.array_equal(r, expected), "Numerical error detected."
+                        assert np.array_equal(r_wide, expected), "Numerical error detected (wide_fxp)."
                         
                         test_count += 1
 

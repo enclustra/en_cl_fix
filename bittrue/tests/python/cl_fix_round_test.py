@@ -32,6 +32,8 @@ def get_data(fmt : FixFormat):
     return cl_fix_from_bits_as_int(int_data, fmt)
 
 def round_check(a, aFmt, rFmt, rnd):
+    # Copy array
+    a = a.copy()
     
     def NonSymPos(a, aFmt, rFmt, rnd):
         a = a + 2.0**-(rFmt.F+1)

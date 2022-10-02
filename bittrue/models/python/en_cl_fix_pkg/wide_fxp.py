@@ -297,7 +297,7 @@ class wide_fxp:
         # Saturation
         if sat == FixSaturate.None_s or sat == FixSaturate.Warn_s:
             # Wrap
-            satSpan = 2**(rFmt.I + fr)
+            satSpan = 2**(rFmt.I + rFmt.F)
             if rFmt.S == 1:
                 val = ((val + satSpan) % (2*satSpan)) - satSpan
             else:
