@@ -10,13 +10,29 @@
 from enum import Enum
 import warnings
 
+class FixRound(Enum):
+    Trunc_s = 0
+    NonSymPos_s = 1
+    NonSymNeg_s = 2
+    SymInf_s = 3
+    SymZero_s = 4
+    ConvEven_s = 5
+    ConvOdd_s = 6
+
+class FixSaturate(Enum):
+    None_s = 0
+    Warn_s = 1
+    Sat_s = 2
+    SatWarn_s = 3
+
 class FixFormat:
     def __init__(self, S : int, I : int, F : int):
         assert S == 0 or S == 1, "S must be 0 or 1"
-        if S+I+F < 0:
-            Inew = -(S+F)
-            warnings.warn(f"Format width cannot be negative. Changing ({S}, {I}, {F}) to ({S}, {Inew}, {F})", Warning)
-            I = Inew
+        # We allow unsigned null formats such as: (0,0,0) or (0,-5,5).
+        # We allow signed sign-bit only such as:  (1,0,0) or (1,-5,5).
+        # We do not allow signed null formats such as (1,-1,0) or negative widths such as (0,-1,0)
+        # as they create awkward edge cases (e.g. in cl_fix_max_value) and have no practical use.
+        assert I+F >= 0, "I+F must be at least 0"
         self.S = int(S)
         self.I = int(I)
         self.F = int(F)
@@ -97,6 +113,21 @@ class FixFormat:
         assert minShift <= maxShift, f"minShift ({minShift}) must be <= maxShift ({maxShift})"
         return FixFormat(aFmt.S, aFmt.I + maxShift, aFmt.F - minShift)
     
+    # Format for result of rounding
+    @staticmethod
+    def ForRound(aFmt, rFracBits : int, rnd : FixRound):
+        if rFracBits >= aFmt.F:
+            # If fractional bits are not being reduced, then nothing happens to int bits.
+            bitGrowth = 0
+        elif rnd == FixRound.Trunc_s:
+            # Crude truncation has no effect on int bits.
+            bitGrowth = 0
+        else:
+            # All other rounding modes can overflow into +1 int bit.
+            bitGrowth = 1
+        
+        return FixFormat(aFmt.S, aFmt.I + bitGrowth, rFracBits)
+    
     def __repr__(self):
         return "FixFormat" + f"({self.S}, {self.I}, {self.F})"
 
@@ -108,18 +139,3 @@ class FixFormat:
     
     def width(self):
         return self.S + self.I + self.F
-
-class FixRound(Enum):
-    Trunc_s = 0
-    NonSymPos_s = 1
-    NonSymNeg_s = 2
-    SymInf_s = 3
-    SymZero_s = 4
-    ConvEven_s = 5
-    ConvOdd_s = 6
-
-class FixSaturate(Enum):
-    None_s = 0
-    Warn_s = 1
-    Sat_s = 2
-    SatWarn_s = 3

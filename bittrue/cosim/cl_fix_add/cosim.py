@@ -95,6 +95,7 @@ for aS in aS_values:
                 # Limit I+F (to keep simulation time reasonable)
                 bF = bIplusF-bI
                 bFmt = FixFormat(bS, bI, bF)
+                addFmt = FixFormat.ForAdd(aFmt, bFmt)
                 
                 # Generate B data
                 b = get_data(bFmt)
@@ -117,6 +118,12 @@ for aS in aS_values:
                         #######
                         for rnd in rnd_values:
                             
+                            # Skip any parameter combinations that lead to invalid internal formats
+                            try:
+                                FixFormat.ForRound(addFmt, rF, rnd) 
+                            except:
+                                continue
+                            
                             #######
                             # sat #
                             #######
@@ -137,6 +144,8 @@ for aS in aS_values:
                                 test_sat.append(sat.value)
                                 
                                 test_count += 1
+
+print(f"Cosim generated {test_count} tests.")
 
 # Save formats
 aFmt_names = ["aFmt" + str(i) for i in range(test_count)]

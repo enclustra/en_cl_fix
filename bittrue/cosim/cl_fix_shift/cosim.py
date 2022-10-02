@@ -80,7 +80,9 @@ for aS in aS_values:
         a = get_data(aFmt)
         
         for shift in shift_values:
-                
+            
+            shiftFmt = FixFormat.ForShift(aFmt, shift)
+            
             ########
             # rFmt #
             ########
@@ -94,6 +96,12 @@ for aS in aS_values:
                     # rnd #
                     #######
                     for rnd in rnd_values:
+                        
+                        # Skip any parameter combinations that lead to invalid internal formats
+                        try:
+                            FixFormat.ForRound(shiftFmt, rF, rnd)
+                        except:
+                            continue
                         
                         #######
                         # sat #
@@ -115,6 +123,8 @@ for aS in aS_values:
                             test_sat.append(sat.value)
                             
                             test_count += 1
+
+print(f"Cosim generated {test_count} tests.")
 
 # Save formats
 aFmt_names = ["aFmt" + str(i) for i in range(test_count)]
