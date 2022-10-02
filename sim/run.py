@@ -143,6 +143,17 @@ def create_test_suite(vu, args):
                         generics=dict(),
                         pre_config=cl_fix_round_cosim.run)
     
+    ###################
+    # cl_fix_saturate #
+    ###################
+    cl_fix_saturate_cosim = cosim("cl_fix_saturate")
+    cl_fix_saturate_tb = lib.test_bench("cl_fix_saturate_tb")
+    
+    for test in cl_fix_saturate_tb.get_tests("test"):
+        test.add_config(name=(f"Test"),
+                        generics=dict(),
+                        pre_config=cl_fix_saturate_cosim.run)
+    
     ###############################################################################################
     # Set compile and simulation options
     ###############################################################################################
