@@ -223,20 +223,19 @@ class wide_fxp:
         return wide_fxp._FromIntScalar(self._data.min(), self._fmt)
 
 
-    # Create a new wide_fxp object with a new fixed-point format (after rounding and saturation).
-    def resize(self, rFmt : FixFormat,
-               rnd : FixRound = FixRound.Trunc_s,
-               sat : FixSaturate = FixSaturate.None_s):
+    # Create a new wide_fxp object with a new fixed-point format after rounding.
+    def round(self, rFmt : FixFormat, rnd : FixRound = FixRound.Trunc_s):
+        assert rFmt == FixFormat.ForRound(self._fmt, rFmt.F, rnd), "round: Invalid result format. Use FixFormat.ForRound()."
         
         # Copy object data so self is not modified and take floor to enforce int object type
         val = np.floor(self._data)
-        fmt = self._fmt
         
-        # Shorthand
+        # Shorthands
+        fmt = self._fmt
         f = fmt.F
         fr = rFmt.F
         
-        # Rounding
+        # Add offset before truncating to implement rounding
         if fr < f:
             # Frac bits decrease => do rounding
             if rnd is FixRound.Trunc_s:
@@ -282,12 +281,19 @@ class wide_fxp:
         else:
             # Frac bits don't change => No rounding or scaling
             pass
+            
+        return wide_fxp(val, rFmt)
 
+    # Create a new wide_fxp object with a new fixed-point format after saturation.
+    def saturate(self, rFmt : FixFormat, sat : FixSaturate = FixSaturate.None_s):
+        # Copy object data so self is not modified and take floor to enforce int object type
+        val = np.floor(self._data)
+        
         # Saturation warning
         if sat == FixSaturate.Warn_s or sat == FixSaturate.SatWarn_s:
             if np.any(val > wide_fxp.MaxValue(rFmt).data) or np.any(val < wide_fxp.MinValue(rFmt).data):
                 warnings.warn("resize : Saturation warning!", Warning)
-
+        
         # Saturation
         if sat == FixSaturate.None_s or sat == FixSaturate.Warn_s:
             # Wrap
@@ -302,7 +308,20 @@ class wide_fxp:
             val = np.where(val < wide_fxp.MinValue(rFmt).data, wide_fxp.MinValue(rFmt).data, val)
             
         return wide_fxp(val, rFmt)
-    
+
+    # Create a new wide_fxp object with a new fixed-point format after rounding and saturation.
+    def resize(self, rFmt : FixFormat,
+               rnd : FixRound = FixRound.Trunc_s,
+               sat : FixSaturate = FixSaturate.None_s):
+        
+        # Round
+        roundedFmt = FixFormat.ForRound(aFmt, rFmt.F, rnd)
+        rounded = self.round(roundedFmt, rnd)
+        
+        # Saturate
+        result = rounded.saturate(rFmt, sat)
+        
+        return result
     
     # Create a new wide_fxp object with the most significant bit (- index) set to "value"
     def set_msb(self, index, value):

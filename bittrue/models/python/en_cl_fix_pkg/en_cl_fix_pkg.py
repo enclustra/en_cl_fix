@@ -99,96 +99,118 @@ def cl_fix_get_bits_as_int(a, aFmt : FixFormat):
     else:
         return np.array(np.round(a*2.0**aFmt.F),'int64')
 
-def cl_fix_resize(  a, aFmt : FixFormat,
-                    rFmt : FixFormat,
-                    rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
+def cl_fix_round(a, aFmt : FixFormat, rFmt : int, rnd : FixRound):
+    assert rFmt == FixFormat.ForRound(aFmt, rFmt.F, rnd), "cl_fix_round: Invalid result format. Use FixFormat.ForRound()."
+    
     if type(a) == wide_fxp or cl_fix_is_wide(rFmt):
         # Convert to wide_fxp (if not already wide_fxp)
         a = wide_fxp.FromFxp(a, aFmt)
-        # Resize
-        result = a.resize(rFmt, rnd, sat)
+        # Round
+        rounded = a.round(rFmt, rnd)
         # Convert to narrow if required
         if not cl_fix_is_wide(rFmt):
-            result = result.to_narrow_fxp()
+            rounded = rounded.to_narrow_fxp()
     else:
         a = np.array(a)
-        # Rounding
-        bitGrowth = 0
+        
+        # Add offset before truncating to implement rounding
         if rFmt.F < aFmt.F:
             if rnd is FixRound.Trunc_s:
-                # No offset is applied, so no bit-growth
-                bitGrowth = 0
+                None
             elif rnd is FixRound.NonSymPos_s:
                 a = a + 2.0 ** (-rFmt.F - 1)
-                bitGrowth = 1
             elif rnd is FixRound.NonSymNeg_s:
                 a = a + 2.0 ** (-rFmt.F - 1) - 2.0 ** -aFmt.F
-                bitGrowth = 1
             elif rnd is FixRound.SymInf_s:
                 a = a + 2.0 ** (-rFmt.F - 1) - 2.0 ** -aFmt.F * (a < 0).astype(int)
-                bitGrowth = 1
             elif rnd is FixRound.SymZero_s:
                 a = a + 2.0 ** (-rFmt.F - 1) - 2.0 ** -aFmt.F * (a >= 0).astype(int)
-                bitGrowth = 1
             elif rnd is FixRound.ConvEven_s:
                 a = a + 2.0 ** (-rFmt.F - 1) - 2.0 ** -aFmt.F * ((np.floor(a * 2 ** rFmt.F) + 1) % 2)
-                bitGrowth = 1
             elif rnd is FixRound.ConvOdd_s:
                 a = a + 2.0 ** (-rFmt.F - 1) - 2.0 ** -aFmt.F * ((np.floor(a * 2 ** rFmt.F)) % 2)
-                bitGrowth = 1
             else:
-                raise Exception("cl_fix_resize : Illegal value for round!")
-        # The format after rounding is the same as after a (lossy) right shift by (aFmt.F - rFmt.F), but
-        # with +bitGrowth (integer bit) to support the rounding offset applied above.
-        roundedFmt = FixFormat(aFmt.S, aFmt.I - (aFmt.F - rFmt.F) + bitGrowth, rFmt.F)
+                raise Exception(f"cl_fix_round: Unsupported rounding mode: {rnd}")
+        
+        # Truncate
         rounded = np.floor(a * 2.0 ** rFmt.F).astype(float) * 2.0 ** -rFmt.F
-
+        
+    return rounded
+    
+def cl_fix_saturate(a, aFmt : FixFormat, rFmt : FixFormat, sat : FixSaturate):
+    assert rFmt.F == aFmt.F, "cl_fix_saturate: Number of frac bits cannot change."
+    
+    if type(a) == wide_fxp or cl_fix_is_wide(rFmt):
+        # Convert to wide_fxp (if not already wide_fxp)
+        a = wide_fxp.FromFxp(a, aFmt)
+        # Saturate
+        saturated = a.saturate(rFmt, sat)
+        # Convert to narrow if required
+        if not cl_fix_is_wide(rFmt):
+            saturated = saturated.to_narrow_fxp()
+    else:
         # Saturation warning
         fmtMax = cl_fix_max_value(rFmt)
         fmtMin = cl_fix_min_value(rFmt)
         if sat == FixSaturate.Warn_s or sat == FixSaturate.SatWarn_s:
-            if np.any(rounded > fmtMax) or np.any(rounded < fmtMin):
-                warnings.warn("cl_fix_resize : Saturation warning!", Warning)
-
+            if np.any(a > fmtMax) or np.any(a < fmtMin):
+                warnings.warn("cl_fix_saturate : Saturation warning!", Warning)
+        
         # Saturation
         if sat == FixSaturate.None_s or sat == FixSaturate.Warn_s:
             # Wrap
             
             # Decide if signed wrapping calculation will fit in narrow format
             if rFmt.S == 1:
-                # We need to add: rounded + 2.0 ** rFmt.I
-                offsetFmt = FixFormat(0,rFmt.I+1,0)  # Format of 2.0 ** rFmt.I.
-                addFmt = FixFormat.ForAdd(roundedFmt, offsetFmt)
+                # We need to add: a + 2.0 ** rFmt.I.
+                # For rFmt.I < 0, we increase frac bits to guarantee at least 1 bit in the format.
+                if rFmt.I >= 0:
+                    offsetFmt = FixFormat(0,rFmt.I+1,0)
+                else:
+                    offsetFmt = FixFormat(0,rFmt.I+1,-rFmt.I)
+                addFmt = FixFormat.ForAdd(aFmt, offsetFmt)
                 convertToWide = cl_fix_is_wide(addFmt)
             else:
                 convertToWide = False
             
             if convertToWide:
                 # Do intermediate calculation in wide_fxp (int) to avoid loss of precision
-                rounded = np.floor(rounded.astype(object) * 2**rFmt.F)
+                a = np.floor(a.astype(object) * 2**rFmt.F)
                 satSpan = 2**(rFmt.I + rFmt.F)
                 if rFmt.S == 1:
-                    result = ((rounded + satSpan) % (2*satSpan)) - satSpan
+                    saturated = ((a + satSpan) % (2*satSpan)) - satSpan
                 else:
-                    result = rounded % satSpan
+                    saturated = a % satSpan
                 # Convert back to narrow fixed-point
-                result = (result / 2**rFmt.F).astype(float)
+                saturated = (saturated / 2**rFmt.F).astype(float)
             else:
                 # Calculate in float64 without loss of precision
                 if rFmt.S == 1:
-                    result = ((rounded + 2.0 ** rFmt.I) % (2.0 ** (rFmt.I + 1))) - 2.0 ** rFmt.I
+                    saturated = ((a + 2.0 ** rFmt.I) % (2.0 ** (rFmt.I + 1))) - 2.0 ** rFmt.I
                 else:
-                    result = rounded % (2.0**rFmt.I)
+                    saturated = a % (2.0**rFmt.I)
         else:
             # Saturate
-            result = np.where(rounded > fmtMax, fmtMax, rounded)
-            result = np.where(rounded < fmtMin, fmtMin, result)
+            saturated = np.where(a > fmtMax, fmtMax, a)
+            saturated = np.where(a < fmtMin, fmtMin, saturated)
+    
+    return saturated
+    
+def cl_fix_resize(  a, aFmt : FixFormat,
+                    rFmt : FixFormat,
+                    rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
+    # Round
+    roundedFmt = FixFormat.ForRound(aFmt, rFmt.F, rnd)
+    rounded = cl_fix_round(a, aFmt, roundedFmt, rnd)
+    
+    # Saturate
+    result = cl_fix_saturate(rounded, roundedFmt, rFmt, sat)
 
     return result
 
-def cl_fix_in_range(    a, aFmt : FixFormat,
-                        rFmt : FixFormat,
-                        rnd: FixRound = FixRound.Trunc_s):
+def cl_fix_in_range(a, aFmt : FixFormat,
+                    rFmt : FixFormat,
+                    rnd : FixRound = FixRound.Trunc_s):
     rndFmt = FixFormat(aFmt.S, aFmt.I+1, rFmt.F)
     valRnd = cl_fix_resize(a, aFmt, rndFmt, rnd, FixSaturate.Sat_s)
     lo = np.where(valRnd < cl_fix_min_value(rFmt), False, True)

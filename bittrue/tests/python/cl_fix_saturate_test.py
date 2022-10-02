@@ -1,0 +1,129 @@
+###################################################################################################
+# Copyright (c) 2022 Enclustra GmbH, Switzerland (info@enclustra.com)
+###################################################################################################
+
+###################################################################################################
+# Description:
+#
+# This script tests cl_fix_round against standard Python implementations.
+###################################################################################################
+
+###################################################################################################
+# Imports
+###################################################################################################
+import sys
+import os
+from os.path import join, dirname
+root = dirname(__file__)
+sys.path.append(join(root, "../../models/python"))
+from en_cl_fix_pkg import *
+
+import numpy as np
+
+###################################################################################################
+# Helpers
+###################################################################################################
+
+def get_data(fmt : FixFormat):
+    # Generate every possible value in format (counter)
+    int_min = cl_fix_get_bits_as_int(cl_fix_min_value(fmt), fmt)
+    int_max = cl_fix_get_bits_as_int(cl_fix_max_value(fmt), fmt)
+    int_data = np.arange(int_min, 1+int_max)
+    return cl_fix_from_bits_as_int(int_data, fmt)
+
+def sat_check(a, aFmt, rFmt, sat):
+    
+    if sat is FixSaturate.None_s or sat is FixSaturate.Warn_s:
+        # Get integer representation
+        a = cl_fix_get_bits_as_int(a, aFmt)
+        
+        # Interpret bits as unsigned
+        if aFmt.S == 1:
+            sign_weight = 2**(aFmt.I + aFmt.F)
+            a = np.where(a < 0, a + 2*sign_weight, a)
+        
+        # Align binary point
+        a = a * 2**(rFmt.F - aFmt.F)
+        
+        # Wrap
+        a = a % 2**cl_fix_width(rFmt)
+        
+        # Interpret bits as signed
+        if rFmt.S == 1:
+            a = np.where(a >= 2**(cl_fix_width(rFmt)-1), a - 2**cl_fix_width(rFmt), a)
+        
+        return cl_fix_from_bits_as_int(a, rFmt)
+    elif sat is FixSaturate.Sat_s or sat is FixSaturate.SatWarn_s:
+        a = np.where(a > cl_fix_max_value(rFmt), cl_fix_max_value(rFmt), a)
+        a = np.where(a < cl_fix_min_value(rFmt), cl_fix_min_value(rFmt), a)
+        return a
+    else:
+        raise ValueError(f"Unrecognized rounding mode: {rnd}")
+
+###################################################################################################
+# Config
+###################################################################################################
+
+# aFmt test points
+aS_values = [0,1]
+aI_values = np.arange(-4,1+4)
+aF_values = np.arange(-4,1+4)
+
+# rFmt test points
+rS_values = [0,1]
+rI_values = np.arange(-4,1+4)
+
+###################################################################################################
+# Run
+###################################################################################################
+
+test_count = 0
+
+########
+# aFmt #
+########
+for aS in aS_values:
+    for aI in aI_values:
+        for aF in aF_values:
+            # Skip invalid formats
+            try:
+                aFmt = FixFormat(aS, aI, aF)
+            except AssertionError:
+                continue
+            
+            # Generate A data
+            a = get_data(aFmt)
+            
+            for rS in rS_values:
+                for rI in rI_values:
+                    rF = aF
+                    
+                    # Skip invalid formats
+                    try:
+                        rFmt = FixFormat(rS, rI, rF)
+                    except AssertionError:
+                        continue
+                
+                    for sat in FixSaturate:
+                        # Calculate using cl_fix_saturate
+                        r = cl_fix_saturate(a, aFmt, rFmt, sat)
+                        
+                        # Repeat using wide_fxp (but still with narrow data)
+                        # r_wide = cl_fix_round(wide_fxp.FromNarrowFxp(a, aFmt), aFmt, rFmt, rnd)
+                        
+                        # Local checker function
+                        expected = sat_check(a, aFmt, rFmt, sat)
+                        
+                        # Check numerical correctness
+                        # assert np.array_equal(r, expected), "Numerical error detected."
+                        # assert np.array_equal(r_wide, expected), "Numerical error detected (wide_fxp)."
+                        
+                        if not np.array_equal(r, expected):
+                            print(f"{a} {aFmt} --> {rFmt} {sat}")
+                            print(r)
+                            print(expected)
+                            assert False
+                        
+                        test_count += 1
+
+print(f"Completed {test_count} tests.")
