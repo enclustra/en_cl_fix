@@ -82,18 +82,18 @@ def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.S
 def cl_fix_zeros(shape, fmt):
     return cl_fix_from_real(np.zeros(shape), fmt)
 
-def cl_fix_from_bits_as_int(a : int, aFmt : FixFormat):
+def cl_fix_from_integer(a : int, aFmt : FixFormat):
     if cl_fix_is_wide(aFmt):
         if not np.all(cl_fix_in_range(a, aFmt, aFmt)):
-            raise ValueError("cl_fix_from_bits_as_int: Value not in number format range")
+            raise ValueError("cl_fix_from_integer: Value not in number format range")
         return wide_fxp(a, aFmt)
     else:
         value = np.array(a/2**aFmt.F, np.float64)
         if not np.all(cl_fix_in_range(value, aFmt, aFmt)):
-            raise ValueError("cl_fix_from_bits_as_int: Value not in number format range")
+            raise ValueError("cl_fix_from_integer: Value not in number format range")
         return value
 
-def cl_fix_get_bits_as_int(a, aFmt : FixFormat):
+def cl_fix_to_integer(a, aFmt : FixFormat):
     if type(a) == wide_fxp:
         return a.data
     else:

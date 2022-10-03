@@ -39,7 +39,7 @@ architecture rtl of cl_fix_compare_tb is
     -- Helper function for printing error info
     function Str(x : integer; XFmt : FixFormat_t) return string is
     begin
-        return to_string(cl_fix_to_real(cl_fix_from_bits_as_int(x, XFmt), XFmt));
+        return to_string(cl_fix_to_real(cl_fix_from_integer(x, XFmt), XFmt));
     end function;
     
     function ToBool(x : integer) return boolean is
@@ -59,10 +59,10 @@ architecture rtl of cl_fix_compare_tb is
         constant Leq_c      : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_leq.txt", 32, ascii_dec, 1);
         constant Geq_c      : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_geq.txt", 32, ascii_dec, 1);
         
-        constant Amin       : integer := cl_fix_get_bits_as_int(cl_fix_min_value(AFmt_c(i)), AFmt_c(i));
-        constant Amax       : integer := cl_fix_get_bits_as_int(cl_fix_max_value(AFmt_c(i)), AFmt_c(i));
-        constant Bmin       : integer := cl_fix_get_bits_as_int(cl_fix_min_value(BFmt_c(i)), BFmt_c(i));
-        constant Bmax       : integer := cl_fix_get_bits_as_int(cl_fix_max_value(BFmt_c(i)), BFmt_c(i));
+        constant Amin       : integer := cl_fix_to_integer(cl_fix_min_value(AFmt_c(i)), AFmt_c(i));
+        constant Amax       : integer := cl_fix_to_integer(cl_fix_max_value(AFmt_c(i)), AFmt_c(i));
+        constant Bmin       : integer := cl_fix_to_integer(cl_fix_min_value(BFmt_c(i)), BFmt_c(i));
+        constant Bmax       : integer := cl_fix_to_integer(cl_fix_max_value(BFmt_c(i)), BFmt_c(i));
         variable Idx_v      : natural := 0;
         variable Expected_v : boolean;
         variable Result_v   : boolean;
@@ -79,8 +79,8 @@ architecture rtl of cl_fix_compare_tb is
                 -- Calculate result in VHDL
                 Result_v := cl_fix_compare(
                     "=",
-                    cl_fix_from_bits_as_int(a, AFmt_c(i)), AFmt_c(i),
-                    cl_fix_from_bits_as_int(b, BFmt_c(i)), BFmt_c(i)
+                    cl_fix_from_integer(a, AFmt_c(i)), AFmt_c(i),
+                    cl_fix_from_integer(b, BFmt_c(i)), BFmt_c(i)
                 );
                 
                 -- Check against cosim
@@ -97,8 +97,8 @@ architecture rtl of cl_fix_compare_tb is
                 -- Calculate result in VHDL
                 Result_v := cl_fix_compare(
                     "!=",
-                    cl_fix_from_bits_as_int(a, AFmt_c(i)), AFmt_c(i),
-                    cl_fix_from_bits_as_int(b, BFmt_c(i)), BFmt_c(i)
+                    cl_fix_from_integer(a, AFmt_c(i)), AFmt_c(i),
+                    cl_fix_from_integer(b, BFmt_c(i)), BFmt_c(i)
                 );
                 
                 -- Check against cosim
@@ -115,8 +115,8 @@ architecture rtl of cl_fix_compare_tb is
                 -- Calculate result in VHDL
                 Result_v := cl_fix_compare(
                     "<",
-                    cl_fix_from_bits_as_int(a, AFmt_c(i)), AFmt_c(i),
-                    cl_fix_from_bits_as_int(b, BFmt_c(i)), BFmt_c(i)
+                    cl_fix_from_integer(a, AFmt_c(i)), AFmt_c(i),
+                    cl_fix_from_integer(b, BFmt_c(i)), BFmt_c(i)
                 );
                 
                 -- Check against cosim
@@ -133,8 +133,8 @@ architecture rtl of cl_fix_compare_tb is
                 -- Calculate result in VHDL
                 Result_v := cl_fix_compare(
                     ">",
-                    cl_fix_from_bits_as_int(a, AFmt_c(i)), AFmt_c(i),
-                    cl_fix_from_bits_as_int(b, BFmt_c(i)), BFmt_c(i)
+                    cl_fix_from_integer(a, AFmt_c(i)), AFmt_c(i),
+                    cl_fix_from_integer(b, BFmt_c(i)), BFmt_c(i)
                 );
                 
                 -- Check against cosim
@@ -151,8 +151,8 @@ architecture rtl of cl_fix_compare_tb is
                 -- Calculate result in VHDL
                 Result_v := cl_fix_compare(
                     "<=",
-                    cl_fix_from_bits_as_int(a, AFmt_c(i)), AFmt_c(i),
-                    cl_fix_from_bits_as_int(b, BFmt_c(i)), BFmt_c(i)
+                    cl_fix_from_integer(a, AFmt_c(i)), AFmt_c(i),
+                    cl_fix_from_integer(b, BFmt_c(i)), BFmt_c(i)
                 );
                 
                 -- Check against cosim
@@ -169,8 +169,8 @@ architecture rtl of cl_fix_compare_tb is
                 -- Calculate result in VHDL
                 Result_v := cl_fix_compare(
                     ">=",
-                    cl_fix_from_bits_as_int(a, AFmt_c(i)), AFmt_c(i),
-                    cl_fix_from_bits_as_int(b, BFmt_c(i)), BFmt_c(i)
+                    cl_fix_from_integer(a, AFmt_c(i)), AFmt_c(i),
+                    cl_fix_from_integer(b, BFmt_c(i)), BFmt_c(i)
                 );
                 
                 -- Check against cosim

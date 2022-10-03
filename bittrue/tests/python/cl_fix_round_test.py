@@ -26,10 +26,10 @@ import numpy as np
 
 def get_data(fmt : FixFormat):
     # Generate every possible value in format (counter)
-    int_min = cl_fix_get_bits_as_int(cl_fix_min_value(fmt), fmt)
-    int_max = cl_fix_get_bits_as_int(cl_fix_max_value(fmt), fmt)
+    int_min = cl_fix_to_integer(cl_fix_min_value(fmt), fmt)
+    int_max = cl_fix_to_integer(cl_fix_max_value(fmt), fmt)
     int_data = np.arange(int_min, 1+int_max)
-    return cl_fix_from_bits_as_int(int_data, fmt)
+    return cl_fix_from_integer(int_data, fmt)
 
 def round_check(a, aFmt, rFmt, rnd):
     # Copy array

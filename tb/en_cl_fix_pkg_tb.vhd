@@ -131,20 +131,20 @@ begin
                             4.0,
                             "cl_fix_to_real Wrong: Negative Fractional Bits");
                             
-                -- cl_fix_from_bits_as_int
-                print("cl_fix_from_bits_as_int");
-                check_equal(cl_fix_from_bits_as_int(3, (0, 4, 0)), std_logic_vector'("0011"), "cl_fix_from_bits_as_int: Unsigned Positive");
-                check_equal(cl_fix_from_bits_as_int(3, (1, 3, 0)), std_logic_vector'("0011"), "cl_fix_from_bits_as_int: Signed Positive");
-                check_equal(cl_fix_from_bits_as_int(-3, (1, 3, 0)), std_logic_vector'("1101"), "cl_fix_from_bits_as_int: Signed Negative");
-                check_equal(cl_fix_from_bits_as_int(-3, (1, 1, 2)), std_logic_vector'("1101"), "cl_fix_from_bits_as_int: Fractional"); -- binary point position is not important
-                check_equal(cl_fix_from_bits_as_int(17, (0, 4, 0)), std_logic_vector'("0001"), "cl_fix_from_bits_as_int: Wrap Unsigned");
+                -- cl_fix_from_integer
+                print("cl_fix_from_integer");
+                check_equal(cl_fix_from_integer(3, (0, 4, 0)), std_logic_vector'("0011"), "cl_fix_from_integer: Unsigned Positive");
+                check_equal(cl_fix_from_integer(3, (1, 3, 0)), std_logic_vector'("0011"), "cl_fix_from_integer: Signed Positive");
+                check_equal(cl_fix_from_integer(-3, (1, 3, 0)), std_logic_vector'("1101"), "cl_fix_from_integer: Signed Negative");
+                check_equal(cl_fix_from_integer(-3, (1, 1, 2)), std_logic_vector'("1101"), "cl_fix_from_integer: Fractional"); -- binary point position is not important
+                check_equal(cl_fix_from_integer(17, (0, 4, 0)), std_logic_vector'("0001"), "cl_fix_from_integer: Wrap Unsigned");
                 
-                -- cl_fix_get_bits_as_int
-                print("cl_fix_get_bits_as_int");
-                check_equal(cl_fix_get_bits_as_int("11", (0,2,0)), 3, "cl_fix_get_bits_as_int: Unsigned Positive");
-                check_equal(cl_fix_get_bits_as_int("011", (1,2,0)), 3, "cl_fix_get_bits_as_int: Signed Positive");
-                check_equal(cl_fix_get_bits_as_int("1101", (1,3,0)), -3, "cl_fix_get_bits_as_int: Signed Negative");
-                check_equal(cl_fix_get_bits_as_int("1101", (1,1,2)), -3, "cl_fix_get_bits_as_int: Fractional"); -- binary point position is not important
+                -- cl_fix_to_integer
+                print("cl_fix_to_integer");
+                check_equal(cl_fix_to_integer("11", (0,2,0)), 3, "cl_fix_to_integer: Unsigned Positive");
+                check_equal(cl_fix_to_integer("011", (1,2,0)), 3, "cl_fix_to_integer: Signed Positive");
+                check_equal(cl_fix_to_integer("1101", (1,3,0)), -3, "cl_fix_to_integer: Signed Negative");
+                check_equal(cl_fix_to_integer("1101", (1,1,2)), -3, "cl_fix_to_integer: Fractional"); -- binary point position is not important
                 
                 -- cl_fix_resize
                 print("cl_fix_resize");

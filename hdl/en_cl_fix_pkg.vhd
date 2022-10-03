@@ -103,9 +103,9 @@ package en_cl_fix_pkg is
     
     function cl_fix_to_real(a : std_logic_vector; a_fmt : FixFormat_t) return real;
     
-    function cl_fix_get_bits_as_int(a : std_logic_vector; aFmt : FixFormat_t) return integer;
+    function cl_fix_to_integer(a : std_logic_vector; aFmt : FixFormat_t) return integer;
     
-    function cl_fix_from_bits_as_int(a : integer; aFmt : FixFormat_t) return std_logic_vector;
+    function cl_fix_from_integer(a : integer; aFmt : FixFormat_t) return std_logic_vector;
 
     -----------------------------------------------------------------------------------------------
     -- Rounding and Saturation
@@ -622,7 +622,7 @@ package body en_cl_fix_pkg is
         return result_v;
     end;
     
-    function cl_fix_from_bits_as_int(a : integer; aFmt : FixFormat_t) return std_logic_vector is
+    function cl_fix_from_integer(a : integer; aFmt : FixFormat_t) return std_logic_vector is
     begin
         if aFmt.S = 1 then
             return std_logic_vector(to_signed(a, cl_fix_width(aFmt)));
@@ -631,7 +631,7 @@ package body en_cl_fix_pkg is
         end if;
     end function;
     
-    function cl_fix_get_bits_as_int(a : std_logic_vector; aFmt : FixFormat_t) return integer is
+    function cl_fix_to_integer(a : std_logic_vector; aFmt : FixFormat_t) return integer is
         -- Force downto 0
         constant a_c    : std_logic_vector(a'length-1 downto 0) := a;
     begin

@@ -59,33 +59,33 @@ class cl_fix_from_real_Test(unittest.TestCase):
         with self.assertWarns(Warning):
             cl_fix_from_real(3.9, FixFormat(False, 2, 2))
 
-### cl_fix_from_bits_as_int ###
-class cl_fix_from_bits_as_int_Test(unittest.TestCase):
+### cl_fix_from_integer ###
+class cl_fix_from_integer_Test(unittest.TestCase):
 
     def test_Unsigned_Positive(self):
-        self.assertEqual(1.5, cl_fix_from_bits_as_int(3, FixFormat(False,3,1)))
+        self.assertEqual(1.5, cl_fix_from_integer(3, FixFormat(False,3,1)))
 
     def test_Signed_Positive(self):
-        self.assertEqual(1.5, cl_fix_from_bits_as_int(3, FixFormat(True, 2, 1)))
+        self.assertEqual(1.5, cl_fix_from_integer(3, FixFormat(True, 2, 1)))
 
     def test_Signed_Negative(self):
-        self.assertEqual(-1.5, cl_fix_from_bits_as_int(-3, FixFormat(True, 2, 1)))
+        self.assertEqual(-1.5, cl_fix_from_integer(-3, FixFormat(True, 2, 1)))
 
     def test_Wrap_Unsigned(self):
         with self.assertRaises(ValueError):
-            self.assertEqual(1, cl_fix_from_bits_as_int(17, FixFormat(False, 4, 0)))
+            self.assertEqual(1, cl_fix_from_integer(17, FixFormat(False, 4, 0)))
 
-### cl_fix_get_bits_as_int ###
-class cl_fix_get_bits_as_int_Test(unittest.TestCase):
+### cl_fix_to_integer ###
+class cl_fix_to_integer_Test(unittest.TestCase):
 
     def test_Unsigned_Positive(self):
-        self.assertEqual(3, cl_fix_get_bits_as_int(1.5, FixFormat(False, 3, 1)), FixFormat(False, 3, 1))
+        self.assertEqual(3, cl_fix_to_integer(1.5, FixFormat(False, 3, 1)), FixFormat(False, 3, 1))
 
     def test_Signed_Positive(self):
-        self.assertEqual(3, cl_fix_get_bits_as_int(1.5, FixFormat(True, 2, 1)), FixFormat(True, 2, 1))
+        self.assertEqual(3, cl_fix_to_integer(1.5, FixFormat(True, 2, 1)), FixFormat(True, 2, 1))
 
     def test_Signed_Negative(self):
-        self.assertEqual(-3, cl_fix_get_bits_as_int(-1.5, FixFormat(True, 2, 1)), FixFormat(True, 2, 1))
+        self.assertEqual(-3, cl_fix_to_integer(-1.5, FixFormat(True, 2, 1)), FixFormat(True, 2, 1))
 
 ### cl_fix_resize ###
 class cl_fix_resize_Test(unittest.TestCase):

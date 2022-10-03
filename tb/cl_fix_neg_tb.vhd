@@ -43,14 +43,14 @@ architecture rtl of cl_fix_neg_tb is
     -- Helper function for printing error info
     function Str(x : integer; XFmt : FixFormat_t) return string is
     begin
-        return to_string(cl_fix_to_real(cl_fix_from_bits_as_int(x, XFmt), XFmt));
+        return to_string(cl_fix_to_real(cl_fix_from_integer(x, XFmt), XFmt));
     end function;
     
     procedure Check(i : natural) is
         -- Load response data for this test case
         constant Expected_c : SlvArray_t := cl_fix_read_file(DataPath_c & "test" & to_string(i) & "_output.txt", RFmt_c(i), ascii_dec, 1);
-        constant Amin       : integer := cl_fix_get_bits_as_int(cl_fix_min_value(AFmt_c(i)), AFmt_c(i));
-        constant Amax       : integer := cl_fix_get_bits_as_int(cl_fix_max_value(AFmt_c(i)), AFmt_c(i));
+        constant Amin       : integer := cl_fix_to_integer(cl_fix_min_value(AFmt_c(i)), AFmt_c(i));
+        constant Amax       : integer := cl_fix_to_integer(cl_fix_max_value(AFmt_c(i)), AFmt_c(i));
         variable Idx_v      : natural := 0;
         variable Result_v   : std_logic_vector(cl_fix_width(RFmt_c(i))-1 downto 0);
     begin
@@ -59,7 +59,7 @@ architecture rtl of cl_fix_neg_tb is
         for a in Amin to Amax loop
             -- Calculate result in VHDL
             Result_v := cl_fix_neg(
-                cl_fix_from_bits_as_int(a, AFmt_c(i)), AFmt_c(i),
+                cl_fix_from_integer(a, AFmt_c(i)), AFmt_c(i),
                 RFmt_c(i), FixRound_t'val(Rnd_c(i)), FixSaturate_t'val(Sat_c(i))
             );
             
