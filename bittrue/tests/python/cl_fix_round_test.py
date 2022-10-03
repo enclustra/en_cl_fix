@@ -35,24 +35,24 @@ def round_check(a, aFmt, rFmt, rnd):
     # Copy array
     a = a.copy()
     
-    def NonSymPos(a, aFmt, rFmt, rnd):
+    def NonSymPos(a, aFmt, rFmt):
         a = a + 2.0**-(rFmt.F+1)
         return np.floor(a * 2.0**rFmt.F) / 2.0**rFmt.F
     
-    def NonSymNeg(a, aFmt, rFmt, rnd):
+    def NonSymNeg(a, aFmt, rFmt):
         a = a - 2.0**-(rFmt.F+1)
         return np.ceil(a * 2.0**rFmt.F) / 2.0**rFmt.F
-    
+        
     if rnd is FixRound.Trunc_s:
         return np.floor(a * 2.0**rFmt.F) / 2.0**rFmt.F
     elif rnd is FixRound.NonSymPos_s:
-        return NonSymPos(a, aFmt, rFmt, rnd)
+        return NonSymPos(a, aFmt, rFmt)
     elif rnd is FixRound.NonSymNeg_s:
-        return NonSymNeg(a, aFmt, rFmt, rnd)
+        return NonSymNeg(a, aFmt, rFmt)
     elif rnd is FixRound.SymInf_s:
-        return np.where(a >= 0, NonSymPos(a, aFmt, rFmt, rnd), NonSymNeg(a, aFmt, rFmt, rnd))
+        return np.where(a >= 0, NonSymPos(a, aFmt, rFmt), NonSymNeg(a, aFmt, rFmt))
     elif rnd is FixRound.SymZero_s:
-        return np.where(a >= 0, NonSymNeg(a, aFmt, rFmt, rnd), NonSymPos(a, aFmt, rFmt, rnd))
+        return np.where(a >= 0, NonSymNeg(a, aFmt, rFmt), NonSymPos(a, aFmt, rFmt))
     elif rnd is FixRound.ConvEven_s:
         # Numpy's around() implements convergent even rounding
         return np.around(a * 2.0**rFmt.F) / 2.0**rFmt.F
