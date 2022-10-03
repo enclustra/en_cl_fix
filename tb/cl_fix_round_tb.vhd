@@ -57,9 +57,9 @@ architecture rtl of cl_fix_round_tb is
         -- We repeat the same pattern here.
         for a in Amin to Amax loop
             -- Calculate result in VHDL
-            Result_v := cl_fix_resize(
+            Result_v := cl_fix_round(
                 cl_fix_from_bits_as_int(a, AFmt_c(i)), AFmt_c(i),
-                RFmt_c(i), FixRound_t'val(Rnd_c(i)), None_s
+                RFmt_c(i), FixRound_t'val(Rnd_c(i))
             );
             
             -- Check against cosim

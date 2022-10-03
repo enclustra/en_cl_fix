@@ -77,6 +77,8 @@ package en_cl_fix_pkg is
     
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; shift : integer) return FixFormat_t;
     
+    function cl_fix_round_fmt(a_fmt : FixFormat_t; r_frac_bits : integer; rnd : FixRound_t) return FixFormat_t;
+    
     -----------------------------------------------------------------------------------------------
     -- String Conversions
     -----------------------------------------------------------------------------------------------
@@ -106,8 +108,22 @@ package en_cl_fix_pkg is
     function cl_fix_from_bits_as_int(a : integer; aFmt : FixFormat_t) return std_logic_vector;
 
     -----------------------------------------------------------------------------------------------
-    -- Resize and Rounding
+    -- Rounding and Saturation
     -----------------------------------------------------------------------------------------------
+    
+    function cl_fix_round(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s
+    ) return std_logic_vector;
+    
+    function cl_fix_saturate(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
     
     function cl_fix_resize(
         a           : std_logic_vector;
@@ -196,7 +212,9 @@ package en_cl_fix_pkg is
         b           : std_logic_vector;
         bFmt        : FixFormat_t
     ) return boolean;
-        
+    
+    function cl_fix_sign(a : std_logic_vector; aFmt : FixFormat_t) return std_logic;
+    
 end package;
 
 ---------------------------------------------------------------------------------------------------
@@ -220,6 +238,27 @@ package body en_cl_fix_pkg is
             return -2.0**fmt.I;
         else
             return 0.0;
+        end if;
+    end function;
+    
+    function get_half(aFmt, rFmt : FixFormat_t) return unsigned is
+        constant tie_c  : natural := aFmt.F - rFmt.F - 1;
+        variable v      : unsigned(cl_fix_width(aFmt)-1 downto 0) := (others => '0');
+    begin
+        -- Set the "tie" bit (i.e. half the LSB weight of rFmt)
+        v(tie_c) := '1';
+        return v;
+    end function;
+    
+    function get_unit_bit(a : std_logic_vector; aFmt, rFmt : FixFormat_t) return std_logic is
+        constant unit_c : natural := aFmt.F - rFmt.F;
+    begin
+        if unit_c >= cl_fix_width(aFmt) then
+            -- Implicit MSB extension
+            return cl_fix_sign(a, aFmt);
+        else
+            -- Normal behavior: get the explicit "unit" bit (i.e. the LSB weight of rFmt)
+            return a(unit_c);
         end if;
     end function;
     
@@ -347,6 +386,23 @@ package body en_cl_fix_pkg is
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; shift : integer) return FixFormat_t is
     begin
         return cl_fix_shift_fmt(a_fmt, shift, shift);
+    end;
+    
+    function cl_fix_round_fmt(a_fmt : FixFormat_t; r_frac_bits : integer; rnd : FixRound_t) return FixFormat_t is
+        variable growth_v   : natural;
+    begin
+        if r_frac_bits >= a_fmt.F then
+            -- If fractional bits are not being reduced, then nothing happens to int bits.
+            growth_v := 0;
+        elsif rnd = Trunc_s then
+            -- Crude truncation has no effect on int bits.
+            growth_v := 0;
+        else
+            -- All other rounding modes can overflow into +1 int bit.
+            growth_v := 1;
+        end if;
+        
+        return (a_fmt.S, a_fmt.I + growth_v, r_frac_bits);
     end;
     
     function to_string(fmt : FixFormat_t) return string is
@@ -551,6 +607,107 @@ package body en_cl_fix_pkg is
         end if;
     end function;
     
+    function cl_fix_round(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s
+    ) return std_logic_vector is
+        -- The result format takes care of potential integer growth due to the rounding mode.
+        -- In the intermediate calculation, we need to +/- 2.0**-(result_fmt.F+1) in order to
+        -- implement each rounding algorithm (except trivial Trunc_s).
+        constant frac_growth_c  : natural := choose(round = Trunc_s, 0, 1);
+        constant mid_fmt_c      : FixFormat_t := (
+            result_fmt.S,
+            result_fmt.I,
+            max(result_fmt.F+1, a_fmt.F)
+        );
+        constant in_offset_c        : natural := mid_fmt_c.F - a_fmt.F;
+        constant out_offset_c       : natural := mid_fmt_c.F - result_fmt.F;
+        constant half_c             : unsigned(cl_fix_width(mid_fmt_c)-1 downto 0) := get_half(mid_fmt_c, result_fmt);
+        constant sign_c             : std_logic := cl_fix_sign(a, a_fmt);
+        variable unit_v             : std_logic;
+        variable mid_v              : unsigned(cl_fix_width(mid_fmt_c)-1 downto 0) := (others => '0');
+    begin
+        assert result_fmt = cl_fix_round_fmt(a_fmt, result_fmt.F, round)
+            report "cl_fix_round: Invalid result format. Use cl_fix_round_fmt()." severity Failure;
+        
+        -- Write the input value into mid_v with correct binary point alignment.
+        -- We sign extend into any extra int bits (and in_offset_c LSBs are defaulted to '0').
+        if a_fmt.S = 0 then
+            mid_v(mid_v'high downto in_offset_c) := resize(unsigned(a), mid_v'length - in_offset_c);
+        else
+            mid_v(mid_v'high downto in_offset_c) := unsigned(resize(signed(a), mid_v'length - in_offset_c));
+        end if;
+        
+        -- To implement each rounding algorithm, we add an appropriate offset before truncating.
+        if result_fmt.F < a_fmt.F then
+            
+            -- Get the least significant bit in the result format (for convergent rounding)
+            unit_v := get_unit_bit(std_logic_vector(mid_v), mid_fmt_c, result_fmt);
+            
+            case round is
+                when Trunc_s =>
+                    null;  -- Crude truncation => no offset.
+                when NonSymPos_s =>
+                    mid_v := mid_v + half_c;
+                when NonSymNeg_s =>
+                    mid_v := mid_v + (half_c-1);
+                when SymInf_s =>
+                    mid_v := mid_v + half_c - ("" & sign_c);
+                when SymZero_s =>
+                    mid_v := mid_v + half_c - ("" & not sign_c);
+                when ConvEven_s =>
+                    mid_v := mid_v + half_c - ("" & not unit_v);
+                when ConvOdd_s =>
+                    mid_v := mid_v + half_c - ("" & unit_v);
+                when others => report "Unrecognized rounding mode: " & to_string(round) severity Failure;
+            end case;
+        end if;
+        
+        -- Truncate
+        return std_logic_vector(mid_v(cl_fix_width(result_fmt)+out_offset_c-1 downto out_offset_c));
+    end;
+    
+    function cl_fix_saturate(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
+        
+        constant ResultWidth_c      : positive := cl_fix_width(result_fmt);
+        constant CutFracBits_c      : natural := a_fmt.F - result_fmt.F;
+        constant CutIntSignBits_c   : integer := cl_fix_width(a_fmt) - (ResultWidth_c+CutFracBits_c);
+        
+        variable a_v                : unsigned(cl_fix_width(a_fmt)-1 downto 0);
+        
+    begin
+        a_v := unsigned(a);
+        
+        if CutIntSignBits_c > 0 and saturate /= None_s then -- saturation required
+            if result_fmt.S = 1 then -- signed output
+                if to_01(a_v(a_v'high downto a_v'high-CutIntSignBits_c)) /= 0 and
+                        not a_v(a_v'high downto a_v'high-CutIntSignBits_c) /= 0 then
+                    assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
+                    if saturate /= Warn_s then
+                        a_v(a_v'high-1 downto 0) := (others => not a_v(a_v'high));
+                        a_v(ResultWidth_c+CutFracBits_c-1) := a_v(a_v'high);
+                    end if;
+                end if;
+            else -- unsigned output
+                if to_01(a_v(a_v'high downto a_v'high-CutIntSignBits_c+1)) /= 0 then
+                    assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
+                    if saturate /= Warn_s then
+                        a_v := (others => not a_v(a_v'high));
+                    end if;
+                end if;
+            end if;
+        end if;
+        
+        return std_logic_vector(a_v(ResultWidth_c+CutFracBits_c-1 downto CutFracBits_c));
+    end;
+    
     function cl_fix_resize(
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
@@ -558,99 +715,12 @@ package body en_cl_fix_pkg is
         round       : FixRound_t    := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        constant DropFracBits_c     : integer := a_fmt.F - result_fmt.F;
-        constant NeedRound_c        : boolean := round /= Trunc_s and DropFracBits_c > 0;
-        -- Rounding addition is performed with an additional integer bit (carry bit)
-        constant CarryBit_c         : boolean := NeedRound_c and saturate /= None_s;
-        -- It is not clear what this extra bit is for (undocumented)
-        constant AddSignBit_c       : boolean := ((a_fmt.S = 0) and (result_fmt.S = 0) and (saturate /= None_s));
-        -- Several rounding methods use the largest value smaller than the tie weight ("half").
-        -- The required integer value is 2**(DropFracBits_c-1)-1, but to support >32 bits, we use unsigned.
-        function GetHalfMinusDelta return unsigned is
-        begin
-            -- If DropFracBits_c = 1, then 2**(DropFracBits_c-1)-1 = 0.
-            -- If DropFracBits_c < 1, then NeedRound_c = FALSE, so the value is never used (just return 0).
-            if DropFracBits_c <= 1 then
-                return "0";
-            end if;
-            -- If DropFracBits_c > 1 then 2**(DropFracBits_c-1)-1 = "11...1"
-            return (DropFracBits_c-2 downto 0 => '1');
-        end function;
-        
-        constant HalfMinusDelta_c   : unsigned := GetHalfMinusDelta;
-        constant TempFmt_c : FixFormat_t :=
-            (
-                S   => max(a_fmt.S, result_fmt.S), -- must stay like this!
-                I   => max(a_fmt.I + toInteger(CarryBit_c), result_fmt.I) + toInteger(AddSignBit_c),
-                F   => max(a_fmt.F, result_fmt.F)
-            );
-        constant TempWidth_c        : positive := cl_fix_width(TempFmt_c);
-        constant ResultWidth_c      : positive := cl_fix_width(result_fmt);
-        constant MoreFracBits_c     : natural := TempFmt_c.F - a_fmt.F;
-        constant CutFracBits_c      : natural := TempFmt_c.F - result_fmt.F;
-        constant CutIntSignBits_c   : integer := TempWidth_c - (ResultWidth_c+CutFracBits_c);
-        
-        variable a_v        : std_logic_vector(a'length-1 downto 0);
-        variable temp_v     : unsigned(TempWidth_c-1 downto 0);
-        variable sign_v     : std_logic;
-        variable result_v   : std_logic_vector(ResultWidth_c-1 downto 0);
+        -- Round
+        constant rounded_fmt_c  : FixFormat_t := cl_fix_round_fmt(a_fmt, result_fmt.F, round);
+        constant rounded_c      : std_logic_vector := cl_fix_round(a, a_fmt, rounded_fmt_c, round);
     begin
-        -- TODO: Rounding addition could be less wide when result_fmt.I > a_fmt.IntWidth
-        -- TODO: saturate = Warn_s could use no carry bit for synthesis.
-        a_v := a;
-        temp_v := (others => '0');
-        if a_fmt.S = 1 then
-            temp_v(temp_v'high downto MoreFracBits_c) := unsigned(resize(signed(a_v), TempWidth_c-MoreFracBits_c));
-        else
-            temp_v(temp_v'high downto MoreFracBits_c) := resize(unsigned(a_v), TempWidth_c-MoreFracBits_c);
-        end if;
-        if NeedRound_c then -- rounding required
-            if a_fmt.S = 1 then
-                sign_v := a_v(a_v'high);
-            else
-                sign_v := '0';
-            end if;
-            case round is
-                when Trunc_s        => null;
-                when NonSymPos_s    => temp_v(TempWidth_c-1 downto DropFracBits_c-1) := temp_v(TempWidth_c-1 downto DropFracBits_c-1) + 1;
-                when NonSymNeg_s    => temp_v := temp_v + HalfMinusDelta_c;
-                when SymInf_s       => temp_v := temp_v + HalfMinusDelta_c + ("" & not sign_v);
-                when SymZero_s      => temp_v := temp_v + HalfMinusDelta_c + ("" & sign_v);
-                when ConvEven_s     =>
-                    if DropFracBits_c < a_v'length then
-                        temp_v := temp_v + HalfMinusDelta_c + ("" & a_v(DropFracBits_c));
-                    else
-                        temp_v := temp_v + HalfMinusDelta_c + ("" & sign_v); -- implicit sign extension
-                    end if;
-                when ConvOdd_s      =>
-                    if DropFracBits_c < a_v'length then
-                        temp_v := temp_v + HalfMinusDelta_c + ("" & not a_v(DropFracBits_c));
-                    else
-                        temp_v := temp_v + HalfMinusDelta_c + ("" & not sign_v); -- implicit sign extension
-                    end if;
-            end case;
-        end if;
-        if CutIntSignBits_c > 0 and saturate /= None_s then -- saturation required
-            if result_fmt.S = 1 then -- signed output
-                if to_01(temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c)) /= 0 and
-                        not temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c) /= 0 then
-                    assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
-                    if saturate /= Warn_s then
-                        temp_v(temp_v'high-1 downto 0) := (others => not temp_v(temp_v'high));
-                        temp_v(ResultWidth_c+CutFracBits_c-1) := temp_v(temp_v'high);
-                    end if;
-                end if;
-            else -- unsigned output
-                if to_01(temp_v(temp_v'high downto temp_v'high-CutIntSignBits_c+1)) /= 0 then
-                    assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
-                    if saturate /= Warn_s then
-                        temp_v := (others => not temp_v(temp_v'high));
-                    end if;
-                end if;
-            end if;
-        end if;
-        result_v := std_logic_vector(temp_v(ResultWidth_c+CutFracBits_c-1 downto CutFracBits_c));
-        return result_v;
+        -- Saturate
+        return cl_fix_saturate(rounded_c, rounded_fmt_c, result_fmt, saturate);
     end;
     
     function cl_fix_in_range(
@@ -883,5 +953,13 @@ package body en_cl_fix_pkg is
             end if;
         end if;
         
+    end function;
+    
+    function cl_fix_sign(a : std_logic_vector; aFmt : FixFormat_t) return std_logic is
+    begin
+        if aFmt.S = 0 or cl_fix_width(aFmt) = 0 then
+            return '0';
+        end if;
+        return a(a'high);
     end function;
 end;

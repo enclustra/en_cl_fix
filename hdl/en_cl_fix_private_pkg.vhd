@@ -16,6 +16,7 @@ library ieee;
 package en_cl_fix_private_pkg is
     
     function choose(condition : boolean; if_true : integer; if_false : integer) return integer;
+    function choose(condition : boolean; if_true : std_logic; if_false : std_logic) return std_logic;
     function to01(sl : std_logic) return std_logic;
     function toInteger(bool : boolean) return integer;
     
@@ -35,6 +36,14 @@ end package;
 package body en_cl_fix_private_pkg is
     
     function choose(condition : boolean; if_true : integer; if_false : integer) return integer is
+    begin
+        if condition then
+            return if_true;
+        end if;
+        return if_false;
+    end function;
+    
+    function choose(condition : boolean; if_true : std_logic; if_false : std_logic) return std_logic is
     begin
         if condition then
             return if_true;
