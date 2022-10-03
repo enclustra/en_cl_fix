@@ -10,6 +10,7 @@ import os
 from os.path import join, dirname
 root = dirname(__file__)
 sys.path.append(join(root, "../../models/python"))
+from shutil import rmtree
 from en_cl_fix_pkg import *
 
 import numpy as np
@@ -18,12 +19,13 @@ import numpy as np
 # Config
 ###################################################################################################
 
-# Create data directory
+# Clear data directory
 DATA_DIR = join(root, "data")
 try:
-    os.mkdir(DATA_DIR)
-except FileExistsError:
+    rmtree(DATA_DIR)
+except FileNotFoundError:
     pass
+os.mkdir(DATA_DIR)
 
 # aFmt test points
 aS_values = [0,1]
