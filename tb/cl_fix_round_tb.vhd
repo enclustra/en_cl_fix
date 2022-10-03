@@ -65,7 +65,7 @@ architecture rtl of cl_fix_round_tb is
             -- Check against cosim
             if Result_v /= Expected_c(Idx_v) then
                 print(
-                    "Error while calculating -" & Str(a, AFmt_c(i)) & " " & to_string(AFmt_c(i))
+                    "Error while rounding " & Str(a, AFmt_c(i)) & " " & to_string(AFmt_c(i))
                     & " [rnd: " & to_string(FixRound_t'val(Rnd_c(i))) & "] --> " & to_string(RFmt_c(i))
                 );
                 check_equal(Result_v, Expected_c(Idx_v), "Error at index " & to_string(Idx_v));
