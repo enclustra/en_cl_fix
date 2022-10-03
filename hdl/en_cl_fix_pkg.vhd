@@ -256,32 +256,39 @@ package body en_cl_fix_pkg is
     end function;
     
     function get_unit_bit(a : std_logic_vector; aFmt, rFmt : FixFormat_t) return std_logic is
+        -- Force downto 0
+        constant a_c    : std_logic_vector(a'length-1 downto 0) := a;
         constant unit_c : natural := aFmt.F - rFmt.F;
     begin
         if unit_c >= cl_fix_width(aFmt) then
             -- Implicit MSB extension
-            return cl_fix_sign(a, aFmt);
+            return cl_fix_sign(a_c, aFmt);
         else
             -- Normal behavior: get the explicit "unit" bit (i.e. the LSB weight of rFmt)
-            return a(unit_c);
+            return a_c(unit_c);
         end if;
     end function;
     
     function resize_sensible(a : signed; n : natural) return signed is
-        variable v  : signed(n-1 downto 0);
+        -- Force downto 0
+        constant a_c    : signed(a'length-1 downto 0) := a;
+        variable v      : signed(n-1 downto 0);
     begin
         if n >= a'length then
             -- Sign extension: Use the standard VHDL function.
-            v := resize(a, n);
+            v := resize(a_c, n);
         else
             -- Truncation: Just do plain truncation.
             -- This is usually more sensible than numeric_std.resize, which preserves the sign bit.
-            v := a(n-1 downto 0);
+            v := a_c(n-1 downto 0);
         end if;
         return v;
     end function;
     
     function convert(a : std_logic_vector; aFmt, rFmt : FixFormat_t) return std_logic_vector is
+        -- Force downto 0
+        constant a_c    : std_logic_vector(a'length-1 downto 0) := a;
+        
         -- This function converts from aFmt to rFmt without any rounding or saturation:
         --     - It does *not* support rFmt.F < aFmt.F (offset_c is type natural). To reduce frac
         --       bits, always use cl_fix_round (Trunc_s rounding mode can be used to truncate).
@@ -294,9 +301,9 @@ package body en_cl_fix_pkg is
         -- Write the input value into result_v with correct binary point alignment.
         -- We sign extend into any extra int bits (and offset_c LSBs are defaulted to '0').
         if aFmt.S = 0 then
-            result_v(r_width_c-1 downto offset_c) := std_logic_vector(resize(unsigned(a), r_width_c - offset_c));
+            result_v(r_width_c-1 downto offset_c) := std_logic_vector(resize(unsigned(a_c), r_width_c - offset_c));
         else
-            result_v(r_width_c-1 downto offset_c) := std_logic_vector(resize_sensible(signed(a), r_width_c - offset_c));
+            result_v(r_width_c-1 downto offset_c) := std_logic_vector(resize_sensible(signed(a_c), r_width_c - offset_c));
         end if;
         
         return result_v;
@@ -625,13 +632,15 @@ package body en_cl_fix_pkg is
     end function;
     
     function cl_fix_get_bits_as_int(a : std_logic_vector; aFmt : FixFormat_t) return integer is
+        -- Force downto 0
+        constant a_c    : std_logic_vector(a'length-1 downto 0) := a;
     begin
         -- Modelsim throws warnings if to_integer() is called on 1-bit signed or any 0-bit input.
         -- We handle these special cases explicitly to avoid the warnings.
         if cl_fix_width(aFmt) = 0 then
             return 0;
         elsif aFmt.S = 1 and cl_fix_width(aFmt) = 1 then
-            if a(0) = '1' then
+            if a_c(0) = '1' then
                 -- Note: -1 in the integer representation is -2**aFmt.I in fixed point.
                 return -1;
             else
@@ -641,9 +650,9 @@ package body en_cl_fix_pkg is
         
         -- Normal cases
         if aFmt.S = 1 then
-            return to_integer(signed(a));
+            return to_integer(signed(a_c));
         else
-            return to_integer(unsigned(a));
+            return to_integer(unsigned(a_c));
         end if;
     end function;
     
@@ -653,6 +662,9 @@ package body en_cl_fix_pkg is
         result_fmt  : FixFormat_t;
         round       : FixRound_t := Trunc_s
     ) return std_logic_vector is
+        -- Force downto 0
+        constant a_c            : std_logic_vector(a'length-1 downto 0) := a;
+        
         -- The result format takes care of potential integer growth due to the rounding mode.
         -- In the intermediate calculation, we need to +/- 2.0**-(result_fmt.F+1) in order to
         -- implement each rounding algorithm (except trivial Trunc_s).
@@ -662,19 +674,19 @@ package body en_cl_fix_pkg is
             result_fmt.I,
             max(result_fmt.F+1, a_fmt.F)
         );
-        constant in_offset_c        : natural := mid_fmt_c.F - a_fmt.F;
-        constant out_offset_c       : natural := mid_fmt_c.F - result_fmt.F;
-        constant half_c             : unsigned(cl_fix_width(mid_fmt_c)-1 downto 0) := get_half(mid_fmt_c, result_fmt);
-        constant sign_c             : std_logic := cl_fix_sign(a, a_fmt);
-        variable unit_v             : std_logic;
-        variable mid_v              : unsigned(cl_fix_width(mid_fmt_c)-1 downto 0) := (others => '0');
-        variable result_v           : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
+        constant in_offset_c    : natural := mid_fmt_c.F - a_fmt.F;
+        constant out_offset_c   : natural := mid_fmt_c.F - result_fmt.F;
+        constant half_c         : unsigned(cl_fix_width(mid_fmt_c)-1 downto 0) := get_half(mid_fmt_c, result_fmt);
+        constant sign_c         : std_logic := cl_fix_sign(a_c, a_fmt);
+        variable unit_v         : std_logic;
+        variable mid_v          : unsigned(cl_fix_width(mid_fmt_c)-1 downto 0) := (others => '0');
+        variable result_v       : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
         assert result_fmt = cl_fix_round_fmt(a_fmt, result_fmt.F, round)
             report "cl_fix_round: Invalid result format. Use cl_fix_round_fmt()." severity Failure;
         
         -- Write the input value into mid_v with correct binary point alignment.
-        mid_v := unsigned(convert(a, a_fmt, mid_fmt_c));
+        mid_v := unsigned(convert(a_c, a_fmt, mid_fmt_c));
         
         -- To implement each rounding algorithm, we add an appropriate offset before truncating.
         if result_fmt.F < a_fmt.F then
@@ -777,25 +789,15 @@ package body en_cl_fix_pkg is
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        constant TempFmt_c  : FixFormat_t :=
-            (
-                S   => a_fmt.S,
-                I   => a_fmt.I + a_fmt.S,
-                F   => a_fmt.F
-            );
-        variable a_v        : std_logic_vector(a'length-1 downto 0);
-        variable temp_v     : std_logic_vector(cl_fix_width(TempFmt_c)-1 downto 0);
+        constant mid_fmt_c  : FixFormat_t := cl_fix_abs_fmt(a_fmt);
+        variable mid_v      : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
     begin
-        a_v := a;
-        if a_fmt.S = 1 then
-            temp_v := a_v(a_v'high) & a_v;
-            if a_v(a_v'high) = '1' then
-                temp_v := std_logic_vector(unsigned(not temp_v) + 1);
-            end if;
+        if cl_fix_sign(a, a_fmt) = '1' then
+            mid_v := cl_fix_neg(a, a_fmt, mid_fmt_c);
         else
-            temp_v := a_v;
+            mid_v := convert(a, a_fmt, mid_fmt_c);
         end if;
-        return cl_fix_resize(temp_v, TempFmt_c, result_fmt, round, saturate);
+        return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
     end;
     
     function cl_fix_neg(
@@ -908,6 +910,10 @@ package body en_cl_fix_pkg is
         round       : FixRound_t    := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
+        -- Force downto 0
+        constant a_c            : std_logic_vector(a'length-1 downto 0) := a;
+        constant b_c            : std_logic_vector(b'length-1 downto 0) := b;
+        
         -- VHDL doesn't define a * operator for mixed signed*unsigned or unsigned*signed.
         -- Just inside cl_fix_mult, it is safe to define them for local use.
         function "*"(x : signed; y : unsigned) return signed is
@@ -927,13 +933,13 @@ package body en_cl_fix_pkg is
         variable result_v       : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
         if a_fmt.S = 0 and b_fmt.S = 0 then
-            mid_v := std_logic_vector(unsigned(a) * unsigned(b));
+            mid_v := std_logic_vector(unsigned(a_c) * unsigned(b_c));
         elsif a_fmt.S = 0 and b_fmt.S = 1 then
-            mid_v := std_logic_vector(unsigned(a) *   signed(b));
+            mid_v := std_logic_vector(unsigned(a_c) *   signed(b_c));
         elsif a_fmt.S = 1 and b_fmt.S = 0 then
-            mid_v := std_logic_vector(  signed(a) * unsigned(b));
+            mid_v := std_logic_vector(  signed(a_c) * unsigned(b_c));
         else
-            mid_v := std_logic_vector(  signed(a) *   signed(b));
+            mid_v := std_logic_vector(  signed(a_c) *   signed(b_c));
         end if;
         
         return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
@@ -982,10 +988,12 @@ package body en_cl_fix_pkg is
     end function;
     
     function cl_fix_sign(a : std_logic_vector; aFmt : FixFormat_t) return std_logic is
+        -- Force downto 0
+        constant a_c    : std_logic_vector(a'length-1 downto 0) := a;
     begin
         if aFmt.S = 0 or cl_fix_width(aFmt) = 0 then
             return '0';
         end if;
-        return a(a'high);
+        return a_c(a_c'high);
     end function;
 end;
