@@ -57,15 +57,15 @@ architecture rtl of cl_fix_saturate_tb is
         -- We repeat the same pattern here.
         for a in Amin to Amax loop
             -- Calculate result in VHDL
-            Result_v := cl_fix_resize(
+            Result_v := cl_fix_saturate(
                 cl_fix_from_bits_as_int(a, AFmt_c(i)), AFmt_c(i),
-                RFmt_c(i), Trunc_s, FixSaturate_t'val(Sat_c(i))
+                RFmt_c(i), FixSaturate_t'val(Sat_c(i))
             );
             
             -- Check against cosim
             if Result_v /= Expected_c(Idx_v) then
                 print(
-                    "Error while calculating -" & Str(a, AFmt_c(i)) & " " & to_string(AFmt_c(i))
+                    "Error while saturating " & Str(a, AFmt_c(i)) & " " & to_string(AFmt_c(i))
                     & " [sat: " & to_string(FixSaturate_t'val(Sat_c(i))) & "] --> " & to_string(RFmt_c(i))
                 );
                 check_equal(Result_v, Expected_c(Idx_v), "Error at index " & to_string(Idx_v));

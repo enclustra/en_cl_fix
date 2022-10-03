@@ -133,7 +133,12 @@ package en_cl_fix_pkg is
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector;
     
-    function cl_fix_in_range(a : std_logic_vector; a_fmt : FixFormat_t; result_fmt : FixFormat_t; round : FixRound_t := Trunc_s) return boolean;
+    function cl_fix_in_range(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s
+    ) return boolean;
     
     -----------------------------------------------------------------------------------------------
     -- Math Functions
@@ -260,6 +265,41 @@ package body en_cl_fix_pkg is
             -- Normal behavior: get the explicit "unit" bit (i.e. the LSB weight of rFmt)
             return a(unit_c);
         end if;
+    end function;
+    
+    function resize_sensible(a : signed; n : natural) return signed is
+        variable v  : signed(n-1 downto 0);
+    begin
+        if n >= a'length then
+            -- Sign extension: Use the standard VHDL function.
+            v := resize(a, n);
+        else
+            -- Truncation: Just do plain truncation.
+            -- This is usually more sensible than numeric_std.resize, which preserves the sign bit.
+            v := a(n-1 downto 0);
+        end if;
+        return v;
+    end function;
+    
+    function convert(a : std_logic_vector; aFmt, rFmt : FixFormat_t) return std_logic_vector is
+        -- This function converts from aFmt to rFmt without any rounding or saturation:
+        --     - It does *not* support rFmt.F < aFmt.F (offset_c is type natural). To reduce frac
+        --       bits, always use cl_fix_round (Trunc_s rounding mode can be used to truncate).
+        --     - It does support (rFmt.S+rFmt.I) < (aFmt.S+aFmt.I) *without* saturation. In other
+        --       words, this implements cl_fix_saturate, with None_s saturation mode.
+        constant r_width_c  : natural := cl_fix_width(rFmt);
+        constant offset_c   : natural := rFmt.F - aFmt.F;
+        variable result_v   : std_logic_vector(r_width_c-1 downto 0) := (others => '0');
+    begin
+        -- Write the input value into result_v with correct binary point alignment.
+        -- We sign extend into any extra int bits (and offset_c LSBs are defaulted to '0').
+        if aFmt.S = 0 then
+            result_v(r_width_c-1 downto offset_c) := std_logic_vector(resize(unsigned(a), r_width_c - offset_c));
+        else
+            result_v(r_width_c-1 downto offset_c) := std_logic_vector(resize_sensible(signed(a), r_width_c - offset_c));
+        end if;
+        
+        return result_v;
     end function;
     
     -- Avoid collision between min() function and minutes unit in VHDL std library.
@@ -541,9 +581,9 @@ package body en_cl_fix_pkg is
     end;
     
     function cl_fix_to_real(a : std_logic_vector; a_fmt : FixFormat_t) return real is
-        constant ABits_c        : positive := cl_fix_width(a_fmt);
+        constant ABits_c        : natural := cl_fix_width(a_fmt);
         constant ChunkSize_c    : positive := 30;
-        constant ChunkCount_c   : positive := (ABits_c + ChunkSize_c - 1)/ChunkSize_c;
+        constant ChunkCount_c   : natural := (ABits_c + ChunkSize_c - 1)/ChunkSize_c;
         variable a_v            : std_logic_vector(a'length-1 downto 0);
         variable Correction_v   : real := 0.0;
         variable apad_v         : unsigned(ChunkSize_c*ChunkCount_c-1 downto 0);
@@ -628,17 +668,13 @@ package body en_cl_fix_pkg is
         constant sign_c             : std_logic := cl_fix_sign(a, a_fmt);
         variable unit_v             : std_logic;
         variable mid_v              : unsigned(cl_fix_width(mid_fmt_c)-1 downto 0) := (others => '0');
+        variable result_v           : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
         assert result_fmt = cl_fix_round_fmt(a_fmt, result_fmt.F, round)
             report "cl_fix_round: Invalid result format. Use cl_fix_round_fmt()." severity Failure;
         
         -- Write the input value into mid_v with correct binary point alignment.
-        -- We sign extend into any extra int bits (and in_offset_c LSBs are defaulted to '0').
-        if a_fmt.S = 0 then
-            mid_v(mid_v'high downto in_offset_c) := resize(unsigned(a), mid_v'length - in_offset_c);
-        else
-            mid_v(mid_v'high downto in_offset_c) := unsigned(resize(signed(a), mid_v'length - in_offset_c));
-        end if;
+        mid_v := unsigned(convert(a, a_fmt, mid_fmt_c));
         
         -- To implement each rounding algorithm, we add an appropriate offset before truncating.
         if result_fmt.F < a_fmt.F then
@@ -665,8 +701,10 @@ package body en_cl_fix_pkg is
             end case;
         end if;
         
-        -- Truncate
-        return std_logic_vector(mid_v(cl_fix_width(result_fmt)+out_offset_c-1 downto out_offset_c));
+        -- Truncate (and force downto 0)
+        result_v := std_logic_vector(mid_v(cl_fix_width(result_fmt)+out_offset_c-1 downto out_offset_c));
+        
+        return result_v;
     end;
     
     function cl_fix_saturate(
@@ -675,37 +713,29 @@ package body en_cl_fix_pkg is
         result_fmt  : FixFormat_t;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        
-        constant ResultWidth_c      : positive := cl_fix_width(result_fmt);
-        constant CutFracBits_c      : natural := a_fmt.F - result_fmt.F;
-        constant CutIntSignBits_c   : integer := cl_fix_width(a_fmt) - (ResultWidth_c+CutFracBits_c);
-        
-        variable a_v                : unsigned(cl_fix_width(a_fmt)-1 downto 0);
-        
+        variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
-        a_v := unsigned(a);
+        assert result_fmt.F = a_fmt.F report "cl_fix_saturate: Number of frac bits cannot change." severity Failure;
         
-        if CutIntSignBits_c > 0 and saturate /= None_s then -- saturation required
-            if result_fmt.S = 1 then -- signed output
-                if to_01(a_v(a_v'high downto a_v'high-CutIntSignBits_c)) /= 0 and
-                        not a_v(a_v'high downto a_v'high-CutIntSignBits_c) /= 0 then
-                    assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
-                    if saturate /= Warn_s then
-                        a_v(a_v'high-1 downto 0) := (others => not a_v(a_v'high));
-                        a_v(ResultWidth_c+CutFracBits_c-1) := a_v(a_v'high);
-                    end if;
-                end if;
-            else -- unsigned output
-                if to_01(a_v(a_v'high downto a_v'high-CutIntSignBits_c+1)) /= 0 then
-                    assert saturate = Sat_s report "cl_fix_resize : Saturation Warning!" severity warning;
-                    if saturate /= Warn_s then
-                        a_v := (others => not a_v(a_v'high));
-                    end if;
-                end if;
+        -- Saturation warning
+        if saturate = Warn_s or saturate = SatWarn_s then
+            assert cl_fix_in_range(a, a_fmt, result_fmt)
+                report "cl_fix_saturate : Saturation warning!" severity Warning;
+        end if;
+        
+        -- Write the input value into result_v with correct binary point alignment.
+        result_v := convert(a, a_fmt, result_fmt);
+        
+        -- Saturate
+        if saturate = Sat_s or saturate = SatWarn_s then
+            if cl_fix_compare("<", a, a_fmt, cl_fix_min_value(result_fmt), result_fmt) then
+                result_v := cl_fix_min_value(result_fmt);
+            elsif cl_fix_compare(">", a, a_fmt, cl_fix_max_value(result_fmt), result_fmt) then
+                result_v := cl_fix_max_value(result_fmt);
             end if;
         end if;
         
-        return std_logic_vector(a_v(ResultWidth_c+CutFracBits_c-1 downto CutFracBits_c));
+        return result_v;
     end;
     
     function cl_fix_resize(
@@ -729,19 +759,15 @@ package body en_cl_fix_pkg is
         result_fmt  : FixFormat_t;
         round       : FixRound_t := Trunc_s
     ) return boolean is
-        -- Note: This matches the python implementation
-        constant rndFmt_c : FixFormat_t :=
-            (
-                S   => a_fmt.S,
-                I   => a_fmt.I + 1,
-                F   => result_fmt.F
-            );
+        -- Note: If result_fmt.F /= a_fmt.F, then we need to know what rounding algorithm will be
+        --       used when reducing the LSBs.
+        constant rndFmt_c : FixFormat_t := cl_fix_round_fmt(a_fmt, result_fmt.F, round);
         
         -- Apply rounding
-        constant Rounded_c  : std_logic_vector := cl_fix_resize(a, a_fmt, rndFmt_c, round, Sat_s);
+        constant Rounded_c  : std_logic_vector := cl_fix_round(a, a_fmt, rndFmt_c, round);
     begin
-        return cl_fix_compare("a>=b", Rounded_c, rndFmt_c, cl_fix_min_value(result_fmt), result_fmt) and
-               cl_fix_compare("a<=b", Rounded_c, rndFmt_c, cl_fix_max_value(result_fmt), result_fmt);
+        return cl_fix_compare(">=", Rounded_c, rndFmt_c, cl_fix_min_value(result_fmt), result_fmt) and
+               cl_fix_compare("<=", Rounded_c, rndFmt_c, cl_fix_max_value(result_fmt), result_fmt);
     end;
     
     function cl_fix_abs(
@@ -783,7 +809,7 @@ package body en_cl_fix_pkg is
         variable a_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
         variable mid_v      : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
     begin
-        a_v := cl_fix_resize(a, a_fmt, mid_fmt_c);
+        a_v := convert(a, a_fmt, mid_fmt_c);
         mid_v := std_logic_vector(-signed(a_v));
         return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
     end;
@@ -802,8 +828,8 @@ package body en_cl_fix_pkg is
         variable b_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
         variable mid_v      : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
     begin
-        a_v := cl_fix_resize(a, a_fmt, mid_fmt_c, Trunc_s, None_s);
-        b_v := cl_fix_resize(b, b_fmt, mid_fmt_c, Trunc_s, None_s);
+        a_v := convert(a, a_fmt, mid_fmt_c);
+        b_v := convert(b, b_fmt, mid_fmt_c);
         -- Signed/unsigned addition/subtraction are identical when using two's complement.
         -- However, a long-standing Vivado bug causes incorrect post-synthesis behavior in DSP
         -- slices (pre-add or post-add) if numeric_std.unsigned is used. There are no known issues
@@ -826,8 +852,8 @@ package body en_cl_fix_pkg is
         variable b_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
         variable mid_v      : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
     begin
-        a_v := cl_fix_resize(a, a_fmt, mid_fmt_c, Trunc_s, None_s);
-        b_v := cl_fix_resize(b, b_fmt, mid_fmt_c, Trunc_s, None_s);
+        a_v := convert(a, a_fmt, mid_fmt_c);
+        b_v := convert(b, b_fmt, mid_fmt_c);
         -- Signed/unsigned addition/subtraction are identical when using two's complement.
         -- However, a long-standing Vivado bug causes incorrect post-synthesis behavior in DSP
         -- slices (pre-add or post-add) if numeric_std.unsigned is used. There are no known issues
@@ -925,8 +951,8 @@ package body en_cl_fix_pkg is
         variable BFull_v    : std_logic_vector(cl_fix_width(FullFmt_c)-1 downto 0);
     begin
         -- Convert to same type
-        AFull_v := cl_fix_resize(a, aFmt, FullFmt_c);
-        BFull_v := cl_fix_resize(b, bFmt, FullFmt_c);
+        AFull_v := convert(a, aFmt, FullFmt_c);
+        BFull_v := convert(b, bFmt, FullFmt_c);
         
         -- Compare
         if FullFmt_c.S = 1 then
