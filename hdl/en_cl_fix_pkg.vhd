@@ -666,9 +666,10 @@ package body en_cl_fix_pkg is
         constant a_c            : std_logic_vector(a'length-1 downto 0) := a;
         
         -- The result format takes care of potential integer growth due to the rounding mode.
-        -- In the intermediate calculation, we need to +/- 2.0**-(result_fmt.F+1) in order to
-        -- implement each rounding algorithm (except trivial Trunc_s).
-        constant frac_growth_c  : natural := choose(round = Trunc_s, 0, 1);
+        -- In the intermediate calculation, we need to +/- up to 2.0**-(result_fmt.F+1) in order to
+        -- implement each rounding algorithm (except trivial Trunc_s). To keep life simple, we just
+        -- force at least result_fmt.F+1 frac bits (even if this is sometimes one too many). The
+        -- synthesis tool is likely to optimize this fine.
         constant mid_fmt_c      : FixFormat_t := (
             result_fmt.S,
             result_fmt.I,
@@ -713,7 +714,7 @@ package body en_cl_fix_pkg is
             end case;
         end if;
         
-        -- Truncate (and force downto 0)
+        -- Truncate (and force downto 0 by assigning to result_v before returning)
         result_v := std_logic_vector(mid_v(cl_fix_width(result_fmt)+out_offset_c-1 downto out_offset_c));
         
         return result_v;
