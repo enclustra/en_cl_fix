@@ -315,7 +315,7 @@ class wide_fxp:
                sat : FixSaturate = FixSaturate.None_s):
         
         # Round
-        roundedFmt = FixFormat.ForRound(aFmt, rFmt.F, rnd)
+        roundedFmt = FixFormat.ForRound(self._fmt, rFmt.F, rnd)
         rounded = self.round(roundedFmt, rnd)
         
         # Saturate
