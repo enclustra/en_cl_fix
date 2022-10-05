@@ -86,16 +86,51 @@ class FixFormat:
         # rmax = amax-bmin
         #     If bFmt.S = 0: rmax = (2**aFmt.I - 2**-aFmt.F) - 0
         #     If bFmt.S = 1: rmax = (2**aFmt.I - 2**-aFmt.F) + 2**bFmt.I
-        # We get 1 bit of growth in the signed case if -2**-aFmt.F + 2**bFmt.I >= 0.
-        rmax_growth = bFmt.S if bFmt.I >= -aFmt.F else 0
+        # If bFmt.S = 0, then rmaxFmt = aFmt.
+        # If bFmt.S = 1 and aFmt.I >= bFmt.I, then we get 1 bit of growth if:
+        #                -2**-aFmt.F + 2**bFmt.I >= 0
+        #                              2**bFmt.I >= 2**-aFmt.F
+        # If bFmt.S = 1 and bFmt.I >= aFmt.I, then we get 1 bit of growth if:
+        #                -2**-aFmt.F + 2**aFmt.I >= 0
+        #                              2**aFmt.I >= 2**-aFmt.F
+        if bFmt.S == 0:
+            rmaxI = aFmt.I
+        else:
+            rmax_growth = bFmt.S if min(aFmt.I, bFmt.I) >= -aFmt.F else 0
+            rmaxI = max(aFmt.I, bFmt.I) + rmax_growth
         
         # rmin = amin-bmax
         #     If aFmt.S = 0: rmin = 0 - (2**bFmt.I - 2**-bFmt.F)
         #     If aFmt.S = 1: rmin = -2**aFmt.I - (2**bFmt.I - 2**-bFmt.F)
-        # We get 1 bit of growth in the signed case if -2**aFmt.I + 2**-bFmt.F < 0.
-        rmin_growth = aFmt.S if aFmt.I > -bFmt.F else 0
+        # If aFmt.S = 0 and bFmt.I = -bFmt.F, then rFmt.S=0 with no requirement on rFmt.I.
+        # If aFmt.S = 0 and bFmt.I = -bFmt.F+1, then we have a special case (power of 2) such that
+        # rmin = -2**-bFmt.F, so rFmt.S=1 and rFmt.I = -bFmt.F.
+        # If aFmt.S = 0 and (all other cases), then rFmt.S=1 and rFmt.I=bFmt.I.
+        # If aFmt.S = 1 and aFmt.I >= bFmt.I, then we get 1 bit of growth if:
+        #                       2**bFmt.I - 2**-bFmt.F > 0
+        # If aFmt.S = 1 and bFmt.I >= aFmt.I, then we get 1 bit of growth if:
+        #                       2**aFmt.I - 2**-bFmt.F > 0
+        if aFmt.S == 0:
+            if bFmt.width() == 1 and bFmt.S == 1:
+                # Special case: a is unsigned and b is 1-bit signed:
+                S = 0
+                I = rmaxI
+            elif bFmt.I == -bFmt.F+1:
+                # Special case: a is unsigned and rmin is a power of 2
+                S = 1
+                I = max(rmaxI, -bFmt.F)
+            else:
+                # Normal case for unsigned a
+                S = 1
+                I = max(rmaxI, bFmt.I)
+        else:
+            # Signed a
+            S = 1
+            rmin_growth = aFmt.S if min(aFmt.I, bFmt.I) > -bFmt.F else 0
+            rminI = max(aFmt.I, bFmt.I) + rmin_growth
+            I = max(rmaxI, rminI)
         
-        return FixFormat(1, max(aFmt.I, bFmt.I) + max(rmin_growth, rmax_growth), max(aFmt.F, bFmt.F))
+        return FixFormat(S, I, max(aFmt.F, bFmt.F))
     
     # Format for result of add-subtract
     @staticmethod
