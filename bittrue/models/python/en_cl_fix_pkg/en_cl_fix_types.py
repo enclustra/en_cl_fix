@@ -50,6 +50,10 @@ class FixFormat:
         # If bFmt.I >= aFmt.I, then we get 1 bit of growth if:
         #           -2**-bFmt.F + 2**aFmt.I - 2**-aFmt.F >= 0
         # Note that the aFmt.I == bFmt.I case is covered by either condition.
+        # We define maxFmt as the format with most int bits, and minFmt as the other. (As noted
+        # above, it doesn't matter which we treat as max/min when aFmt.I == bFmt.I). This gives a
+        # general expression for when bit-growth happens:
+        #           -2**-maxFmt.F + 2**minFmt.I - 2**-minFmt.F >= 0
         # If we rearrange the expression into pure integer arithmetic, we get:
         #      2**(minFmt.F+minFmt.I+maxFmt.F) >= 2**minFmt.F + 2**maxFmt.F
         # Equality is only possible if the RHS is a power of 2, so we can remove the 2**n by
