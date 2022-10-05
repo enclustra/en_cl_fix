@@ -40,16 +40,33 @@ class FixFormat:
     # Format for result of addition
     @staticmethod
     def ForAdd(aFmt, bFmt):
+        assert aFmt.width() > 0 and bFmt.width() > 0, "Data widths must be positive"
         # We must consider both extremes:
         
         # rmax = amax+bmax
         #      = (2**aFmt.I - 2**-aFmt.F) + (2**bFmt.I - 2**-bFmt.F)
-        # If we denote the format with max(aFmt.I, bFmt.I) int bits as "maxFmt" and the other
-        # format as "minFmt", then we get 1 bit of growth if 2**minFmt.I > 2**-maxFmt.F.
-        if aFmt.I >= bFmt.I:
-            rmax_growth = 1 if bFmt.I > -aFmt.F else 0
-        else:
-            rmax_growth = 1 if aFmt.I > -bFmt.F else 0
+        # If aFmt.I >= bFmt.I, then we get 1 bit of growth if:
+        #           -2**-aFmt.F + 2**bFmt.I - 2**-bFmt.F >= 0
+        # If bFmt.I >= aFmt.I, then we get 1 bit of growth if:
+        #           -2**-bFmt.F + 2**aFmt.I - 2**-aFmt.F >= 0
+        # Note that the aFmt.I == bFmt.I case is covered by either condition.
+        # If we rearrange the expression into pure integer arithmetic, we get:
+        #      2**(minFmt.F+minFmt.I+maxFmt.F) >= 2**minFmt.F + 2**maxFmt.F
+        # Equality is only possible if the RHS is a power of 2, so we can remove the 2**n by
+        # splitting this into two simple cases:
+        #      (1) If minFmt.F == maxFmt.F = F:
+        #          F+minFmt.I+F >= F+1
+        #          minFmt.I+F >= 1
+        #          minFmt.I+F > 0
+        #      (2) Else:
+        #          minFmt.F+minFmt.I+maxFmt.F > max(minFmt.F, maxFmt.F)
+        #          minFmt.I+maxFmt.F > max(minFmt.F, maxFmt.F) - minFmt.F
+        # Clearly, the expression for (2) also covers (1). We finally simplify the expression by
+        # noting that in general x+y-max(x,y) = min(x,y):
+        #          minFmt.I + min(minFmt.F, maxFmt.F) > 0
+        #          min(aFmt.I, bFmt.I) + min(aFmt.F, bFmt.F) > 0
+        # There is probably a more direct way to derive this simple expression.
+        rmax_growth = 1 if min(aFmt.I, bFmt.I) + min(aFmt.F, bFmt.F) > 0 else 0
         
         # rmin = amin+bmin
         #     If aFmt.S = 0 and bFmt.S = 0: 0 + 0
@@ -63,6 +80,7 @@ class FixFormat:
     # Format for result of subtraction
     @staticmethod
     def ForSub(aFmt, bFmt):
+        assert aFmt.width() > 0 and bFmt.width() > 0, "Data widths must be positive"
         # We must consider both extremes:
         
         # rmax = amax-bmin
@@ -82,6 +100,7 @@ class FixFormat:
     # Format for result of add-subtract
     @staticmethod
     def ForAddsub(aFmt, bFmt):
+        assert aFmt.width() > 0 and bFmt.width() > 0, "Data widths must be positive"
         addFmt = FixFormat.ForAdd(aFmt, bFmt)
         subFmt = FixFormat.ForSub(aFmt, bFmt)
         return FixFormat(max(addFmt.S, subFmt.S), max(addFmt.I, subFmt.I), max(addFmt.F, subFmt.F))
@@ -89,6 +108,7 @@ class FixFormat:
     # Format for result of multiplication
     @staticmethod
     def ForMult(aFmt, bFmt):
+        assert aFmt.width() > 0 and bFmt.width() > 0, "Data widths must be positive"
         # We get 1 bit of growth for signed*signed (rmax = -2**aFmt.I * -2**bFmt.I).
         growth = min(aFmt.S, bFmt.S)
         signed = max(aFmt.S, bFmt.S)
@@ -97,17 +117,23 @@ class FixFormat:
     # Format for result of negation
     @staticmethod
     def ForNeg(aFmt):
+        assert aFmt.width() > 0, "Data width must be positive"
+        # 1-bit unsigned inputs are special (neg is 1-bit signed)
+        if aFmt.S == 0 and aFmt.width() == 1:
+            return FixFormat(1, aFmt.I+aFmt.S-1, aFmt.F)
         return FixFormat(1, aFmt.I+aFmt.S, aFmt.F)
     
     # Format for result of absolute value
     @staticmethod
     def ForAbs(aFmt):
+        assert aFmt.width() > 0, "Data width must be positive"
         negFmt = FixFormat.ForNeg(aFmt)
         return FixFormat(max(aFmt.S, negFmt.S), max(aFmt.I, negFmt.I), max(aFmt.F, negFmt.F))
     
     # Format for result of left-shift
     @staticmethod
     def ForShift(aFmt, minShift, maxShift=None):
+        assert aFmt.width() > 0, "Data width must be positive"
         if maxShift is None:
             maxShift = minShift
         assert minShift <= maxShift, f"minShift ({minShift}) must be <= maxShift ({maxShift})"
@@ -116,6 +142,7 @@ class FixFormat:
     # Format for result of rounding
     @staticmethod
     def ForRound(aFmt, rFracBits : int, rnd : FixRound):
+        assert aFmt.width() > 0, "Data width must be positive"
         if rFracBits >= aFmt.F:
             # If fractional bits are not being reduced, then nothing happens to int bits.
             bitGrowth = 0
