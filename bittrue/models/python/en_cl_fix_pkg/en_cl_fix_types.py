@@ -191,11 +191,12 @@ class FixFormat:
         
         # The requirement can exceed rmaxI only if aFmt.S != bFmt.S and we don't run into the same
         # special case as FixFormat.ForNeg() (i.e. the unsigned value being 1-bit).
-        I = rmaxI
         if aFmt.S == 0 and bFmt.S == 1:
             I = max(rmaxI, FixFormat.ForNeg(aFmt).I + bFmt.I)
         elif aFmt.S == 1 and bFmt.S == 0:
             I = max(rmaxI, aFmt.I + FixFormat.ForNeg(bFmt).I)
+        else:
+            I = rmaxI
         
         # Sign bit
         if aFmt.width() == 1 and aFmt.S == 1 and bFmt.width() == 1 and bFmt.S == 1:
