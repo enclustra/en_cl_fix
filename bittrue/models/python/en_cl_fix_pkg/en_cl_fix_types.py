@@ -148,10 +148,64 @@ class FixFormat:
     @staticmethod
     def ForMult(aFmt, bFmt):
         assert aFmt.width() > 0 and bFmt.width() > 0, "Data widths must be positive"
-        # We get 1 bit of growth for signed*signed (rmax = -2**aFmt.I * -2**bFmt.I).
-        growth = min(aFmt.S, bFmt.S)
-        signed = max(aFmt.S, bFmt.S)
-        return FixFormat(signed, aFmt.I+bFmt.I+growth, aFmt.F+bFmt.F)
+        # We must consider both extremes:
+        
+        # rmax:
+        # If aFmt.S == 1 and bFmt.S == 1, then:
+        #     rmax = amin * bmin
+        #          = -2**aFmt.I * -2**bFmt.I = 2**(aFmt.I + bFmt.I)
+        #          ==> aFmt.I + bFmt.I + 1 int bits.
+        # Else:
+        #     rmax = amax * bmax
+        #          = (2**aFmt.I - 2**-aFmt.F) * (2**bFmt.I - 2**-bFmt.F)
+        #          = 2**(aFmt.I + bFmt.I) - 2**(aFmt.I - bFmt.F) - 2**(bFmt.I - aFmt.F) + 2**(-aFmt.F - bFmt.F)
+        #     This will typically need aFmt.I + bFmt.I int bits, but -1 bit if:
+        #          2**(aFmt.I + bFmt.I) - 2**(aFmt.I - bFmt.F) - 2**(bFmt.I - aFmt.F) + 2**(-aFmt.F - bFmt.F) < 2**(aFmt.I + bFmt.I - 1)
+        #     If we define x=aFmt.I+aFmt.F and y=bFmt.I+bFmt.F, then we can rearrange this to:
+        #          2**(x+y-1) + 1 < 2**x + 2**y
+        #     Further rearrangement leads to:
+        #          (2**x - 2)(2**y - 2) < 2
+        #     Note that x>=0 and y>=0 because we do not support I+F<0. So, it is fairly easy to see
+        #     the inequality is true iff x<=1 or y<=1 (and this is trivial to confirm numerically).
+        if aFmt.S == 1 and bFmt.S == 1:
+            rmaxI = aFmt.I + bFmt.I + 1
+        elif aFmt.I+aFmt.F <= 1 or bFmt.I+bFmt.F <= 1:
+            rmaxI = aFmt.I + bFmt.I - 1
+        else:
+            rmaxI = aFmt.I + bFmt.I
+        
+        # rmin:
+        # If aFmt.S == 0 and bFmt.S == 0, then:
+        #     rmin = amin * bmin = 0
+        #     ==> No requirement.
+        # If aFmt.S == 0 and bFmt.S == 1, then:
+        #     rmin = amax * bmin = (2**aFmt.I - 2**-aFmt.F) * -2**bFmt.I
+        #                        = -amax * 2**bFmt.I
+        #     ==> Same as FixFormat.ForNeg(aFmt).I + bFmt.I
+        # If aFmt.S == 1 and bFmt.S == 0, then:
+        #     rmin = amin * bmax
+        #     ==> Same as FixFormat.ForNeg(bFmt).I + aFmt.I
+        # If aFmt.S == 1 and bFmt.S == 1, then:
+        #     rmin = min(amax * bmin, amin * bmax)
+        #     ==> Never exceeds rmaxI ==> Ignore.
+        
+        # The requirement can exceed rmaxI only if aFmt.S != bFmt.S and we don't run into the same
+        # special case as FixFormat.ForNeg() (i.e. the unsigned value being 1-bit).
+        I = rmaxI
+        if aFmt.S == 0 and bFmt.S == 1:
+            I = max(rmaxI, FixFormat.ForNeg(aFmt).I + bFmt.I)
+        elif aFmt.S == 1 and bFmt.S == 0:
+            I = max(rmaxI, aFmt.I + FixFormat.ForNeg(bFmt).I)
+        
+        # Sign bit
+        if aFmt.width() == 1 and aFmt.S == 1 and bFmt.width() == 1 and bFmt.S == 1:
+            # Special case: 1-bit signed * 1-bit signed is unsigned
+            S = 0
+        else:
+            # Normal: If either input is signed, then output is signed
+            S = max(aFmt.S, bFmt.S)
+        
+        return FixFormat(S, I, aFmt.F+bFmt.F)
     
     # Format for result of negation
     @staticmethod
