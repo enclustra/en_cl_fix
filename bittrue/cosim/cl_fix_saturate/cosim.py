@@ -63,8 +63,8 @@ test_sat = []
 for aS in aS_values:
     for aI in aI_values:
         for aF in aF_values:
-            # Skip illegal formats
-            if aI+aF < 0:
+            # Skip unusable formats
+            if aS+aI+aF <= 0:
                 continue
             
             aFmt = FixFormat(aS, aI, aF)
