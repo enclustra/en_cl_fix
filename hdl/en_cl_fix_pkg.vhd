@@ -409,7 +409,12 @@ package body en_cl_fix_pkg is
     
     function cl_fix_neg_fmt(a_fmt : FixFormat_t) return FixFormat_t is
     begin
-        -- We get 1 bit of growth for signed inputs due to the asymmetry of two's complement.
+        -- 1-bit unsigned inputs are special (neg is 1-bit signed)
+        if a_fmt.S = 0 and cl_fix_width(a_fmt) = 1 then
+            return (1, a_fmt.I + a_fmt.S - 1, a_fmt.F);
+        end if;
+        
+        -- Normal case: 1 bit of growth for signed inputs due to the asymmetry of two's complement.
         return (1, a_fmt.I + a_fmt.S, a_fmt.F);
     end;
     
