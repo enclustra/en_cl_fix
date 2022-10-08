@@ -1068,7 +1068,6 @@ package body en_cl_fix_pkg is
         constant mid_fmt_c      : FixFormat_t := cl_fix_mult_fmt(a_fmt, b_fmt);
         constant mid_width_c    : positive := cl_fix_width(mid_fmt_c);
         variable mid_v          : std_logic_vector(mid_width_c-1 downto 0);
-        variable result_v       : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
         if a_fmt.S = 0 and b_fmt.S = 0 then
             mid_v := std_logic_vector(resize(unsigned(a_c) * unsigned(b_c), mid_width_c));
