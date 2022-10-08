@@ -94,7 +94,8 @@ class wide_fxp:
     @staticmethod
     def FromFxp(x, fmt : FixFormat):
         if type(x) == wide_fxp:
-            assert x.fmt == fmt, "FromFxp : Input was already wide_fxp and its fmt mismatched."
+            assert x.fmt == fmt, "FromFxp : Input was already wide_fxp and its fmt mismatched." \
+            f" Got: {x.fmt}. Requested: {fmt}."
             return x
         else:
             return wide_fxp.FromNarrowFxp(x, fmt)
@@ -450,7 +451,7 @@ class wide_fxp:
         
         # Align binary points
         rFmt = FixFormat.ForAdd(aFmt, bFmt)
-        a = a.resize(rFmt)
+        a = a.resize(rFmt)  ##################### This is not correct. We should not be resizing. #####
         b = b.resize(rFmt)
         
         # Do addition on internal integer data (binary points are aligned)
