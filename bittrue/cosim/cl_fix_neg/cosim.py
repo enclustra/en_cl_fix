@@ -9,23 +9,21 @@ import sys
 import os
 from os.path import join, dirname
 root = dirname(__file__)
+import numpy as np
+
 sys.path.append(join(root, "../../models/python"))
-from shutil import rmtree
 from en_cl_fix_pkg import *
 
-import numpy as np
+sys.path.append(join(root, ".."))
+from cosim_utils import *
+
+# Clear data directory
+DATA_DIR = join(root, "data")
+clear_directory(DATA_DIR)
 
 ###################################################################################################
 # Config
 ###################################################################################################
-
-# Clear data directory
-DATA_DIR = join(root, "data")
-try:
-    rmtree(DATA_DIR)
-except FileNotFoundError:
-    pass
-os.mkdir(DATA_DIR)
 
 # aFmt test points
 aS_values = [0,1]
@@ -44,17 +42,6 @@ rnd_values = [FixRound.Trunc_s, FixRound.NonSymPos_s]
 sat_values = [FixSaturate.None_s, FixSaturate.Sat_s]
 
 ###################################################################################################
-# Helpers
-###################################################################################################
-
-def get_data(fmt : FixFormat):
-    # Generate every possible value in format (counter)
-    int_min = cl_fix_to_integer(cl_fix_min_value(fmt), fmt)
-    int_max = cl_fix_to_integer(cl_fix_max_value(fmt), fmt)
-    int_data = np.arange(int_min, 1+int_max)
-    return cl_fix_from_integer(int_data, fmt)
-
-###################################################################################################
 # Run
 ###################################################################################################
 
@@ -68,15 +55,18 @@ test_sat = []
 ########
 # aFmt #
 ########
+progress = ProgressReporter((aS_values, aI_values, aF_values))
 for aS in aS_values:
     for aI in aI_values:
         for aF in aF_values:
+            # Report progress
+            progress.report()
+            
             # Skip unusable formats
             if aS+aI+aF < 1:
                 continue
             
             aFmt = FixFormat(aS, aI, aF)
-            negFmt = FixFormat.ForNeg(aFmt)
             
             # Generate A data
             a = get_data(aFmt)
@@ -97,12 +87,6 @@ for aS in aS_values:
                         # rnd #
                         #######
                         for rnd in rnd_values:
-                            
-                            # Skip any parameter combinations that lead to invalid internal formats
-                            try:
-                                FixFormat.ForRound(negFmt, rF, rnd) 
-                            except:
-                                continue
                             
                             #######
                             # sat #

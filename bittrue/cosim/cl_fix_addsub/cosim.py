@@ -9,61 +9,42 @@ import sys
 import os
 from os.path import join, dirname
 root = dirname(__file__)
+import numpy as np
+
 sys.path.append(join(root, "../../models/python"))
-from shutil import rmtree
 from en_cl_fix_pkg import *
 
-import numpy as np
+sys.path.append(join(root, ".."))
+from cosim_utils import *
+
+# Clear data directory
+DATA_DIR = join(root, "data")
+clear_directory(DATA_DIR)
 
 ###################################################################################################
 # Config
 ###################################################################################################
 
-# Clear data directory
-DATA_DIR = join(root, "data")
-try:
-    rmtree(DATA_DIR)
-except FileNotFoundError:
-    pass
-os.mkdir(DATA_DIR)
-
 # aFmt test points
 aS_values = [0,1]
-aI_values = np.arange(-1,1+4)
-aIplusF = 3
+aI_values = np.arange(-2,1+2)
+aF_values = np.arange(-2,1+2)
 
 # bFmt test points
 bS_values = [0,1]
-bI_values = np.arange(-1,1+4)
-bIplusF = 3
+bI_values = np.arange(-2,1+2)
+bF_values = np.arange(-2,1+2)
 
 # rFmt test points
 rS_values = [0,1]
-rI_values = np.arange(-1,1+4)
-rIplusF = 3
+rI_values = np.arange(-2,1+2)
+rF_values = np.arange(-2,1+2)
 
 # rnd test points
-rnd_values = [FixRound.Trunc_s, FixRound.NonSymPos_s]
+rnd_values = [FixRound.Trunc_s]
 
 # sat test points
-sat_values = [FixSaturate.None_s, FixSaturate.Sat_s]
-
-###################################################################################################
-# Helpers
-###################################################################################################
-
-def get_data(fmt : FixFormat):
-    # Generate every possible value in format (counter)
-    int_min = cl_fix_to_integer(cl_fix_min_value(fmt), fmt)
-    int_max = cl_fix_to_integer(cl_fix_max_value(fmt), fmt)
-    int_data = np.arange(int_min, 1+int_max)
-    return cl_fix_from_integer(int_data, fmt)
-
-def repeat_each_value(x, n):
-    return np.tile(x, (n,1)).flatten(order='F')
-
-def repeat_whole_array(x, n):
-    return np.tile(x, (n,1)).flatten(order='C')
+sat_values = [FixSaturate.None_s]
 
 ###################################################################################################
 # Run
@@ -80,79 +61,83 @@ test_sat = []
 ########
 # aFmt #
 ########
+progress = ProgressReporter((aS_values, aI_values, aF_values))
 for aS in aS_values:
     for aI in aI_values:
-        # Limit I+F (to keep simulation time reasonable)
-        aF = aIplusF-aI
-        aFmt = FixFormat(aS, aI, aF)
-        
-        # Generate A data
-        a = get_data(aFmt)
-        
-        ########
-        # bFmt #
-        ########
-        for bS in bS_values:
-            for bI in bI_values:
-                # Limit I+F (to keep simulation time reasonable)
-                bF = bIplusF-bI
-                bFmt = FixFormat(bS, bI, bF)
-                addFmt = FixFormat.ForAdd(aFmt, bFmt)
-                subFmt = FixFormat.ForSub(aFmt, bFmt)
-                
-                # Generate B data
-                b = get_data(bFmt)
-                
-                # Produce all combinations of all a and b values
-                a_all = repeat_whole_array(a, len(b))
-                b_all = repeat_each_value(b, len(a))
-                
-                # Repeat all combinations twice for add and sub
-                do_add = np.concatenate((np.zeros(len(a_all)), np.ones(len(a_all)))).astype(bool)
-                a_all = repeat_whole_array(a_all, 2)
-                b_all = repeat_whole_array(b_all, 2)
-                
-                ########
-                # rFmt #
-                ########
-                for rS in rS_values:
-                    for rI in rI_values:
-                        # Limit I+F (to keep simulation time reasonable)
-                        rF = rIplusF-rI
-                        rFmt = FixFormat(rS, rI, rF)
+        for aF in aF_values:
+            # Report progress
+            progress.report()
+            
+            # Skip unusable formats
+            if aS+aI+aF < 1:
+                continue
+            
+            aFmt = FixFormat(aS, aI, aF)
+            
+            # Generate A data
+            a = get_data(aFmt)
+            
+            ########
+            # bFmt #
+            ########
+            for bS in bS_values:
+                for bI in bI_values:
+                    for bF in bF_values:
+                        # Skip unusable formats
+                        if bS+bI+bF < 1:
+                            continue
                         
-                        #######
-                        # rnd #
-                        #######
-                        for rnd in rnd_values:
-                            
-                            # Skip any parameter combinations that lead to invalid internal formats
-                            try:
-                                FixFormat.ForRound(addFmt, rF, rnd)
-                                FixFormat.ForRound(subFmt, rF, rnd)
-                            except:
-                                continue
-                            
-                            #######
-                            # sat #
-                            #######
-                            for sat in sat_values:
-                                # Calculate output
-                                r = cl_fix_addsub(a_all, aFmt, b_all, bFmt, do_add, rFmt, rnd, sat)
-                                
-                                # Save output to file
-                                np.savetxt(join(DATA_DIR, f"test{test_count}_output.txt"),
-                                           cl_fix_to_integer(r, rFmt),
-                                           fmt="%i", header=f"r[{r.size}]")
-                                
-                                # Save test parameters into lists
-                                test_aFmt.append(aFmt)
-                                test_bFmt.append(bFmt)
-                                test_rFmt.append(rFmt)
-                                test_rnd.append(rnd.value)
-                                test_sat.append(sat.value)
-                                
-                                test_count += 1
+                        bFmt = FixFormat(bS, bI, bF)
+                        
+                        # Generate B data
+                        b = get_data(bFmt)
+                        
+                        # Produce all combinations of all a and b values
+                        a_all = repeat_whole_array(a, len(b))
+                        b_all = repeat_each_value(b, len(a))
+                        
+                        # Repeat all combinations twice for add and sub
+                        do_add = np.concatenate((np.zeros(len(a_all)), np.ones(len(a_all)))).astype(bool)
+                        a_all = repeat_whole_array(a_all, 2)
+                        b_all = repeat_whole_array(b_all, 2)
+                
+                        ########
+                        # rFmt #
+                        ########
+                        for rS in rS_values:
+                            for rI in rI_values:
+                                for rF in rF_values:
+                                    # Skip unusable formats
+                                    if rS+rI+rF < 1:
+                                        continue
+                                    
+                                    rFmt = FixFormat(rS, rI, rF)
+                                    
+                                    #######
+                                    # rnd #
+                                    #######
+                                    for rnd in rnd_values:
+                                        
+                                        #######
+                                        # sat #
+                                        #######
+                                        for sat in sat_values:
+                                            # Calculate output
+                                            r = cl_fix_addsub(a_all, aFmt, b_all, bFmt, do_add, rFmt, rnd, sat)
+                                            
+                                            # Save output to file
+                                            np.savetxt(join(DATA_DIR, f"test{test_count}_output.txt"),
+                                                       cl_fix_to_integer(r, rFmt),
+                                                       fmt="%i", header=f"r[{r.size}]")
+                                            
+                                            # Save test parameters into lists
+                                            test_aFmt.append(aFmt)
+                                            test_bFmt.append(bFmt)
+                                            test_rFmt.append(rFmt)
+                                            test_rnd.append(rnd.value)
+                                            test_sat.append(sat.value)
+                                            
+                                            test_count += 1
 
 print(f"Cosim generated {test_count} tests.")
 

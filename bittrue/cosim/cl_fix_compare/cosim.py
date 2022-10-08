@@ -9,23 +9,21 @@ import sys
 import os
 from os.path import join, dirname
 root = dirname(__file__)
+import numpy as np
+
 sys.path.append(join(root, "../../models/python"))
-from shutil import rmtree
 from en_cl_fix_pkg import *
 
-import numpy as np
+sys.path.append(join(root, ".."))
+from cosim_utils import *
+
+# Clear data directory
+DATA_DIR = join(root, "data")
+clear_directory(DATA_DIR)
 
 ###################################################################################################
 # Config
 ###################################################################################################
-
-# Clear data directory
-DATA_DIR = join(root, "data")
-try:
-    rmtree(DATA_DIR)
-except FileNotFoundError:
-    pass
-os.mkdir(DATA_DIR)
 
 # aFmt test points
 aS_values = [0,1]
@@ -36,23 +34,6 @@ aF_values = np.arange(-3,1+3)
 bS_values = [0,1]
 bI_values = np.arange(-3,1+3)
 bF_values = np.arange(-3,1+3)
-
-###################################################################################################
-# Helpers
-###################################################################################################
-
-def get_data(fmt : FixFormat):
-    # Generate every possible value in format (counter)
-    int_min = cl_fix_to_integer(cl_fix_min_value(fmt), fmt)
-    int_max = cl_fix_to_integer(cl_fix_max_value(fmt), fmt)
-    int_data = np.arange(int_min, 1+int_max)
-    return cl_fix_from_integer(int_data, fmt)
-
-def repeat_each_value(x, n):
-    return np.tile(x, (n,1)).flatten(order='F')
-
-def repeat_whole_array(x, n):
-    return np.tile(x, (n,1)).flatten(order='C')
 
 ###################################################################################################
 # Run
@@ -69,11 +50,15 @@ test_sat = []
 ########
 # aFmt #
 ########
+progress = ProgressReporter((aS_values, aI_values, aF_values))
 for aS in aS_values:
     for aI in aI_values:
         for aF in aF_values:
-            # Skip formats with non-positive length
-            if aS+aI+aF <= 0:
+            # Report progress
+            progress.report()
+            
+            # Skip unusable formats
+            if aS+aI+aF < 1:
                 continue
             
             aFmt = FixFormat(aS, aI, aF)
