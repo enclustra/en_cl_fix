@@ -441,20 +441,25 @@ package body en_cl_fix_pkg is
     end;
     
     function cl_fix_round_fmt(a_fmt : FixFormat_t; r_frac_bits : integer; rnd : FixRound_t) return FixFormat_t is
-        variable growth_v   : natural;
+        variable I_v    : integer;
     begin
         if r_frac_bits >= a_fmt.F then
             -- If fractional bits are not being reduced, then nothing happens to int bits.
-            growth_v := 0;
+            I_v := a_fmt.I;
         elsif rnd = Trunc_s then
             -- Crude truncation has no effect on int bits.
-            growth_v := 0;
+            I_v := a_fmt.I;
         else
             -- All other rounding modes can overflow into +1 int bit.
-            growth_v := 1;
+            I_v := a_fmt.I + 1;
         end if;
         
-        return (a_fmt.S, a_fmt.I + growth_v, r_frac_bits);
+        -- Force result to be at least 1 bit wide
+        if a_fmt.S + I_v + r_frac_bits < 1 then
+            I_v := -a_fmt.S - r_frac_bits + 1;
+        end if;
+        
+        return (a_fmt.S, I_v, r_frac_bits);
     end;
     
     function to_string(fmt : FixFormat_t) return string is

@@ -239,15 +239,19 @@ class FixFormat:
         assert aFmt.width() > 0, "Data width must be positive"
         if rFracBits >= aFmt.F:
             # If fractional bits are not being reduced, then nothing happens to int bits.
-            bitGrowth = 0
+            I = aFmt.I
         elif rnd == FixRound.Trunc_s:
             # Crude truncation has no effect on int bits.
-            bitGrowth = 0
+            I = aFmt.I
         else:
             # All other rounding modes can overflow into +1 int bit.
-            bitGrowth = 1
+            I = aFmt.I + 1
         
-        return FixFormat(aFmt.S, aFmt.I + bitGrowth, rFracBits)
+        # Force result to be at least 1 bit wide
+        if aFmt.S + I + rFracBits < 1:
+            I = -aFmt.S - rFracBits + 1
+    
+        return FixFormat(aFmt.S, I, rFracBits)
     
     def __repr__(self):
         return "FixFormat" + f"({self.S}, {self.I}, {self.F})"
