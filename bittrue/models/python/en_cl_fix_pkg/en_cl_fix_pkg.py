@@ -233,9 +233,6 @@ def cl_fix_neg(a, aFmt : FixFormat,
     midFmt = FixFormat.ForNeg(aFmt)
     if type(a) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
-    else:
-        a = cl_fix_resize(a, aFmt, midFmt)
-    
     return cl_fix_resize(-a, midFmt, rFmt, rnd, sat)
 
 def cl_fix_add( a, aFmt : FixFormat,
@@ -246,10 +243,6 @@ def cl_fix_add( a, aFmt : FixFormat,
     if type(a) == wide_fxp or type(b) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
         b = wide_fxp.FromFxp(b, bFmt)
-    else:
-        a = cl_fix_resize(a, aFmt, midFmt)
-        b = cl_fix_resize(b, bFmt, midFmt)
-    
     return cl_fix_resize(a + b, midFmt, rFmt, rnd, sat)
 
 def cl_fix_sub( a, aFmt : FixFormat,
@@ -260,10 +253,6 @@ def cl_fix_sub( a, aFmt : FixFormat,
     if type(a) == wide_fxp or type(b) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
         b = wide_fxp.FromFxp(b, bFmt)
-    else:
-        a = cl_fix_resize(a, aFmt, midFmt)
-        b = cl_fix_resize(b, bFmt, midFmt)
-    
     return cl_fix_resize(a - b, midFmt, rFmt, rnd, sat)
 
 def cl_fix_addsub(  a, aFmt : FixFormat,
