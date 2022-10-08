@@ -79,6 +79,9 @@ package en_cl_fix_pkg is
     
     function cl_fix_round_fmt(a_fmt : FixFormat_t; r_frac_bits : integer; rnd : FixRound_t) return FixFormat_t;
     
+    function cl_fix_fmt_union(fmts : FixFormatArray_t) return FixFormat_t;
+    function cl_fix_fmt_union(aFmt, bFmt : FixFormat_t) return FixFormat_t;
+    
     -----------------------------------------------------------------------------------------------
     -- String Conversions
     -----------------------------------------------------------------------------------------------
@@ -348,9 +351,32 @@ package body en_cl_fix_pkg is
         
         -- rmax = amax+bmax
         --      = (2**aFmt.I - 2**-aFmt.F) + (2**bFmt.I - 2**-bFmt.F)
-        -- If we denote the format with max(aFmt.I, bFmt.I) int bits as "maxFmt" and the other
-        -- format as "minFmt", then we get 1 bit of growth if 2**minFmt.I > 2**-maxFmt.F.
-        constant rmax_growth_c  : natural := choose((a_fmt.I >= b_fmt.I and b_fmt.I > -a_fmt.F) or (a_fmt.I < b_fmt.I and a_fmt.I > -b_fmt.F), 1, 0);
+        -- If aFmt.I >= bFmt.I, then we get 1 bit of growth if:
+        --           -2**-aFmt.F + 2**bFmt.I - 2**-bFmt.F >= 0
+        -- If bFmt.I >= aFmt.I, then we get 1 bit of growth if:
+        --           -2**-bFmt.F + 2**aFmt.I - 2**-aFmt.F >= 0
+        -- Note that the aFmt.I == bFmt.I case is covered by either condition.
+        -- We define maxFmt as the format with most int bits, and minFmt as the other. (As noted
+        -- above, it doesn't matter which we treat as max/min when aFmt.I == bFmt.I). This gives a
+        -- general expression for when bit-growth happens:
+        --           -2**-maxFmt.F + 2**minFmt.I - 2**-minFmt.F >= 0
+        -- If we rearrange the expression into pure integer arithmetic, we get:
+        --      2**(minFmt.F+minFmt.I+maxFmt.F) >= 2**minFmt.F + 2**maxFmt.F
+        -- Equality is only possible if the RHS is a power of 2, so we can remove the 2**n by
+        -- splitting this into two simple cases:
+        --      (1) If minFmt.F == maxFmt.F = F:
+        --          F+minFmt.I+F >= F+1
+        --          minFmt.I+F >= 1
+        --          minFmt.I+F > 0
+        --      (2) Else:
+        --          minFmt.F+minFmt.I+maxFmt.F > max(minFmt.F, maxFmt.F)
+        --          minFmt.I+maxFmt.F > max(minFmt.F, maxFmt.F) - minFmt.F
+        -- Clearly, the expression for (2) also covers (1). We finally simplify the expression by
+        -- noting that in general x+y-max(x,y) = min(x,y):
+        --          minFmt.I + min(minFmt.F, maxFmt.F) > 0
+        --          min(aFmt.I, bFmt.I) + min(aFmt.F, bFmt.F) > 0
+        -- There is probably a more direct way to derive this simple expression.
+        constant rmax_growth_c  : natural := choose(min(a_fmt.I, b_fmt.I) + min(a_fmt.F, b_fmt.F) > 0, 1, 0);
         
         -- rmin = amin+bmin
         --     If aFmt.S = 0 and bFmt.S = 0: 0 + 0
@@ -367,44 +393,144 @@ package body en_cl_fix_pkg is
     end;
     
     function cl_fix_sub_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
+        variable growth_v       : natural range 0 to 1;
+        variable rmaxI_v        : integer;
+        variable rminI_v        : integer;
+        variable S_v            : natural range 0 to 1;
+        variable I_v            : integer;
+    begin
         -- We must consider both extremes:
         
         -- rmax = amax-bmin
         --     If bFmt.S = 0: rmax = (2**aFmt.I - 2**-aFmt.F) - 0
         --     If bFmt.S = 1: rmax = (2**aFmt.I - 2**-aFmt.F) + 2**bFmt.I
-        -- We get 1 bit of growth in the signed case if -2**-aFmt.F + 2**bFmt.I >= 0.
-        constant rmax_growth_c  : natural := choose(b_fmt.I >= -a_fmt.F, b_fmt.S, 0);
+        -- If bFmt.S = 0, then rmaxFmt = aFmt.
+        -- If bFmt.S = 1 and aFmt.I >= bFmt.I, then we get 1 bit of growth if:
+        --                -2**-aFmt.F + 2**bFmt.I >= 0
+        --                              2**bFmt.I >= 2**-aFmt.F
+        -- If bFmt.S = 1 and bFmt.I >= aFmt.I, then we get 1 bit of growth if:
+        --                -2**-aFmt.F + 2**aFmt.I >= 0
+        --                              2**aFmt.I >= 2**-aFmt.F
+        if b_fmt.S = 0 then
+            rmaxI_v := a_fmt.I;
+        else
+            growth_v := choose(min(a_fmt.I, b_fmt.I) >= -a_fmt.F, b_fmt.S, 0);
+            rmaxI_v := max(a_fmt.I, b_fmt.I) + growth_v;
+        end if;
         
         -- rmin = amin-bmax
         --     If aFmt.S = 0: rmin = 0 - (2**bFmt.I - 2**-bFmt.F)
         --     If aFmt.S = 1: rmin = -2**aFmt.I - (2**bFmt.I - 2**-bFmt.F)
-        -- We get 1 bit of growth in the signed case if -2**aFmt.I + 2**-bFmt.F < 0.
-        constant rmin_growth_c  : natural := choose(a_fmt.I > -b_fmt.F, a_fmt.S, 0);
-    begin
-        return (
-            1,
-            max(a_fmt.I, b_fmt.I) + max(rmin_growth_c, rmax_growth_c),
-            max(a_fmt.F, b_fmt.F)
-        );
+        -- If aFmt.S = 0 and bFmt.I = -bFmt.F, then rFmt.S=0 with no requirement on rFmt.I.
+        -- If aFmt.S = 0 and bFmt.I = -bFmt.F+1, then we have a special case (power of 2) such that
+        -- rmin = -2**-bFmt.F, so rFmt.S=1 and rFmt.I = -bFmt.F.
+        -- If aFmt.S = 0 and (all other cases), then rFmt.S=1 and rFmt.I=bFmt.I.
+        -- If aFmt.S = 1 and aFmt.I >= bFmt.I, then we get 1 bit of growth if:
+        --                       2**bFmt.I - 2**-bFmt.F > 0
+        -- If aFmt.S = 1 and bFmt.I >= aFmt.I, then we get 1 bit of growth if:
+        --                       2**aFmt.I - 2**-bFmt.F > 0
+        if a_fmt.S = 0 then
+            if cl_fix_width(b_fmt) = 1 and b_fmt.S = 1 then
+                -- Special case: a is unsigned and b is 1-bit signed:
+                S_v := 0;
+                I_v := rmaxI_v;
+            elsif b_fmt.I = -b_fmt.F+1 then
+                -- Special case: a is unsigned and rmin is a power of 2
+                S_v := 1;
+                I_v := max(rmaxI_v, -b_fmt.F);
+            else
+                -- Normal case for unsigned a
+                S_v := 1;
+                I_v := max(rmaxI_v, b_fmt.I);
+            end if;
+        else
+            -- Signed a
+            S_v := 1;
+            growth_v := choose(min(a_fmt.I, b_fmt.I) > -b_fmt.F, a_fmt.S, 0);
+            rminI_v := max(a_fmt.I, b_fmt.I) + growth_v;
+            I_v := max(rmaxI_v, rminI_v);
+        end if;
+        
+        return (S_v, I_v, max(a_fmt.F, b_fmt.F));
     end;
     
     function cl_fix_addsub_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
         constant add_fmt_c  : FixFormat_t := cl_fix_add_fmt(a_fmt, b_fmt);
         constant sub_fmt_c  : FixFormat_t := cl_fix_sub_fmt(a_fmt, b_fmt);
     begin
-        return (
-            max(add_fmt_c.S, sub_fmt_c.S),
-            max(add_fmt_c.I, sub_fmt_c.I),
-            max(add_fmt_c.F, sub_fmt_c.F)
-        );
+        -- Take the max over add and sub formats.
+        return cl_fix_fmt_union(add_fmt_c, sub_fmt_c);
     end;
     
     function cl_fix_mult_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
-        -- We get 1 bit of growth for signed*signed (rmax = -2**aFmt.I * -2**bFmt.I).
-        constant Growth_c   : natural := min(a_fmt.S, b_fmt.S);
-        constant Signed_c   : natural := max(a_fmt.S, b_fmt.S);
+        constant a_neg_fmt_c    : FixFormat_t := cl_fix_neg_fmt(a_fmt);
+        constant b_neg_fmt_c    : FixFormat_t := cl_fix_neg_fmt(b_fmt);
+        variable rmaxI_v        : integer;
+        variable S_v            : natural range 0 to 1;
+        variable I_v            : integer;
     begin
-        return (Signed_c, a_fmt.I + b_fmt.I + Growth_c, a_fmt.F + b_fmt.F);
+        -- We must consider both extremes:
+        
+        -- rmax:
+        -- If aFmt.S == 1 and bFmt.S == 1, then:
+        --     rmax = amin * bmin
+        --          = -2**aFmt.I * -2**bFmt.I = 2**(aFmt.I + bFmt.I)
+        --          ==> aFmt.I + bFmt.I + 1 int bits.
+        -- Else:
+        --     rmax = amax * bmax
+        --          = (2**aFmt.I - 2**-aFmt.F) * (2**bFmt.I - 2**-bFmt.F)
+        --          = 2**(aFmt.I + bFmt.I) - 2**(aFmt.I - bFmt.F) - 2**(bFmt.I - aFmt.F) + 2**(-aFmt.F - bFmt.F)
+        --     This will typically need aFmt.I + bFmt.I int bits, but -1 bit if:
+        --          2**(aFmt.I + bFmt.I) - 2**(aFmt.I - bFmt.F) - 2**(bFmt.I - aFmt.F) + 2**(-aFmt.F - bFmt.F) < 2**(aFmt.I + bFmt.I - 1)
+        --     If we define x=aFmt.I+aFmt.F and y=bFmt.I+bFmt.F, then we can rearrange this to:
+        --          2**(x+y-1) + 1 < 2**x + 2**y
+        --     Further rearrangement leads to:
+        --          (2**x - 2)(2**y - 2) < 2
+        --     Note that x>=0 and y>=0 because we do not support I+F<0. So, it is fairly easy to see
+        --     the inequality is true iff x<=1 or y<=1 (and this is trivial to confirm numerically).
+        if a_fmt.S = 1 and b_fmt.S = 1 then
+            rmaxI_v := a_fmt.I + b_fmt.I + 1;
+        elsif a_fmt.I+a_fmt.F <= 1 or b_fmt.I+b_fmt.F <= 1 then
+            rmaxI_v := a_fmt.I + b_fmt.I - 1;
+        else
+            rmaxI_v := a_fmt.I + b_fmt.I;
+        end if;
+        
+        -- rmin:
+        -- If aFmt.S == 0 and bFmt.S == 0, then:
+        --     rmin = amin * bmin = 0
+        --     ==> No requirement.
+        -- If aFmt.S == 0 and bFmt.S == 1, then:
+        --     rmin = amax * bmin = (2**aFmt.I - 2**-aFmt.F) * -2**bFmt.I
+        --                        = -amax * 2**bFmt.I
+        --     ==> Same as FixFormat.ForNeg(aFmt).I + bFmt.I
+        -- If aFmt.S == 1 and bFmt.S == 0, then:
+        --     rmin = amin * bmax
+        --     ==> Same as FixFormat.ForNeg(bFmt).I + aFmt.I
+        -- If aFmt.S == 1 and bFmt.S == 1, then:
+        --     rmin = min(amax * bmin, amin * bmax)
+        --     ==> Never exceeds rmaxI ==> Ignore.
+        
+        -- The requirement can exceed rmaxI only if aFmt.S != bFmt.S and we don't run into the same
+        -- special case as FixFormat.ForNeg() (i.e. the unsigned value being 1-bit).
+        if a_fmt.S = 0 and b_fmt.S = 1 then
+            I_v := max(rmaxI_v, a_neg_fmt_c.I + b_fmt.I);
+        elsif a_fmt.S = 1 and b_fmt.S = 0 then
+            I_v := max(rmaxI_v, a_fmt.I + b_neg_fmt_c.I);
+        else
+            I_v := rmaxI_v;
+        end if;
+        
+        -- Sign bit
+        if cl_fix_width(a_fmt) = 1 and a_fmt.S = 1 and cl_fix_width(b_fmt) = 1 and b_fmt.S = 1 then
+            -- Special case: 1-bit signed * 1-bit signed is unsigned
+            S_v := 0;
+        else
+            -- Normal: If either input is signed, then output is signed
+            S_v := max(a_fmt.S, b_fmt.S);
+        end if;
+        
+        return (S_v, I_v, a_fmt.F+b_fmt.F);
     end;
     
     function cl_fix_neg_fmt(a_fmt : FixFormat_t) return FixFormat_t is
@@ -421,11 +547,7 @@ package body en_cl_fix_pkg is
     function cl_fix_abs_fmt(a_fmt : FixFormat_t) return FixFormat_t is
         constant neg_fmt_c  : FixFormat_t := cl_fix_neg_fmt(a_fmt);
     begin
-        return (
-            max(a_fmt.S, neg_fmt_c.S),
-            max(a_fmt.I, neg_fmt_c.I),
-            max(a_fmt.F, neg_fmt_c.F)
-        );
+        return cl_fix_fmt_union(a_fmt, neg_fmt_c);
     end;
     
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; min_shift : integer; max_shift : integer) return FixFormat_t is
@@ -461,6 +583,25 @@ package body en_cl_fix_pkg is
         
         return (a_fmt.S, I_v, r_frac_bits);
     end;
+    
+    function cl_fix_fmt_union(fmts : FixFormatArray_t) return FixFormat_t is
+        variable Max_v  : FixFormat_t := fmts(fmts'low);
+    begin
+        for i in fmts'low+1 to fmts'high loop
+            if fmts(i).S > Max_v.S then
+                Max_v.S := fmts(i).S;
+            end if;
+            if fmts(i).I > Max_v.I then
+                Max_v.I := fmts(i).I;
+            end if;
+        end loop;
+        return Max_v;
+    end function;
+    
+    function cl_fix_fmt_union(aFmt, bFmt : FixFormat_t) return FixFormat_t is
+    begin
+        return cl_fix_fmt_union((aFmt, bFmt));
+    end function;
     
     function to_string(fmt : FixFormat_t) return string is
     begin
@@ -928,10 +1069,8 @@ package body en_cl_fix_pkg is
         -- VHDL doesn't define a * operator for mixed signed*unsigned or unsigned*signed.
         -- Just inside cl_fix_mult, it is safe to define them for local use.
         function "*"(x : signed; y : unsigned) return signed is
-            constant Temp_c : signed := x * ('0' & signed(y));
         begin
-            -- Drop the redundant MSB
-            return Temp_c(Temp_c'high-1 downto Temp_c'low);
+            return x * ('0' & signed(y));
         end function;
         
         function "*"(x : unsigned; y : signed) return signed is
@@ -940,17 +1079,18 @@ package body en_cl_fix_pkg is
         end function;
         
         constant mid_fmt_c      : FixFormat_t := cl_fix_mult_fmt(a_fmt, b_fmt);
-        variable mid_v          : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
+        constant mid_width_c    : positive := cl_fix_width(mid_fmt_c);
+        variable mid_v          : std_logic_vector(mid_width_c-1 downto 0);
         variable result_v       : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
         if a_fmt.S = 0 and b_fmt.S = 0 then
-            mid_v := std_logic_vector(unsigned(a_c) * unsigned(b_c));
+            mid_v := std_logic_vector(resize(unsigned(a_c) * unsigned(b_c), mid_width_c));
         elsif a_fmt.S = 0 and b_fmt.S = 1 then
-            mid_v := std_logic_vector(unsigned(a_c) *   signed(b_c));
+            mid_v := std_logic_vector(resize_sensible(unsigned(a_c) * signed(b_c), mid_width_c));
         elsif a_fmt.S = 1 and b_fmt.S = 0 then
-            mid_v := std_logic_vector(  signed(a_c) * unsigned(b_c));
+            mid_v := std_logic_vector(resize_sensible(signed(a_c) * unsigned(b_c), mid_width_c));
         else
-            mid_v := std_logic_vector(  signed(a_c) *   signed(b_c));
+            mid_v := std_logic_vector(resize_sensible(signed(a_c) * signed(b_c), mid_width_c));
         end if;
         
         return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
