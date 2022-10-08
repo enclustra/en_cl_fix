@@ -61,6 +61,7 @@ for aS in aS_values:
             
             # Generate A data
             a = get_data(aFmt)
+            a_wide = wide_fxp.FromFxp(a, aFmt)
             
             ########
             # rFmt #
@@ -74,6 +75,11 @@ for aS in aS_values:
                     
                     # Calculate output
                     r = cl_fix_round(a, aFmt, rFmt, rnd)
+                    
+                    # Test wide_fxp input here, as there is no separate test script.
+                    # This is not actually part of the cosim data generation.
+                    r_wide = cl_fix_round(a_wide, aFmt, rFmt, rnd)
+                    assert np.array_equal(wide_fxp.FromFxp(r_wide, rFmt), wide_fxp.FromFxp(r, rFmt))
                     
                     # Save output to file
                     np.savetxt(join(DATA_DIR, f"test{test_count}_output.txt"),

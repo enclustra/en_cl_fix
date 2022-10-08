@@ -95,6 +95,8 @@ for aS in aS_values:
                         # Produce all combinations of all a and b values
                         a_all = repeat_whole_array(a, len(b))
                         b_all = repeat_each_value(b, len(a))
+                        a_wide = wide_fxp.FromFxp(a_all, aFmt)
+                        b_wide = wide_fxp.FromFxp(b_all, bFmt)
                         
                         ########
                         # rFmt #
@@ -119,6 +121,11 @@ for aS in aS_values:
                                         for sat in sat_values:
                                             # Calculate output
                                             r = cl_fix_mult(a_all, aFmt, b_all, bFmt, rFmt, rnd, sat)
+                                            
+                                            # Test wide_fxp input here, as there is no separate test script.
+                                            # This is not actually part of the cosim data generation.
+                                            r_wide = cl_fix_mult(a_wide, aFmt, b_wide, bFmt, rFmt, rnd, sat)
+                                            assert np.array_equal(wide_fxp.FromFxp(r_wide, rFmt), wide_fxp.FromFxp(r, rFmt))
                                             
                                             # Save output to file
                                             np.savetxt(join(DATA_DIR, f"test{test_count}_output.txt"),
