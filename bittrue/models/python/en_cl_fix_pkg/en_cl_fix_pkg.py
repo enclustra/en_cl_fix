@@ -220,7 +220,7 @@ def cl_fix_in_range(a, aFmt : FixFormat,
 def cl_fix_abs( a, aFmt : FixFormat,
                 rFmt : FixFormat,
                 rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
-    midFmt = FixFormat.ForNeg(aFmt)
+    midFmt = FixFormat.ForAbs(aFmt)
     aNeg = cl_fix_neg(a, aFmt, midFmt)
     aPos = cl_fix_resize(a, aFmt, midFmt)
     
