@@ -211,10 +211,10 @@ def cl_fix_resize(  a, aFmt : FixFormat,
 def cl_fix_in_range(a, aFmt : FixFormat,
                     rFmt : FixFormat,
                     rnd : FixRound = FixRound.Trunc_s):
-    rndFmt = FixFormat(aFmt.S, aFmt.I+1, rFmt.F)
-    valRnd = cl_fix_resize(a, aFmt, rndFmt, rnd, FixSaturate.Sat_s)
-    lo = np.where(valRnd < cl_fix_min_value(rFmt), False, True)
-    hi = np.where(valRnd > cl_fix_max_value(rFmt), False, True)
+    rndFmt = FixFormat.ForRound(aFmt, rFmt.F, rnd)
+    rounded = cl_fix_round(a, aFmt, rndFmt, rnd)
+    lo = np.where(rounded < cl_fix_min_value(rFmt), False, True)
+    hi = np.where(rounded > cl_fix_max_value(rFmt), False, True)
     return np.where(np.logical_and(lo,hi), True, False)
 
 def cl_fix_abs( a, aFmt : FixFormat,
