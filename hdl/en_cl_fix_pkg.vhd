@@ -79,9 +79,6 @@ package en_cl_fix_pkg is
     
     function cl_fix_round_fmt(a_fmt : FixFormat_t; r_frac_bits : integer; rnd : FixRound_t) return FixFormat_t;
     
-    function cl_fix_fmt_union(fmts : FixFormatArray_t) return FixFormat_t;
-    function cl_fix_fmt_union(aFmt, bFmt : FixFormat_t) return FixFormat_t;
-    
     -----------------------------------------------------------------------------------------------
     -- String Conversions
     -----------------------------------------------------------------------------------------------
@@ -312,6 +309,15 @@ package body en_cl_fix_pkg is
         return result_v;
     end function;
     
+    function union(aFmt, bFmt : FixFormat_t) return FixFormat_t is
+    begin
+        return (
+            S => max(aFmt.S, bFmt.S),
+            I => max(aFmt.I, bFmt.I),
+            F => max(aFmt.F, bFmt.F)
+        );
+    end function;
+    
     -- Avoid collision between min() function and minutes unit in VHDL std library.
     alias min is work.en_cl_fix_private_pkg.min[integer, integer return integer];
     
@@ -459,7 +465,7 @@ package body en_cl_fix_pkg is
         constant sub_fmt_c  : FixFormat_t := cl_fix_sub_fmt(a_fmt, b_fmt);
     begin
         -- Take the max over add and sub formats.
-        return cl_fix_fmt_union(add_fmt_c, sub_fmt_c);
+        return union(add_fmt_c, sub_fmt_c);
     end;
     
     function cl_fix_mult_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
@@ -547,7 +553,7 @@ package body en_cl_fix_pkg is
     function cl_fix_abs_fmt(a_fmt : FixFormat_t) return FixFormat_t is
         constant neg_fmt_c  : FixFormat_t := cl_fix_neg_fmt(a_fmt);
     begin
-        return cl_fix_fmt_union(a_fmt, neg_fmt_c);
+        return union(a_fmt, neg_fmt_c);
     end;
     
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; min_shift : integer; max_shift : integer) return FixFormat_t is
@@ -583,25 +589,6 @@ package body en_cl_fix_pkg is
         
         return (a_fmt.S, I_v, r_frac_bits);
     end;
-    
-    function cl_fix_fmt_union(fmts : FixFormatArray_t) return FixFormat_t is
-        variable Max_v  : FixFormat_t := fmts(fmts'low);
-    begin
-        for i in fmts'low+1 to fmts'high loop
-            if fmts(i).S > Max_v.S then
-                Max_v.S := fmts(i).S;
-            end if;
-            if fmts(i).I > Max_v.I then
-                Max_v.I := fmts(i).I;
-            end if;
-        end loop;
-        return Max_v;
-    end function;
-    
-    function cl_fix_fmt_union(aFmt, bFmt : FixFormat_t) return FixFormat_t is
-    begin
-        return cl_fix_fmt_union((aFmt, bFmt));
-    end function;
     
     function to_string(fmt : FixFormat_t) return string is
     begin
