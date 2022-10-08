@@ -8,6 +8,7 @@
 ###################################################################################################
 
 from enum import Enum
+import copy
 import warnings
 
 class FixRound(Enum):
@@ -142,7 +143,7 @@ class FixFormat:
         assert aFmt.width() > 0 and bFmt.width() > 0, "Data widths must be positive"
         addFmt = FixFormat.ForAdd(aFmt, bFmt)
         subFmt = FixFormat.ForSub(aFmt, bFmt)
-        return FixFormat(max(addFmt.S, subFmt.S), max(addFmt.I, subFmt.I), max(addFmt.F, subFmt.F))
+        return FixFormat.Union(addFmt, subFmt)
     
     # Format for result of multiplication
     @staticmethod
@@ -222,7 +223,7 @@ class FixFormat:
     def ForAbs(aFmt):
         assert aFmt.width() > 0, "Data width must be positive"
         negFmt = FixFormat.ForNeg(aFmt)
-        return FixFormat(max(aFmt.S, negFmt.S), max(aFmt.I, negFmt.I), max(aFmt.F, negFmt.F))
+        return FixFormat.Union(aFmt, negFmt)
     
     # Format for result of left-shift
     @staticmethod
@@ -250,8 +251,24 @@ class FixFormat:
         # Force result to be at least 1 bit wide
         if aFmt.S + I + rFracBits < 1:
             I = -aFmt.S - rFracBits + 1
-    
+        
         return FixFormat(aFmt.S, I, rFracBits)
+    
+    # Format covering max S/I/F of all input formats.
+    # Note: Accepts either 1 list/tuple of FixFormat or 2 FixFormat inputs.
+    @staticmethod
+    def Union(aFmt, bFmt=None):
+        if bFmt is None:
+            Fmts = aFmt
+        else:
+            Fmts = (aFmt, bFmt)
+        
+        rFmt = copy.copy(Fmts[0])
+        for i in range(1, len(Fmts)):
+            rFmt.S = max(rFmt.S, Fmts[i].S)
+            rFmt.I = max(rFmt.I, Fmts[i].I)
+            rFmt.F = max(rFmt.F, Fmts[i].F)
+        return rFmt
     
     def __repr__(self):
         return "FixFormat" + f"({self.S}, {self.I}, {self.F})"
