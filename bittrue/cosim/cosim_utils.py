@@ -61,5 +61,5 @@ class ProgressReporter:
         
         # Print finish message
         if self._index == self._total_params:
-            print("DONE.", flush=True)
+            print("Done.", flush=True)
     

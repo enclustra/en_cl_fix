@@ -445,50 +445,49 @@ class wide_fxp:
     def __add__(self, other):
         aFmt = self._fmt
         bFmt = other._fmt
+        rFmt = FixFormat.ForAdd(aFmt, bFmt)
         
         a = self.copy()
         b = other.copy()
         
-        # Align binary points
-        rFmt = FixFormat.ForAdd(aFmt, bFmt)
-        a = a.resize(rFmt)  ##################### This is not correct. We should not be resizing. #####
-        b = b.resize(rFmt)
+        # Align binary points without truncating any MSBs or LSBs
+        aRoundFmt = FixFormat.ForRound(a.fmt, rFmt.F, FixRound.Trunc_s)
+        bRoundFmt = FixFormat.ForRound(b.fmt, rFmt.F, FixRound.Trunc_s)
+        a = a.round(aRoundFmt)
+        b = b.round(bRoundFmt)
         
         # Do addition on internal integer data (binary points are aligned)
-        a._data = a.data + b.data
-        
-        return a
+        return wide_fxp(a.data + b.data, rFmt)
     
     
     # "-" operator
     def __sub__(self, other):
         aFmt = self._fmt
         bFmt = other._fmt
+        rFmt = FixFormat.ForSub(aFmt, bFmt)
         
         a = self.copy()
         b = other.copy()
         
-        # Align binary points
-        rFmt = FixFormat.ForSub(aFmt, bFmt)
-        a = a.resize(rFmt)
-        b = b.resize(rFmt)
+        # Align binary points without truncating any MSBs or LSBs
+        aRoundFmt = FixFormat.ForRound(a.fmt, rFmt.F, FixRound.Trunc_s)
+        bRoundFmt = FixFormat.ForRound(b.fmt, rFmt.F, FixRound.Trunc_s)
+        a = a.round(aRoundFmt)
+        b = b.round(bRoundFmt)
         
         # Do subtraction on internal integer data (binary points are aligned)
-        a._data = a.data - b.data
-        
-        return a
-    
+        return wide_fxp(a.data - b.data, rFmt)
     
     # Unary "-" operator
     def __neg__(self):
-        result_fmt = FixFormat.ForNeg(self._fmt)
-        return wide_fxp(-self._data, result_fmt)
+        rFmt = FixFormat.ForNeg(self._fmt)
+        return wide_fxp(-self._data, rFmt)
     
     
     # "*" operator
     def __mul__(self, other):
-        result_fmt = FixFormat.ForMult(self._fmt, other.fmt)
-        return wide_fxp(self._data * other.data, result_fmt)
+        rFmt = FixFormat.ForMult(self._fmt, other.fmt)
+        return wide_fxp(self._data * other.data, rFmt)
     
     
     # Helper function to consistently extract data for comparison operators
@@ -507,6 +506,12 @@ class wide_fxp:
     def __eq__(self, other):
         a, b = self._extract_comparison_data(other)
         return a == b
+    
+    
+    # "!=" operator
+    def __ne__(self, other):
+        a, b = self._extract_comparison_data(other)
+        return a != b
     
     
     # "<" operator
