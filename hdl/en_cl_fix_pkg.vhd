@@ -1090,39 +1090,38 @@ package body en_cl_fix_pkg is
         b           : std_logic_vector;
         bFmt        : FixFormat_t
     ) return boolean is
-        constant FullFmt_c  : FixFormat_t   := (max(aFmt.S, bFmt.S), max(aFmt.I, bFmt.I), max(aFmt.F, bFmt.F));
-        variable AFull_v    : std_logic_vector(cl_fix_width(FullFmt_c)-1 downto 0);
-        variable BFull_v    : std_logic_vector(cl_fix_width(FullFmt_c)-1 downto 0);
+        constant mid_fmt_c  : FixFormat_t := union(aFmt, bFmt);
+        variable a_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
+        variable b_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
     begin
         -- Convert to same type
-        AFull_v := convert(a, aFmt, FullFmt_c);
-        BFull_v := convert(b, bFmt, FullFmt_c);
+        a_v := convert(a, aFmt, mid_fmt_c);
+        b_v := convert(b, bFmt, mid_fmt_c);
         
         -- Compare
-        if FullFmt_c.S = 1 then
-            if    comparison = "="  then return signed(AFull_v) =  signed(BFull_v);
-            elsif comparison = "!=" then return signed(AFull_v) /= signed(BFull_v);
-            elsif comparison = "<"  then return signed(AFull_v) <  signed(BFull_v);
-            elsif comparison = ">"  then return signed(AFull_v) >  signed(BFull_v);
-            elsif comparison = "<=" then return signed(AFull_v) <= signed(BFull_v);
-            elsif comparison = ">=" then return signed(AFull_v) >= signed(BFull_v);
+        if mid_fmt_c.S = 1 then
+            if    comparison = "="  then return signed(a_v) =  signed(b_v);
+            elsif comparison = "!=" then return signed(a_v) /= signed(b_v);
+            elsif comparison = "<"  then return signed(a_v) <  signed(b_v);
+            elsif comparison = ">"  then return signed(a_v) >  signed(b_v);
+            elsif comparison = "<=" then return signed(a_v) <= signed(b_v);
+            elsif comparison = ">=" then return signed(a_v) >= signed(b_v);
             else
                 report "cl_fix_compare: Unrecognized comparison type: " & comparison severity Failure;
                 return false;
             end if;
         else
-            if    comparison = "="  then return unsigned(AFull_v) =  unsigned(BFull_v);
-            elsif comparison = "!=" then return unsigned(AFull_v) /= unsigned(BFull_v);
-            elsif comparison = "<"  then return unsigned(AFull_v) <  unsigned(BFull_v);
-            elsif comparison = ">"  then return unsigned(AFull_v) >  unsigned(BFull_v);
-            elsif comparison = "<=" then return unsigned(AFull_v) <= unsigned(BFull_v);
-            elsif comparison = ">=" then return unsigned(AFull_v) >= unsigned(BFull_v);
+            if    comparison = "="  then return unsigned(a_v) =  unsigned(b_v);
+            elsif comparison = "!=" then return unsigned(a_v) /= unsigned(b_v);
+            elsif comparison = "<"  then return unsigned(a_v) <  unsigned(b_v);
+            elsif comparison = ">"  then return unsigned(a_v) >  unsigned(b_v);
+            elsif comparison = "<=" then return unsigned(a_v) <= unsigned(b_v);
+            elsif comparison = ">=" then return unsigned(a_v) >= unsigned(b_v);
             else
                 report "cl_fix_compare: Unrecognized comparison type: " & comparison severity Failure;
                 return false;
             end if;
         end if;
-        
     end function;
     
     function cl_fix_sign(a : std_logic_vector; aFmt : FixFormat_t) return std_logic is
