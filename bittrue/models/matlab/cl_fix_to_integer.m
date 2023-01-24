@@ -1,8 +1,8 @@
 % -------------------------------------------------------------------------------------------------
-% function r = cl_fix_max_value(fmt)
+% function r = cl_fix_to_integer(a, a_fmt)
 % -------------------------------------------------------------------------------------------------
 % MATLAB wrapper for implementation in en_cl_fix_pkg.py.
 % -------------------------------------------------------------------------------------------------
-function r = cl_fix_max_value(fmt)
-    r = py.en_cl_fix_pkg.cl_fix_max_value(fmt);
+function r = cl_fix_to_integer(a, a_fmt)
+    r = py.en_cl_fix_pkg.cl_fix_to_integer(a, a_fmt);
 end

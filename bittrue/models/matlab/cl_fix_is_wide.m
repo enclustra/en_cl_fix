@@ -1,8 +1,8 @@
 % -------------------------------------------------------------------------------------------------
-% function r = cl_fix_max_value(fmt)
+% function r = cl_fix_is_wide(fmt)
 % -------------------------------------------------------------------------------------------------
 % MATLAB wrapper for implementation in en_cl_fix_pkg.py.
 % -------------------------------------------------------------------------------------------------
-function r = cl_fix_max_value(fmt)
-    r = py.en_cl_fix_pkg.cl_fix_max_value(fmt);
+function r = cl_fix_is_wide(fmt)
+    r = py.en_cl_fix_pkg.cl_fix_is_wide(fmt);
 end
