@@ -332,18 +332,19 @@ def cl_fix_write_formats(fmts, names, filename):
 # Simulation utility functions (not available in VHDL)
 ###################################################################################################
 
-def cl_fix_random(n : int, fmt : FixFormat):
-    # Generate n random data values, distributed across the whole dynamic range of fmt.
+def cl_fix_random(shape, fmt : FixFormat):
+    # Generate random data values distributed across the whole dynamic range of fmt.
     fmtLo = cl_fix_min_value(fmt)
     fmtHi = cl_fix_max_value(fmt)
     if cl_fix_is_wide(fmt):
+        n = np.prod(shape)
         xint = np.empty((n,), dtype=object)
         for i in range(n):
             xint[i] = random.randrange(fmtLo.data[0], fmtHi.data[0]+1)
-
-        return wide_fxp(xint, fmt)
+        
+        return wide_fxp(xint.reshape(shape), fmt)
     else:
         intLo = fmtLo*2**fmt.F
         intHi = fmtHi*2**fmt.F
-        xint = np.random.randint(intLo, intHi+1, (n,), 'int64')
+        xint = np.random.randint(intLo, intHi+1, shape, 'int64')
         return (xint / 2**fmt.F).astype(float)
