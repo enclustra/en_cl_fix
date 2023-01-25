@@ -89,24 +89,11 @@ begin
     -- VUnit Main --
     ----------------
     p_main : process
-        constant c  : std_logic_vector(6 downto 0) := "1100101";
     begin
         test_runner_setup(runner, runner_cfg);
         
         wait until rising_edge(Clk);
         
-        for S in 0 to 1 loop
-            for I in -3 to 3 loop
-                for F in -3 to 3 loop
-                    if S+I+F < 0 then
-                        next;
-                    end if;
-                    
-                    print(to_string(FixFormat_t'(S,I,F)) & ": " & to_string(c(S+I+F-1 downto 0), (S,I,F)));
-                end loop;
-            end loop;
-        end loop;
-            
         while test_suite loop
             if run("test") then
                 for i in 0 to TestCount_c-1 loop
