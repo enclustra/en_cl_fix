@@ -87,10 +87,10 @@ for aS in aS_values:
     for aI in aI_values:
         for aF in aF_values:
             # Skip invalid formats
-            try:
-                aFmt = FixFormat(aS, aI, aF)
-            except AssertionError:
+            if aS+aI+aF <= 0:
                 continue
+            
+            aFmt = FixFormat(aS, aI, aF)
             
             # Generate A data
             a = get_data(aFmt)
