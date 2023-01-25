@@ -46,44 +46,44 @@ disp(append('b_fmt = ', cl_fix_format_to_string(b_fmt)));
 
 % Generate some random input data.
 Ndata = uint64(32768);
-a = py_fix.cl_fix_random(Ndata, a_fmt);
-b = py_fix.cl_fix_random(Ndata, b_fmt);
+a = cl_fix_random(Ndata, a_fmt);
+b = cl_fix_random(Ndata, b_fmt);
 
 % -------------------------------------------------------------------------------------------------
 % Example Arithmetic
 % -------------------------------------------------------------------------------------------------
 
-% Note: All of these examples get result formats from FixFormat.For* functions. This means the
+% Note: All of these examples get result formats from cl_fix_*_fmt functions. This means the
 % results are guaranteed to be represented without loss (no rounding or saturation).
 
 % Addition
-add_fmt = py_fix.FixFormat.ForAdd(a_fmt, b_fmt);
+add_fmt = cl_fix_add_fmt(a_fmt, b_fmt);
 add_result = cl_fix_add(a, a_fmt, b, b_fmt, add_fmt);
 
 % Subtraction
-sub_fmt = py_fix.FixFormat.ForSub(a_fmt, b_fmt);
+sub_fmt = cl_fix_sub_fmt(a_fmt, b_fmt);
 sub_result = cl_fix_sub(a, a_fmt, b, b_fmt, sub_fmt);
 
 % Add-sub
 addsub = logical(randi([0,1], 1, Ndata));
-addsub_fmt = py_fix.FixFormat.ForAddsub(a_fmt, b_fmt);
+addsub_fmt = cl_fix_addsub_fmt(a_fmt, b_fmt);
 addsub_result = cl_fix_addsub(a, a_fmt, b, b_fmt, addsub, addsub_fmt);
 
 % Multiplication
-mult_fmt = py_fix.FixFormat.ForMult(a_fmt, b_fmt);
+mult_fmt = cl_fix_mult_fmt(a_fmt, b_fmt);
 mult_result = cl_fix_mult(a, a_fmt, b, b_fmt, mult_fmt);
 
 % Absolute value
-abs_fmt = py_fix.FixFormat.ForAbs(a_fmt);
+abs_fmt = cl_fix_abs_fmt(a_fmt);
 abs_result = cl_fix_abs(a, a_fmt, abs_fmt);
 
 % Negative value
-neg_fmt = py_fix.FixFormat.ForNeg(a_fmt);
+neg_fmt = cl_fix_neg_fmt(a_fmt);
 neg_result = cl_fix_neg(a, a_fmt, neg_fmt);
 
 % Bit-shift
 shift_size = -3; % Negative value => right shift.
-shift_fmt = py_fix.FixFormat.ForShift(a_fmt, shift_size);
+shift_fmt = cl_fix_shift_fmt(a_fmt, shift_size);
 shift_result = cl_fix_shift(a, a_fmt, shift_size, shift_fmt);
 
 % -------------------------------------------------------------------------------------------------
@@ -150,7 +150,7 @@ assert(isequal(shift_got, shift_expected), 'Error in shift');
 
 % Rounding
 round = py_fix.FixRound.ConvEven_s;
-round_fmt = py_fix.FixFormat.ForRound(a_fmt, a_fmt.F - 4, round);
+round_fmt = cl_fix_round_fmt(a_fmt, a_fmt.F - 4, round);
 round_result = cl_fix_round(a, a_fmt, round_fmt, round);
 
 % Saturation
