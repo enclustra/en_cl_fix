@@ -35,9 +35,6 @@ def cl_fix_is_wide(fmt : FixFormat) -> bool:
     # both signed and unsigned numbers.
     return cl_fix_width(fmt) > 53
 
-def cl_fix_format_to_string(fmt : FixFormat) -> str:
-    return str(fmt)
-
 def cl_fix_max_value(rFmt : FixFormat):
     if cl_fix_is_wide(rFmt):
         return wide_fxp.MaxValue(rFmt)
@@ -76,9 +73,6 @@ def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.S
             x = np.where(x < cl_fix_min_value(rFmt), cl_fix_min_value(rFmt), x)
         
         return x
-
-def cl_fix_zeros(shape, fmt):
-    return cl_fix_from_real(np.zeros(shape), fmt)
 
 def cl_fix_from_integer(a : int, aFmt : FixFormat):
     if cl_fix_is_wide(aFmt):
@@ -322,8 +316,11 @@ cl_fix_round_fmt = FixFormat.ForRound
 cl_fix_union_fmt = FixFormat.Union
 
 ###################################################################################################
-# File I/O
+# Simulation utility functions (not available in VHDL)
 ###################################################################################################
+
+def cl_fix_format_to_string(fmt : FixFormat) -> str:
+    return str(fmt)
 
 def cl_fix_write_formats(fmts, names, filename):
 
@@ -338,10 +335,9 @@ def cl_fix_write_formats(fmts, names, filename):
         
         for fmt in fmts:
             fid.write(cl_fix_format_to_string(fmt) + "\n")
-    
-###################################################################################################
-# Simulation utility functions (not available in VHDL)
-###################################################################################################
+
+def cl_fix_zeros(shape, fmt):
+    return cl_fix_from_real(np.zeros(shape), fmt)
 
 def cl_fix_random(shape, fmt : FixFormat):
     # Generate random data values distributed across the whole dynamic range of fmt.
