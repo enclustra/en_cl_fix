@@ -9,7 +9,7 @@ This library supports arbitrary precision, but software executes faster for bit-
 ## License
 This library is free and open-source.
 
-It is published under [PSI HDL Library License](License.txt), which is [LGPL](LGPL2_1.txt) plus some additional exceptions to clarify the LGPL terms in the context of firmware development.
+It is published under the [PSI HDL Library License](License.txt), which is [LGPL](LGPL2_1.txt) plus some additional exceptions to clarify the LGPL terms in the context of firmware development.
 
 ## Maintainers
 This library is maintained by [Enclustra GmbH](https://www.enclustra.com/en).
@@ -53,7 +53,7 @@ where:
 
 Therefore, the total bit-width is simply `S`+`I`+`F`.
 
-The contributions of the integer bits and fractional bits in a fixed-point binary number depend on their position relative to the binary point (`I` bits left, `F` bits right). This is the same concept as for an ordinary decimal number (with a decimal point), except with powers of 2 instead of powers of 10. For signed numbers, the (two's complement) sign bit carries a weight of -2<sup>i</sup>.
+The contributions of the integer bits and fractional bits in a fixed-point binary number depend on their position relative to the binary point (`I` bits left, `F` bits right). This is the same concept as for an ordinary decimal number (with a decimal point), except with powers of 2 instead of powers of 10. For signed numbers, the (two's complement) sign bit carries a weight of -2<sup>I</sup>.
 
 <img src="doc/images/BitWeights.png" alt="BitWeights" style="zoom: 67%;" />
 
