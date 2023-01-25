@@ -310,6 +310,17 @@ def cl_fix_mult(a, aFmt : FixFormat,
     
     return cl_fix_resize(a * b, midFmt, rFmt, rnd, sat)
 
+# Function aliases
+cl_fix_add_fmt = FixFormat.ForAdd
+cl_fix_sub_fmt = FixFormat.ForSub
+cl_fix_addsub_fmt = FixFormat.ForAddsub
+cl_fix_mult_fmt = FixFormat.ForMult
+cl_fix_neg_fmt = FixFormat.ForNeg
+cl_fix_abs_fmt = FixFormat.ForAbs
+cl_fix_shift_fmt = FixFormat.ForShift
+cl_fix_round_fmt = FixFormat.ForRound
+cl_fix_union_fmt = FixFormat.Union
+
 ###################################################################################################
 # File I/O
 ###################################################################################################
