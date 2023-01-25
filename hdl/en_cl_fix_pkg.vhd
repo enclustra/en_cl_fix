@@ -74,7 +74,6 @@ package en_cl_fix_pkg is
     function cl_fix_abs_fmt(a_fmt : FixFormat_t) return FixFormat_t;
     
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; min_shift : integer; max_shift : integer) return FixFormat_t;
-    
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; shift : integer) return FixFormat_t;
     
     function cl_fix_round_fmt(a_fmt : FixFormat_t; r_frac_bits : integer; rnd : FixRound_t) return FixFormat_t;
@@ -82,6 +81,8 @@ package en_cl_fix_pkg is
     -----------------------------------------------------------------------------------------------
     -- String Conversions
     -----------------------------------------------------------------------------------------------
+    
+    function to_string(a : std_logic_vector; a_fmt : FixFormat_t) return string;
     
     function to_string(fmt : FixFormat_t) return string;
     
@@ -588,6 +589,63 @@ package body en_cl_fix_pkg is
         end if;
         
         return (a_fmt.S, I_v, r_frac_bits);
+    end;
+    
+    function to_string(a : std_logic_vector; a_fmt : FixFormat_t) return string is
+        function to_char(x : std_logic) return character is
+            constant slv_char_c : string(1 to 9) := ('U', 'X', '0', '1', 'Z', 'W', 'L', 'H', '-');
+        begin
+            return slv_char_c(1 + std_logic'pos(x));
+        end;
+        
+        -- Force downto 0
+        constant a_c            : std_logic_vector(cl_fix_width(a_fmt)-1 downto 0) := a;
+        constant all_explicit_c : natural := choose(a_fmt.S+a_fmt.I>=0 and a_fmt.F>=0, 1, 0);
+        constant pre_length_c   : natural := choose(a_fmt.S+a_fmt.I<0, 3-(a_fmt.S+a_fmt.I), 0);
+        constant post_length_c  : natural := choose(a_fmt.F<0, 3-a_fmt.F, 0);
+        variable pre_v          : string(1 to pre_length_c);
+        variable main_v         : string(1 to a_c'length+all_explicit_c); -- +1 for binary point.
+        variable post_v         : string(1 to post_length_c);
+    begin
+        if all_explicit_c = 1 then
+            -- Print explicit S+I bits
+            for i in 1 to a_fmt.S+a_fmt.I loop
+                main_v(i) := to_char(a_c(a_c'length-i));
+            end loop;
+            
+            -- Print binary point
+            main_v(a_fmt.S+a_fmt.I+1) := '.';
+            
+            -- Print explicit F bits
+            for i in 1 to a_fmt.F loop
+                main_v(a_fmt.S+a_fmt.I+1+i) := to_char(a_c(a_fmt.F-i));
+            end loop;
+        else
+            -- Print implicit leading fractional bits (if a_fmt.S+a_fmt.I < 0)
+            if pre_length_c > 0 then
+                pre_v(1 to 2) := ".(";
+                for i in 3 to pre_length_c-1 loop
+                    pre_v(i) := to_char(cl_fix_sign(a, a_fmt));
+                end loop;
+                pre_v(pre_length_c) := ')';
+            end if;
+            
+            -- Print all explicit bits
+            for i in 1 to a_c'length loop
+                main_v(i) := to_char(a_c(a_c'length-i));
+            end loop;
+            
+            -- Print implicit trailing integer bits (if a_fmt.F < 0)
+            if post_length_c > 0 then
+                post_v(1) := '(';
+                for i in 2 to post_length_c-2 loop
+                    post_v(i) := '0';
+                end loop;
+                post_v(post_length_c-1 to post_length_c) := ").";
+            end if;
+        end if;
+        
+        return pre_v & main_v & post_v;
     end;
     
     function to_string(fmt : FixFormat_t) return string is
