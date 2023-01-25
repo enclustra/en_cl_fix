@@ -1,135 +1,152 @@
-# General Information
+## General Information
 
-The *en_cl_fix* library allows implementing the same algorithms and calculations in different languages (currently VHDL and MATLAB) easily. The main idea behind this is to evaluate the behavior or an algorithm in a high-level language such as MATLAB while implementing it later in VHDL. Thanks to the bit-true models, the correctness of the VHDL implementation can be checked easily by comparing outputs of both implementations 
+*en_cl_fix* is a multi-language fixed-point math library for FPGA and ASIC development.
+
+It provides fixed-point functionality in both HDL (currently VHDL) and software languages (currently Python and MATLAB). This allows fixed-point algorithms to be designed, modelled and evaluated in software, before committing to the HDL implementation. Then it allows the HDL implementation to be easily verified in simulation and/or hardware by comparing the simulation/hardware output with the bit-true software model's output.
+
+This library supports arbitrary precision, but software executes faster for bit-widths ≤ 53 bits.
 
 ## License
-This library is published under [PSI HDL Library License](License.txt), which is [LGPL](LGPL2_1.txt) plus some additional exceptions to clarify the LGPL terms in the context of firmware development.
+This library is free and open-source.
+
+It is published under [PSI HDL Library License](License.txt), which is [LGPL](LGPL2_1.txt) plus some additional exceptions to clarify the LGPL terms in the context of firmware development.
 
 ## Maintainers
-Martin Heimlicher [martin.heimlicher@enclustra.com]
+This library is maintained by [Enclustra GmbH](https://www.enclustra.com/en).
 
 ## Changelog
-See [Changelog](Changelog.md)
+See [Changelog](Changelog.md).
 
-## Detailed Documentation
-See [VHDL Documentation](https://rawgit.com/enclustra/en_cl_fix/master/doc/vhdl_out/index.html)
+## Dependencies
 
-## Tagging Policy
-Stable releases are tagged in the form *major*.*minor*.*bugfix*. 
+- Python
+    - *numpy*
+    - *vunit-hdl*
+- MATLAB
+    - For normal usage: None.
+    - For handling very wide data (> 53 bits): [*Fixed-Point Designer Toolbox*](https://www.mathworks.com/products/fixed-point-designer.html).
 
-* Whenever a change is not fully backward compatible, the *major* version number is incremented
-* Whenever new features are added, the *minor* version number is incremented
-* If only bugs are fixed (i.e. no functional changes are applied), the *bugfix* version is incremented
+## Simulations and Testbenches
 
-# Dependencies
-
-The python implementation depends on the *numpy* package
-
-# Simulations and Testbenches
-
-* Python Models
-  * Navigate to *python/unittest* 
-  * Run *python3 en_cl_fix_pkg_test.py*
-* VHDL Models
-  * Start Mmodelsim
-  * In the TCL console, navigate to *sim*
-  * run *source ./sim.tcl*
-  * The script automatically prints whether all tests were successful
+* Python
+  * **TBD**
 * MATLAB
-  * Currently there are not tests for the MATLAB implementation
+  * **TBD**
+* VHDL
+  * **TBD**
 
-# Fixed Point Number Format
+## Fixed-Point Representation
 
-## Format
+### Format
 
 The fixed point number format used in this library is defined as follows:
 
-[s, i, f]
+```
+[S, I, F]
+```
 
-s:	true = Signed number (two's complement), false = Unsigned number
-i:  Number of integer bits
-f:  Number of fractional bits
+where:
 
-The total number of bits required is s+i+f. 
+- `S` = Number of sign bits (0 or 1).
+- `I` = Number of integer bits.
+- `F` = Number of fractional bits.
 
-The value of each bit depending on its position relative to the binary point (i-bits left, f-bits right) is given below.
+Therefore, the total bit-width is simply `S`+`I`+`F`.
 
-... [4][2][1]**.**[0.5][0.25][0.125] ...
+The contributions of the integer bits and fractional bits in a fixed-point binary number depend on their position relative to the binary point (`I` bits left, `F` bits right). This is the same concept as for an ordinary decimal number (with a decimal point), except with powers of 2 instead of powers of 10. For signed numbers, the (two's complement) sign bit carries a weight of -2<sup>i</sup>.
+
+<img src="doc/images/BitWeights.png" alt="BitWeights" style="zoom: 67%;" />
 
 Some examples are given below:
 
-| Number Format | Range             | Bit Pattern  | Example Int | Example Bits |
-|:-------------:|:-----------------:|:------------:|:-----------:|:------------:|
-| [true,2,1]    | -4 ... +3.5       | sii.f        | -2.5        | 101.1        |
-| [true,2,2]    | -4 ... +3.75      | sii.ff       | -2.5        | 101.10       |
-| [false,4,0]   | 0 ... 15          | iiii.        | 5           | 0101.        |
-| [false,4,2]   | 0 ... 15.75       | iiii.ff      | 5.25        | 0101.01      |
-| [true,4,-2]   | -16 ... 12        | sii--.       | -8          | 110--.       |
-| [true,-2,4]   | -0.25 ... +0.1875 | s.--ff       | 0.125       | 0.--10       |
+| Fixed-Point Format |       Range       | Bit Pattern | Example (in Decimal) | Example (in Binary) |
+| :----------------: | :---------------: | :---------: | :------------------: | :-----------------: |
+|      [1,2,1]       |    -4 ... +3.5    |    sii.f    |         -2.5         |           101.1     |
+|      [1,2,2]       |   -4 ... +3.75    |   sii.ff    |         -2.5         |           101.10    |
+|      [0,4,0]       |     0 ... 15      |    iiii.    |          5           |           0101.     |
+|      [0,4,2]       |    0 ... 15.75    |   iiii.ff   |         5.25         |          0101.01    |
+|      [1,4,-2]      |    -16 ... 12     |   sii--.    |          -8          |           110--.    |
+|      [1,-2,4]      | -0.25 ... +0.1875 |    .-sff    |        0.125         |           .-010     |
 
-## Rounding
+### Rounding
 
-Several rounding modes are implemented. They are described below
+Rounding behavior is relevant when the number of fractional bits `F` is decreased. This is the same concept as rounding decimal numbers, but in base 2.
+
+Several widely-used rounding modes are implemented in *en_cl_fix*. They are summarized below:
 <table> 
   <tr>
-    <th rowspan="2"> Value </th>
+    <th rowspan="2"> Rounding Mode </th>
     <th rowspan="2"> Description </th>
-    <th colspan="6"> Examples rounded to (true,2,0) </th>
+    <th colspan="6"> Example values, rounded to [1,2,0] </th>
   </tr>
   <tr>
-  	<th> 2.2 </th> <th> 2.7 </th> <th> -1.5 </th> <th> -0.5 </th> <th> 0.5 </th> <th> 1.5 </th>
+    <th> 2.2 </th> <th> 2.7 </th> <th> -1.5 </th> <th> -0.5 </th> <th> 0.5 </th> <th> 1.5 </th>
   </tr>
   <tr>
     <td> Trunc_s </td>
-    <td> Cut off bits without any rounding </td>
+    <td> Truncate (discard LSBs) </td>
     <td> 2 </td> <td> 2 </td> <td> -2 </td> <td> -1 </td> <td> 0 </td> <td> 1 </td>
   </tr>
   <tr>
     <td> NonSymPos_s </td>
-    <td> Non-symmetric rounding to positive </td>
+    <td> Non-symmetric round to +infinity </td>
     <td> 2 </td> <td> 3 </td> <td> -1 </td> <td> 0 </td> <td> 1 </td> <td> 2 </td>
   </tr>
   <tr>
     <td> NonSymNeg_s </td>
-    <td> Non-symmetric rounding to negative </td>
+    <td> Non-symmetric round to -infinity </td>
     <td> 2 </td> <td> 3 </td> <td> -2 </td> <td> -1 </td> <td> 0 </td> <td> 1 </td>
   </tr>
   <tr>
     <td> SymInf_s </td>
-    <td> Symmetric rounding to infinity </td>
+    <td> Symmetric round "outwards" to +/- infinity </td>
     <td> 2 </td> <td> 3 </td> <td> -2 </td> <td> -1 </td> <td> 1 </td> <td> 2 </td>
   </tr>
   <tr>
     <td> SymZero_s </td>
-    <td> Symmetric rounding to zero </td>
+    <td> Symmetric round "inwards" to zero </td>
     <td> 2 </td> <td> 3 </td> <td> -1 </td> <td> 0 </td> <td> 0 </td> <td> 1 </td>
   </tr>
   <tr>
     <td> ConvEven_s </td>
-    <td> Convergent rounding to even numbers </td>
+    <td> Convergent rounding to even </td>
     <td> 2 </td> <td> 3 </td> <td> -2 </td> <td> 0 </td> <td> 0 </td> <td> 2 </td>
   </tr>
   <tr>
     <td> ConvOdd_s </td>
-    <td> Convertent rounding to odd numbers </td>
+    <td> Convergent rounding to odd </td>
     <td> 2 </td> <td> 3 </td> <td> -1 </td> <td> -1 </td> <td> 1 </td> <td> 1 </td>
   </tr>
 </table>
 
-*NonSymPos_s* is the most common rounding mode and often aliased as *Round_s* for simplicity and readability.
+`Trunc_s` is the most resource-efficient mode, but introduces the largest rounding error. Its integer equivalent is `floor(x)`.
 
-**NOTE:** Use *Trunc_s* wherever possible for lowest resource usage. If rounding is required, prefer *NonSymPos_s* for low resource usage.
+`NonSymPos_s` is the most common general-purpose rounding mode. It is fairly resource-efficient, but introduces error bias because all ties are rounded towards +infinity. Its integer equivalent is `floor(x + 0.5)`.
 
+All the other rounding modes differ from `NonSymPos_s` only with respect to how ties are handled (see table above).
 
-# Documentation
+### Saturation
 
-Documentation for each implementation is written in an appropriate way for the corresponding languages.
+Saturation behavior is relevant when the number of integer bits `I` is decreased and/or the number of sign bits `S` is decreased (signed to unsigned).
 
-* VHDL - Doxygen
-  * To re-generate the documentation, install doxygen, open the doxygen project *doc/doxy_vhdl.doxy* and run doxygen.
-* MATLAB - Documentation Comments
-  * The comments are displayed by matlab automatically when typing *help <command>*
-  * Prerequisite is to add the path to the .m files to the MATLAB path
+If saturation is not enabled, then MSBs are simply discarded, causing any out-of-range values to "wrap".
 
+If warnings are enabled, then the HDL simulator or software environment will issue a warning when an out-of-range value is detected.
 
+| Saturation Mode | Saturate? | Warn? |
+|-----------------|-----------|-------|
+| None_s          | No        | No    |
+| Warn_s          | No        | Yes   |
+| Sat_s           | Yes       | No    |
+| SatWarn_s       | Yes       | Yes   |
 
+## Documentation
+
+Documentation 
+
+- Python
+  - **TBD**
+- MATLAB
+  - **TBD**
+- VHDL
+  - **TBD**
