@@ -17,7 +17,8 @@ package en_cl_fix_private_pkg is
     
     function choose(condition : boolean; if_true : integer; if_false : integer) return integer;
     function choose(condition : boolean; if_true : std_logic; if_false : std_logic) return std_logic;
-    function to01(sl : std_logic) return std_logic;
+    function to01(x : std_logic) return std_logic;
+    function to01(x : std_logic_vector) return std_logic_vector;
     function toInteger(bool : boolean) return integer;
     
     function max(a, b : integer) return integer;
@@ -51,14 +52,23 @@ package body en_cl_fix_private_pkg is
         return if_false;
     end function;
     
-    function to01(sl : std_logic) return std_logic is
+    function to01(x : std_logic) return std_logic is
         variable result_v : std_logic;
     begin
-        if sl = '1' or sl = 'H' then
+        if x = '1' or x = 'H' then
             result_v := '1';
         else
             result_v := '0';
         end if;
+        return result_v;
+    end;
+    
+    function to01(x : std_logic_vector) return std_logic_vector is
+        variable result_v : std_logic_vector(x'range);
+    begin
+        for i in x'range loop
+            result_v(i) := to01(x(i));
+        end loop;
         return result_v;
     end;
     

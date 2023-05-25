@@ -973,7 +973,7 @@ package body en_cl_fix_pkg is
         constant rndFmt_c : FixFormat_t := cl_fix_round_fmt(a_fmt, result_fmt.F, round);
         
         -- Apply rounding
-        constant Rounded_c  : std_logic_vector := cl_fix_round(a, a_fmt, rndFmt_c, round);
+        constant Rounded_c  : std_logic_vector := cl_fix_round(to01(a), a_fmt, rndFmt_c, round);
     begin
         return cl_fix_compare(">=", Rounded_c, rndFmt_c, cl_fix_min_value(result_fmt), result_fmt) and
                cl_fix_compare("<=", Rounded_c, rndFmt_c, cl_fix_max_value(result_fmt), result_fmt);
