@@ -11,7 +11,7 @@ from threading import Lock
 # Import VUnit
 try:
     import sys
-    sys.path.append(abspath(dirname(__file__)) + "/../../lib/FW/VHDL/vunit")
+    sys.path.append(join(abspath(dirname(__file__)), "../../vunit"))
     import VUnitCLI, VUnit
 except ImportError as e:
     from vunit import VUnitCLI, VUnit
@@ -74,12 +74,6 @@ cli.parser.add_argument(
         action="store_true",
         default=False,
         help="Disables automatic execution of cosim scripts",
-    )
-cli.parser.add_argument(
-        "--fast",
-        action="store_true",
-        default=False,
-        help="Enables fast simulations by using a floating-point FFT model",
     )
 
 # Parse command line arguments
