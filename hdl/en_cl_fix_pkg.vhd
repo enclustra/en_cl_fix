@@ -80,6 +80,8 @@ package en_cl_fix_pkg is
     
     function cl_fix_round_fmt(a_fmt : FixFormat_t; r_frac_bits : integer; rnd : FixRound_t) return FixFormat_t;
     
+    function choose(condition : boolean; a_fmt, b_fmt : FixFormat_t) return FixFormat_t;
+    
     -----------------------------------------------------------------------------------------------
     -- String Conversions
     -----------------------------------------------------------------------------------------------
@@ -592,6 +594,14 @@ package body en_cl_fix_pkg is
         
         return (a_fmt.S, I_v, r_frac_bits);
     end;
+    
+    function choose(condition : boolean; a_fmt, b_fmt : FixFormat_t) return FixFormat_t is
+    begin
+        if condition then
+            return a_fmt;
+        end if;
+        return b_fmt;
+    end function;
     
     function to_string(a : std_logic_vector; a_fmt : FixFormat_t) return string is
         function to_char(x : std_logic) return character is
