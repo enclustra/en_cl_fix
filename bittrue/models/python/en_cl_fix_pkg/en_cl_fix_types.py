@@ -41,7 +41,7 @@ class FixFormat:
     # Format for result of addition
     @staticmethod
     def ForAdd(aFmt, bFmt):
-        assert aFmt.width() > 0 and bFmt.width() > 0, "Data widths must be positive"
+        assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
         # We must consider both extremes:
         
         # rmax = amax+bmax
@@ -85,7 +85,7 @@ class FixFormat:
     # Format for result of subtraction
     @staticmethod
     def ForSub(aFmt, bFmt):
-        assert aFmt.width() > 0 and bFmt.width() > 0, "Data widths must be positive"
+        assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
         # We must consider both extremes:
         
         # rmax = amax-bmin
@@ -116,7 +116,7 @@ class FixFormat:
         # If aFmt.S = 1 and bFmt.I >= aFmt.I, then we get 1 bit of growth if:
         #                       2**aFmt.I - 2**-bFmt.F > 0
         if aFmt.S == 0:
-            if bFmt.width() == 1 and bFmt.S == 1:
+            if bFmt.width == 1 and bFmt.S == 1:
                 # Special case: a is unsigned and b is 1-bit signed:
                 S = 0
                 I = rmaxI
@@ -140,7 +140,7 @@ class FixFormat:
     # Format for result of add-subtract
     @staticmethod
     def ForAddsub(aFmt, bFmt):
-        assert aFmt.width() > 0 and bFmt.width() > 0, "Data widths must be positive"
+        assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
         addFmt = FixFormat.ForAdd(aFmt, bFmt)
         subFmt = FixFormat.ForSub(aFmt, bFmt)
         return FixFormat.Union(addFmt, subFmt)
@@ -148,7 +148,7 @@ class FixFormat:
     # Format for result of multiplication
     @staticmethod
     def ForMult(aFmt, bFmt):
-        assert aFmt.width() > 0 and bFmt.width() > 0, "Data widths must be positive"
+        assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
         # We must consider both extremes:
         
         # rmax:
@@ -200,7 +200,7 @@ class FixFormat:
             I = rmaxI
         
         # Sign bit
-        if aFmt.width() == 1 and aFmt.S == 1 and bFmt.width() == 1 and bFmt.S == 1:
+        if aFmt.width == 1 and aFmt.S == 1 and bFmt.width == 1 and bFmt.S == 1:
             # Special case: 1-bit signed * 1-bit signed is unsigned
             S = 0
         else:
@@ -212,23 +212,23 @@ class FixFormat:
     # Format for result of negation
     @staticmethod
     def ForNeg(aFmt):
-        assert aFmt.width() > 0, "Data width must be positive"
+        assert aFmt.width > 0, "Data width must be positive"
         # 1-bit unsigned inputs are special (neg is 1-bit signed)
-        if aFmt.S == 0 and aFmt.width() == 1:
+        if aFmt.S == 0 and aFmt.width == 1:
             return FixFormat(1, aFmt.I+aFmt.S-1, aFmt.F)
         return FixFormat(1, aFmt.I+aFmt.S, aFmt.F)
     
     # Format for result of absolute value
     @staticmethod
     def ForAbs(aFmt):
-        assert aFmt.width() > 0, "Data width must be positive"
+        assert aFmt.width > 0, "Data width must be positive"
         negFmt = FixFormat.ForNeg(aFmt)
         return FixFormat.Union(aFmt, negFmt)
     
     # Format for result of left-shift
     @staticmethod
     def ForShift(aFmt, minShift, maxShift=None):
-        assert aFmt.width() > 0, "Data width must be positive"
+        assert aFmt.width > 0, "Data width must be positive"
         if maxShift is None:
             maxShift = minShift
         assert minShift <= maxShift, f"minShift ({minShift}) must be <= maxShift ({maxShift})"
@@ -237,7 +237,7 @@ class FixFormat:
     # Format for result of rounding
     @staticmethod
     def ForRound(aFmt, rFracBits : int, rnd : FixRound):
-        assert aFmt.width() > 0, "Data width must be positive"
+        assert aFmt.width > 0, "Data width must be positive"
         if rFracBits >= aFmt.F:
             # If fractional bits are not being reduced, then nothing happens to int bits.
             I = aFmt.I
@@ -279,5 +279,6 @@ class FixFormat:
     def __eq__(self, other):
         return (self.S == other.S) and (self.I == other.I) and (self.F == other.F)
     
+    @property
     def width(self):
         return self.S + self.I + self.F

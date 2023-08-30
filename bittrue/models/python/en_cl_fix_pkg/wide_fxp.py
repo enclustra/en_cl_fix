@@ -194,7 +194,7 @@ class wide_fxp:
         fmt = self._fmt
         
         # Calculate number of uint64s needed per element
-        fmtWidth = fmt.width()
+        fmtWidth = fmt.width
         nInts = (fmtWidth + 63) // 64  # ceil(width / 64)
 
         # Cast to unsigned by reintepreting the sign bit
@@ -330,9 +330,9 @@ class wide_fxp:
             raise Exception("wide_fxp.set_msb: only 1 and 0 allowed for value")
         fmt = self.fmt
         if fmt.S == 1 and index == 0:
-            weight = -2**(fmt.width()-1-index)
+            weight = -2**(fmt.width-1-index)
         else:
-            weight = 2**(fmt.width()-1-index)
+            weight = 2**(fmt.width-1-index)
         val = np.where(self.get_msb(index) != value, self.data - weight*(-1)**value, self.data)
         return wide_fxp(val, fmt)
     
@@ -343,7 +343,7 @@ class wide_fxp:
         if fmt.S == 1 and index == 0:
             return (self._data < 0).astype(int)
         else:
-            shift = fmt.width()-1 - index
+            shift = fmt.width-1 - index
             return ((self._data >> shift) % 2).astype(int)
     
     
@@ -373,7 +373,7 @@ class wide_fxp:
             offset = 2**(fmt.F+fmt.I)
             val = np.where(val < 0, val + offset, val)
         # Retain fractional LSBs
-        val = val % 2**rFmt.width()
+        val = val % 2**rFmt.width
         return wide_fxp(val, rFmt)
 
 

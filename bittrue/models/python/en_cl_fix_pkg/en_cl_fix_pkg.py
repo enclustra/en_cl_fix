@@ -13,10 +13,10 @@ from .en_cl_fix_types import *
 from .wide_fxp import wide_fxp
 
 ###################################################################################################
-# Bittrue available in VHDL
+# Bit-true methods (available in VHDL)
 ###################################################################################################
 def cl_fix_width(fmt : FixFormat) -> int:
-    return fmt.width()
+    return fmt.width
 
 def cl_fix_is_wide(fmt : FixFormat) -> bool:
     # Determine whether "narrow" (double precision float) or "wide" (arbitrary-precision integer)
@@ -65,6 +65,7 @@ def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.S
                 warnings.warn(f"cl_fix_from_real: Number {amin} exceeds minimum for format {rFmt}", Warning)
         
         # Quantize. Always use half-up rounding.
+        # Note: Other rounding modes require aFmt.F. If aFmt is defined, then use cl_fix_resize.
         x = np.floor(a*(2.0**rFmt.F)+0.5)/2.0**rFmt.F
         
         # Saturate
