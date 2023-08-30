@@ -1,9 +1,10 @@
 ###################################################################################################
-# Copyright (c) 2021 Enclustra GmbH, Switzerland (info@enclustra.com)
+# Copyright (c) 2023 Enclustra GmbH, Switzerland (info@enclustra.com)
 ###################################################################################################
 
 ###################################################################################################
 # Description:
+#
 # The wide_fxp class adds arbitrary-precision support to en_cl_fix_pkg.
 #
 # Internal data is stored in arbitrary-precision Python integers and all calculations are performed

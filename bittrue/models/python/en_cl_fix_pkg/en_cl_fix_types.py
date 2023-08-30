@@ -1,32 +1,48 @@
 ###################################################################################################
-# Copyright (c) 2021 Enclustra GmbH, Switzerland (info@enclustra.com)
+# Copyright (c) 2023 Enclustra GmbH, Switzerland (info@enclustra.com)
 ###################################################################################################
 
 ###################################################################################################
 # Description:
+#
 # Common types used by en_cl_fix_pkg and wide_fxp class.
 ###################################################################################################
 
 from enum import Enum
 import copy
-import warnings
+
 
 class FixRound(Enum):
-    Trunc_s = 0
-    NonSymPos_s = 1
-    NonSymNeg_s = 2
-    SymInf_s = 3
-    SymZero_s = 4
-    ConvEven_s = 5
-    ConvOdd_s = 6
+    """
+    Fixed-point rounding modes.
+    """
+    Trunc_s = 0         # Truncation (no rounding).
+    NonSymPos_s = 1     # Non-symmetric positive (half-up).
+    NonSymNeg_s = 2     # Non-symmetric negative (half-down).
+    SymInf_s = 3        # Symmetric towards +/- infinity.
+    SymZero_s = 4       # Symmetric towards 0.
+    ConvEven_s = 5      # Convergent towards even.
+    ConvOdd_s = 6       # Convergent towards odd.
+
 
 class FixSaturate(Enum):
-    None_s = 0
-    Warn_s = 1
-    Sat_s = 2
-    SatWarn_s = 3
+    """
+    Fixed-point saturation modes.
+    """
+    None_s = 0          # None (bits are truncated, values wrap).
+    Warn_s = 1          # None, with warning.
+    Sat_s = 2           # Saturate.
+    SatWarn_s = 3       # Saturate, with warning.
+
 
 class FixFormat:
+    """
+    Fixed-point number format, [S, I, F], where:
+        S = Number of sign bits (0 or 1).
+        I = Number of integer bits.
+        F = Number of fractional bits.
+    """
+    
     def __init__(self, S : int, I : int, F : int):
         assert S == 0 or S == 1, "S must be 0 or 1"
         # We allow unsigned null formats such as: (0,0,0) or (0,-5,5).
@@ -38,9 +54,16 @@ class FixFormat:
         self.I = int(I)
         self.F = int(F)
     
-    # Format for result of addition
+    
     @staticmethod
     def ForAdd(aFmt, bFmt):
+        """
+        Returns the minimal FixFormat that is guaranteed to exactly represent the result of an
+        addition, a + b.
+        
+        This is a conservative calculation (it assumes that a and b may take any values). If the
+        values of a and/or b are constrained, then a narrower format may be feasible.
+        """
         assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
         # We must consider both extremes:
         
@@ -82,9 +105,16 @@ class FixFormat:
         
         return FixFormat(max(aFmt.S, bFmt.S), max(aFmt.I, bFmt.I) + max(rmin_growth, rmax_growth), max(aFmt.F, bFmt.F))
     
-    # Format for result of subtraction
+    
     @staticmethod
     def ForSub(aFmt, bFmt):
+        """
+        Returns the minimal FixFormat that is guaranteed to exactly represent the result of a
+        subtraction, a - b.
+        
+        This is a conservative calculation (it assumes that a and b may take any values). If the
+        values of a and/or b are constrained, then a narrower format may be feasible.
+        """
         assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
         # We must consider both extremes:
         
@@ -137,17 +167,31 @@ class FixFormat:
         
         return FixFormat(S, I, max(aFmt.F, bFmt.F))
     
-    # Format for result of add-subtract
+    
     @staticmethod
     def ForAddsub(aFmt, bFmt):
+        """
+        Returns the minimal FixFormat that is guaranteed to exactly represent the result of an
+        addition/subtraction, a +/- b.
+        
+        This is a conservative calculation (it assumes that a and b may take any values). If the
+        values of a and/or b are constrained, then a narrower format may be feasible.
+        """
         assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
         addFmt = FixFormat.ForAdd(aFmt, bFmt)
         subFmt = FixFormat.ForSub(aFmt, bFmt)
         return FixFormat.Union(addFmt, subFmt)
     
-    # Format for result of multiplication
+    
     @staticmethod
     def ForMult(aFmt, bFmt):
+        """
+        Returns the minimal FixFormat that is guaranteed to exactly represent the result of a
+        multiplication, a * b.
+        
+        This is a conservative calculation (it assumes that a and b may take any values). If the
+        values of a and/or b are constrained, then a narrower format may be feasible.
+        """
         assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
         # We must consider both extremes:
         
@@ -209,25 +253,46 @@ class FixFormat:
         
         return FixFormat(S, I, aFmt.F+bFmt.F)
     
-    # Format for result of negation
+    
     @staticmethod
     def ForNeg(aFmt):
+        """
+        Returns the minimal FixFormat that is guaranteed to exactly represent the result of a
+        negation, -a.
+        
+        This is a conservative calculation (it assumes that a may take any values). If the values
+        of a are constrained, then a narrower format may be feasible.
+        """
         assert aFmt.width > 0, "Data width must be positive"
         # 1-bit unsigned inputs are special (neg is 1-bit signed)
         if aFmt.S == 0 and aFmt.width == 1:
             return FixFormat(1, aFmt.I+aFmt.S-1, aFmt.F)
         return FixFormat(1, aFmt.I+aFmt.S, aFmt.F)
     
-    # Format for result of absolute value
+    
     @staticmethod
     def ForAbs(aFmt):
+        """
+        Returns the minimal FixFormat that is guaranteed to exactly represent the result of an
+        absolute value, abs(a).
+        
+        This is a conservative calculation (it assumes that a may take any values). If the values
+        of a are constrained, then a narrower format may be feasible.
+        """
         assert aFmt.width > 0, "Data width must be positive"
         negFmt = FixFormat.ForNeg(aFmt)
         return FixFormat.Union(aFmt, negFmt)
     
-    # Format for result of left-shift
+    
     @staticmethod
     def ForShift(aFmt, minShift, maxShift=None):
+        """
+        Returns the minimal FixFormat that is guaranteed to exactly represent the result of a
+        left shift, a << n.
+        
+        This is a conservative calculation (it assumes that a may take any values). If the values
+        of a are constrained, then a narrower format may be feasible.
+        """
         assert aFmt.width > 0, "Data width must be positive"
         if maxShift is None:
             maxShift = minShift
@@ -237,6 +302,13 @@ class FixFormat:
     # Format for result of rounding
     @staticmethod
     def ForRound(aFmt, rFracBits : int, rnd : FixRound):
+        """
+        Returns the minimal FixFormat that is guaranteed to exactly represent the result of
+        fixed-point rounding (for a specific rounding mode).
+        
+        This is a conservative calculation (it assumes that a may take any values). If the values
+        of a are constrained, then a narrower format may be feasible.
+        """
         assert aFmt.width > 0, "Data width must be positive"
         if rFracBits >= aFmt.F:
             # If fractional bits are not being reduced, then nothing happens to int bits.
@@ -254,10 +326,14 @@ class FixFormat:
         
         return FixFormat(aFmt.S, I, rFracBits)
     
-    # Format covering max S/I/F of all input formats.
-    # Note: Accepts either 1 list/tuple of FixFormat or 2 FixFormat inputs.
+    
     @staticmethod
     def Union(aFmt, bFmt=None):
+        """
+        Returns the minimal FixFormat that can exactly represent ALL of the input formats.
+        
+        Note: The input formats can be either 2 FixFormats, or 1 collection of FixFormats.
+        """
         if bFmt is None:
             Fmts = aFmt
         else:
@@ -270,15 +346,22 @@ class FixFormat:
             rFmt.F = max(rFmt.F, Fmts[i].F)
         return rFmt
     
+    
     def __repr__(self):
         return "FixFormat" + f"({self.S}, {self.I}, {self.F})"
+
 
     def __str__(self):
         return f"({self.S}, {self.I}, {self.F})"
 
+
     def __eq__(self, other):
         return (self.S == other.S) and (self.I == other.I) and (self.F == other.F)
     
+    
     @property
     def width(self):
+        """
+        Returns the total bit-width of the FixFormat: S + I + F.
+        """
         return self.S + self.I + self.F

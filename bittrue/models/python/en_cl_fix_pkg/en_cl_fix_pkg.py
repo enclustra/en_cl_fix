@@ -1,5 +1,5 @@
 ###################################################################################################
-# Copyright (c) 2022 Enclustra GmbH, Switzerland (info@enclustra.com)
+# Copyright (c) 2023 Enclustra GmbH, Switzerland (info@enclustra.com)
 ###################################################################################################
 
 ###################################################################################################
@@ -16,32 +16,43 @@ from .wide_fxp import wide_fxp
 # Bit-true methods (available in VHDL)
 ###################################################################################################
 def cl_fix_width(fmt : FixFormat) -> int:
+    """
+    Returns the bit-width of a fixed-point format.
+    """
     return fmt.width
 
 def cl_fix_is_wide(fmt : FixFormat) -> bool:
-    # Determine whether "narrow" (double precision float) or "wide" (arbitrary-precision integer)
-    # fixed-point representation should be used for this fixed-point format.
-    # An IEEE 754 double has:
-    #   * 1 explicit sign bit.
-    #   * 11 exponent bits (supports -1022 to +1023 due to values reserved for special cases).
-    #   * 52 fractional bits.
-    #   * 1 implicit integer bit := '1'.
-    # The values +0 and -0 are supported as special cases (exponent = 0x000). This means integers
-    # on [-2**53, 2**53] can be represented exactly. In other words, if we assume the exponent
-    # is never overflowed, then 54-bit signed numbers and 53-bit unsigned numbers are guaranteed to
-    # be represented exactly. In theory, this would mean: return fmt.I + fmt.F > 53.
-    # However, handling wrapping of signed numbers (when saturation is disabled) is made simpler if
-    # we reserve an extra integer bit for signed numbers. This gives a consistent 53-bit limit for
-    # both signed and unsigned numbers.
+    """
+    Determines whether "narrow" (double precision float) or "wide" (arbitrary-precision integer)
+    fixed-point representation should be used for this fixed-point format.
+    An IEEE 754 double has:
+      * 1 explicit sign bit.
+      * 11 exponent bits (supports -1022 to +1023 due to values reserved for special cases).
+      * 52 fractional bits.
+      * 1 implicit integer bit := '1'.
+    The values +0 and -0 are supported as special cases (exponent = 0x000). This means integers
+    on [-2**53, 2**53] can be represented exactly. In other words, if we assume the exponent
+    is never overflowed, then 54-bit signed numbers and 53-bit unsigned numbers are guaranteed to
+    be represented exactly. In theory, this would mean: return fmt.I + fmt.F > 53.
+    However, handling wrapping of signed numbers (when saturation is disabled) is made simpler if
+    we reserve an extra integer bit for signed numbers. This gives a consistent 53-bit limit for
+    both signed and unsigned numbers.
+    """
     return cl_fix_width(fmt) > 53
 
 def cl_fix_max_value(rFmt : FixFormat):
+    """
+    Returns the maximum representable value in a specific fixed-point format.
+    """
     if cl_fix_is_wide(rFmt):
         return wide_fxp.MaxValue(rFmt)
     else:
         return 2.0**rFmt.I-2.0**(-rFmt.F)
 
 def cl_fix_min_value(rFmt : FixFormat):
+    """
+    Returns the minimum representable value in a specific fixed-point format.
+    """
     if cl_fix_is_wide(rFmt):
         return wide_fxp.MinValue(rFmt)
     else:
@@ -51,7 +62,9 @@ def cl_fix_min_value(rFmt : FixFormat):
             return 0.0
 
 def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.SatWarn_s):
-    
+    """
+    Converts from floating-point to fixed-point (with half-up rounding and optional saturation).
+    """
     if cl_fix_is_wide(rFmt):
         return wide_fxp.FromFloat(a, rFmt, saturate)
     else:
@@ -76,6 +89,11 @@ def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.S
         return x
 
 def cl_fix_from_integer(a : int, aFmt : FixFormat):
+    """
+    Converts from unnormalized integer data to fixed-point.
+    
+    Example: cl_fix_from_integer(5, FixFormat(0, 2, 1)) = 2.5
+    """
     if cl_fix_is_wide(aFmt):
         if not np.all(cl_fix_in_range(a, aFmt, aFmt)):
             raise ValueError("cl_fix_from_integer: Value not in number format range")
@@ -87,12 +105,20 @@ def cl_fix_from_integer(a : int, aFmt : FixFormat):
         return value
 
 def cl_fix_to_integer(a, aFmt : FixFormat):
+    """
+    Converts from fixed-point to unnormalized integer data.
+    
+    Example: cl_fix_to_integer(2.5, FixFormat(0, 2, 1)) = 5
+    """
     if type(a) == wide_fxp:
         return a.data
     else:
         return np.array(np.round(a*2.0**aFmt.F),'int64')
 
 def cl_fix_round(a, aFmt : FixFormat, rFmt : int, rnd : FixRound):
+    """
+    Performs rounding (when the number of fractional bits is being reduced).
+    """
     assert rFmt == FixFormat.ForRound(aFmt, rFmt.F, rnd), "cl_fix_round: Invalid result format. Use FixFormat.ForRound()."
     
     if type(a) == wide_fxp or cl_fix_is_wide(rFmt):
@@ -131,6 +157,9 @@ def cl_fix_round(a, aFmt : FixFormat, rFmt : int, rnd : FixRound):
     return rounded
     
 def cl_fix_saturate(a, aFmt : FixFormat, rFmt : FixFormat, sat : FixSaturate):
+    """
+    Performs saturation (when the number of integer/sign bits is being reduced).
+    """
     assert rFmt.F == aFmt.F, "cl_fix_saturate: Number of frac bits cannot change."
     
     if type(a) == wide_fxp or cl_fix_is_wide(rFmt):
@@ -192,6 +221,9 @@ def cl_fix_saturate(a, aFmt : FixFormat, rFmt : FixFormat, sat : FixSaturate):
 def cl_fix_resize(a, aFmt : FixFormat,
                   rFmt : FixFormat,
                   rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
+    """
+    Resizes data values (with rounding, then saturation) to fit a new fixed-point format.
+    """
     # Round
     roundedFmt = FixFormat.ForRound(aFmt, rFmt.F, rnd)
     rounded = cl_fix_round(a, aFmt, roundedFmt, rnd)
@@ -204,6 +236,9 @@ def cl_fix_resize(a, aFmt : FixFormat,
 def cl_fix_in_range(a, aFmt : FixFormat,
                     rFmt : FixFormat,
                     rnd : FixRound = FixRound.Trunc_s):
+    """
+    Determines if the input values could be represented in rFmt without saturation.
+    """
     rndFmt = FixFormat.ForRound(aFmt, rFmt.F, rnd)
     rounded = cl_fix_round(a, aFmt, rndFmt, rnd)
     lo = np.where(rounded < cl_fix_min_value(rFmt), False, True)
@@ -213,6 +248,9 @@ def cl_fix_in_range(a, aFmt : FixFormat,
 def cl_fix_abs(a, aFmt : FixFormat,
                rFmt : FixFormat,
                rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+    """
+    Calculates absolute values, abs(a).
+    """
     midFmt = FixFormat.ForAbs(aFmt)
     aNeg = cl_fix_neg(a, aFmt, midFmt)
     aPos = cl_fix_resize(a, aFmt, midFmt)
@@ -223,6 +261,9 @@ def cl_fix_abs(a, aFmt : FixFormat,
 def cl_fix_neg(a, aFmt : FixFormat,
               rFmt : FixFormat,
               rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+    """
+    Calculates negation, -a.
+    """
     midFmt = FixFormat.ForNeg(aFmt)
     if type(a) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
@@ -232,6 +273,9 @@ def cl_fix_add(a, aFmt : FixFormat,
                b, bFmt : FixFormat,
                rFmt : FixFormat,
                rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+    """
+    Calculates addition, a + b.
+    """
     midFmt = FixFormat.ForAdd(aFmt, bFmt)
     if type(a) == wide_fxp or type(b) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
@@ -242,6 +286,9 @@ def cl_fix_sub(a, aFmt : FixFormat,
                b, bFmt : FixFormat,
                rFmt : FixFormat,
                rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+    """
+    Calculates subtraction, a - b.
+    """
     midFmt = FixFormat.ForSub(aFmt, bFmt)
     if type(a) == wide_fxp or type(b) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
@@ -253,6 +300,11 @@ def cl_fix_addsub(a, aFmt : FixFormat,
                   add,  # Bool or bool array.
                   rFmt : FixFormat,
                   rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+    """
+    Calculates addition/subtraction:
+        a + b, where add == True.
+        a - b, where add == False.
+    """
     radd = cl_fix_add(a, aFmt, b, bFmt, rFmt, rnd, sat)
     rsub = cl_fix_sub(a, aFmt, b, bFmt, rFmt, rnd, sat)
     return np.where(add, radd, rsub)
@@ -261,9 +313,12 @@ def cl_fix_shift(a, aFmt : FixFormat,
                  shift : int,
                  rFmt : FixFormat,
                  rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
-    # Note: This function performs a lossless shift (equivalent to *2.0**shift), then resizes to
-    #       the output format. The initial shift does NOT truncate any bits.
-    # Note: "shift" direction is left. (So shift<0 shifts right).
+    """
+    Calculates a left bit-shift (equivalent to *2.0**shift). To shift right, set shift < 0.
+    
+    Note: This function performs a lossless shift (equivalent to *2.0**shift), then resizes to the
+    output format. The initial shift does NOT truncate any bits.
+    """
     if cl_fix_is_wide(rFmt):
         a = wide_fxp.FromFxp(a, aFmt)
     if type(a) == wide_fxp:
@@ -298,6 +353,9 @@ def cl_fix_mult(a, aFmt : FixFormat,
                 b, bFmt : FixFormat,
                 rFmt : FixFormat,
                 rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+    """
+    Calculates multiplication, a * b.
+    """
     midFmt = FixFormat.ForMult(aFmt, bFmt)
     if type(a) == wide_fxp or type(b) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
@@ -321,9 +379,15 @@ cl_fix_union_fmt = FixFormat.Union
 ###################################################################################################
 
 def cl_fix_format_to_string(fmt : FixFormat) -> str:
+    """
+    Converts a FixFormat to string.
+    """
     return str(fmt)
 
-def cl_fix_write_formats(fmts, names, filename):
+def cl_fix_write_formats(fmts, names, filename : str):
+    """
+    Writes a collection of fixed-point formats to file.
+    """
 
     with open(filename, "w") as fid:
         # Write header
@@ -337,10 +401,16 @@ def cl_fix_write_formats(fmts, names, filename):
         for fmt in fmts:
             fid.write(cl_fix_format_to_string(fmt) + "\n")
 
-def cl_fix_zeros(shape, fmt):
+def cl_fix_zeros(shape, fmt : FixFormat):
+    """
+    Generates fixed-point zeros.
+    """
     return cl_fix_from_real(np.zeros(shape), fmt)
 
 def cl_fix_random(shape, fmt : FixFormat):
+    """
+    Generates fixed-point random data, uniformly distributed across the representable range.
+    """
     # Generate random data values distributed across the whole dynamic range of fmt.
     fmtLo = cl_fix_min_value(fmt)
     fmtHi = cl_fix_max_value(fmt)
