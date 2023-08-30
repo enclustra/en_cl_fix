@@ -21,18 +21,18 @@ class FixRound(Enum):
     NonSymNeg_s = 2     # Non-symmetric negative (half-down).
     SymInf_s = 3        # Symmetric towards +/- infinity.
     SymZero_s = 4       # Symmetric towards 0.
-    ConvEven_s = 5      # Convergent towards even.
-    ConvOdd_s = 6       # Convergent towards odd.
+    ConvEven_s = 5      # Convergent towards even number.
+    ConvOdd_s = 6       # Convergent towards odd number.
 
 
 class FixSaturate(Enum):
     """
     Fixed-point saturation modes.
     """
-    None_s = 0          # None (bits are truncated, values wrap).
-    Warn_s = 1          # None, with warning.
-    Sat_s = 2           # Saturate.
-    SatWarn_s = 3       # Saturate, with warning.
+    None_s = 0          # No saturation, no warning.
+    Warn_s = 1          # No saturation, only warning.
+    Sat_s = 2           # Only saturation, no warning.
+    SatWarn_s = 3       # Saturation and warning.
 
 
 class FixFormat:
