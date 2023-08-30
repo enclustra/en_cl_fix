@@ -177,6 +177,7 @@ if __name__ == '__main__':
 
     # Create VUnit object from command line arguments
     vu = VUnit.from_args(args=args)
+    vu.add_vhdl_builtins()
 
     # Create test suite
     create_test_suite(vu, args)
