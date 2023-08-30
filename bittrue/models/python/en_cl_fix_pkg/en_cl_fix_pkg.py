@@ -21,6 +21,7 @@ def cl_fix_width(fmt : FixFormat) -> int:
     """
     return fmt.width
 
+
 def cl_fix_is_wide(fmt : FixFormat) -> bool:
     """
     Determines whether "narrow" (double precision float) or "wide" (arbitrary-precision integer)
@@ -40,6 +41,7 @@ def cl_fix_is_wide(fmt : FixFormat) -> bool:
     """
     return cl_fix_width(fmt) > 53
 
+
 def cl_fix_max_value(rFmt : FixFormat):
     """
     Returns the maximum representable value in a specific fixed-point format.
@@ -48,6 +50,7 @@ def cl_fix_max_value(rFmt : FixFormat):
         return wide_fxp.MaxValue(rFmt)
     else:
         return 2.0**rFmt.I-2.0**(-rFmt.F)
+
 
 def cl_fix_min_value(rFmt : FixFormat):
     """
@@ -60,6 +63,7 @@ def cl_fix_min_value(rFmt : FixFormat):
             return -2.0**rFmt.I
         else:
             return 0.0
+
 
 def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.SatWarn_s):
     """
@@ -88,6 +92,7 @@ def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.S
         
         return x
 
+
 def cl_fix_from_integer(a : int, aFmt : FixFormat):
     """
     Converts from unnormalized integer data to fixed-point.
@@ -104,6 +109,7 @@ def cl_fix_from_integer(a : int, aFmt : FixFormat):
             raise ValueError("cl_fix_from_integer: Value not in number format range")
         return value
 
+
 def cl_fix_to_integer(a, aFmt : FixFormat):
     """
     Converts from fixed-point to unnormalized integer data.
@@ -114,6 +120,7 @@ def cl_fix_to_integer(a, aFmt : FixFormat):
         return a.data
     else:
         return np.array(np.round(a*2.0**aFmt.F),'int64')
+
 
 def cl_fix_round(a, aFmt : FixFormat, rFmt : int, rnd : FixRound):
     """
@@ -155,7 +162,8 @@ def cl_fix_round(a, aFmt : FixFormat, rFmt : int, rnd : FixRound):
         rounded = np.floor(a * 2.0 ** rFmt.F).astype(float) * 2.0 ** -rFmt.F
         
     return rounded
-    
+
+
 def cl_fix_saturate(a, aFmt : FixFormat, rFmt : FixFormat, sat : FixSaturate):
     """
     Performs saturation (when the number of integer/sign bits is being reduced).
@@ -217,7 +225,8 @@ def cl_fix_saturate(a, aFmt : FixFormat, rFmt : FixFormat, sat : FixSaturate):
             saturated = np.where(a < fmtMin, fmtMin, saturated)
     
     return saturated
-    
+
+
 def cl_fix_resize(a, aFmt : FixFormat,
                   rFmt : FixFormat,
                   rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
@@ -233,6 +242,7 @@ def cl_fix_resize(a, aFmt : FixFormat,
 
     return result
 
+
 def cl_fix_in_range(a, aFmt : FixFormat,
                     rFmt : FixFormat,
                     rnd : FixRound = FixRound.Trunc_s):
@@ -245,60 +255,73 @@ def cl_fix_in_range(a, aFmt : FixFormat,
     hi = np.where(rounded > cl_fix_max_value(rFmt), False, True)
     return np.where(np.logical_and(lo,hi), True, False)
 
+
 def cl_fix_abs(a, aFmt : FixFormat,
-               rFmt : FixFormat,
-               rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+               rFmt : FixFormat = None,
+               rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
     """
     Calculates absolute values, abs(a).
     """
     midFmt = FixFormat.ForAbs(aFmt)
+    if rFmt is None:
+        rFmt = midFmt
     aNeg = cl_fix_neg(a, aFmt, midFmt)
     aPos = cl_fix_resize(a, aFmt, midFmt)
     
     a = np.where(a < 0, aNeg, aPos)
     return cl_fix_resize(a, midFmt, rFmt, rnd, sat)
 
+
 def cl_fix_neg(a, aFmt : FixFormat,
-              rFmt : FixFormat,
-              rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+              rFmt : FixFormat = None,
+              rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
     """
     Calculates negation, -a.
     """
     midFmt = FixFormat.ForNeg(aFmt)
+    if rFmt is None:
+        rFmt = midFmt
     if type(a) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
     return cl_fix_resize(-a, midFmt, rFmt, rnd, sat)
 
+
 def cl_fix_add(a, aFmt : FixFormat,
                b, bFmt : FixFormat,
-               rFmt : FixFormat,
-               rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+               rFmt : FixFormat = None,
+               rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
     """
     Calculates addition, a + b.
     """
     midFmt = FixFormat.ForAdd(aFmt, bFmt)
+    if rFmt is None:
+        rFmt = midFmt
     if type(a) == wide_fxp or type(b) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
         b = wide_fxp.FromFxp(b, bFmt)
     return cl_fix_resize(a + b, midFmt, rFmt, rnd, sat)
 
+
 def cl_fix_sub(a, aFmt : FixFormat,
                b, bFmt : FixFormat,
-               rFmt : FixFormat,
-               rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+               rFmt : FixFormat = None,
+               rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
     """
     Calculates subtraction, a - b.
     """
     midFmt = FixFormat.ForSub(aFmt, bFmt)
+    if rFmt is None:
+        rFmt = midFmt
     if type(a) == wide_fxp or type(b) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
         b = wide_fxp.FromFxp(b, bFmt)
     return cl_fix_resize(a - b, midFmt, rFmt, rnd, sat)
 
+
 def cl_fix_addsub(a, aFmt : FixFormat,
                   b, bFmt : FixFormat,
                   add,  # Bool or bool array.
-                  rFmt : FixFormat,
+                  rFmt : FixFormat = None,
                   rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
     """
     Calculates addition/subtraction:
@@ -308,6 +331,24 @@ def cl_fix_addsub(a, aFmt : FixFormat,
     radd = cl_fix_add(a, aFmt, b, bFmt, rFmt, rnd, sat)
     rsub = cl_fix_sub(a, aFmt, b, bFmt, rFmt, rnd, sat)
     return np.where(add, radd, rsub)
+
+
+def cl_fix_mult(a, aFmt : FixFormat,
+                b, bFmt : FixFormat,
+                rFmt : FixFormat = None,
+                rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+    """
+    Calculates multiplication, a * b.
+    """
+    midFmt = FixFormat.ForMult(aFmt, bFmt)
+    if rFmt is None:
+        rFmt = midFmt
+    if type(a) == wide_fxp or type(b) == wide_fxp or cl_fix_is_wide(midFmt):
+        a = wide_fxp.FromFxp(a, aFmt)
+        b = wide_fxp.FromFxp(b, bFmt)
+    
+    return cl_fix_resize(a * b, midFmt, rFmt, rnd, sat)
+
 
 def cl_fix_shift(a, aFmt : FixFormat,
                  shift : int,
@@ -349,19 +390,6 @@ def cl_fix_shift(a, aFmt : FixFormat,
         temp_fmt = FixFormat.ForShift(aFmt, np.min(shift), np.max(shift))
         return cl_fix_resize(a * 2.0 ** shift, temp_fmt, rFmt, rnd, sat)
 
-def cl_fix_mult(a, aFmt : FixFormat,
-                b, bFmt : FixFormat,
-                rFmt : FixFormat,
-                rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
-    """
-    Calculates multiplication, a * b.
-    """
-    midFmt = FixFormat.ForMult(aFmt, bFmt)
-    if type(a) == wide_fxp or type(b) == wide_fxp or cl_fix_is_wide(midFmt):
-        a = wide_fxp.FromFxp(a, aFmt)
-        b = wide_fxp.FromFxp(b, bFmt)
-    
-    return cl_fix_resize(a * b, midFmt, rFmt, rnd, sat)
 
 # Function aliases
 cl_fix_add_fmt = FixFormat.ForAdd
@@ -384,11 +412,11 @@ def cl_fix_format_to_string(fmt : FixFormat) -> str:
     """
     return str(fmt)
 
+
 def cl_fix_write_formats(fmts, names, filename : str):
     """
     Writes a collection of fixed-point formats to file.
     """
-
     with open(filename, "w") as fid:
         # Write header
         header = "# " + ",".join(names)
@@ -401,11 +429,13 @@ def cl_fix_write_formats(fmts, names, filename : str):
         for fmt in fmts:
             fid.write(cl_fix_format_to_string(fmt) + "\n")
 
+
 def cl_fix_zeros(shape, fmt : FixFormat):
     """
     Generates fixed-point zeros.
     """
     return cl_fix_from_real(np.zeros(shape), fmt)
+
 
 def cl_fix_random(shape, fmt : FixFormat):
     """

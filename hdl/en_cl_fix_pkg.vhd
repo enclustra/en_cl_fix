@@ -30,17 +30,19 @@ package en_cl_fix_pkg is
         F   : integer;               -- Fractional bits.
     end record;
     
+    constant NullFixFormat_c    : FixFormat_t := (0, 0, -1);
+    
     type FixFormatArray_t is array(natural range <>) of FixFormat_t;
     
     type FixRound_t is
     (
-        Trunc_s,        -- Discard LSBs.
-        NonSymPos_s,    -- Non-symmetric rounding towards +infinity.
-        NonSymNeg_s,    -- Non-symmetric rounding towards -infinity.
-        SymInf_s,       -- Symmetric rounding towards +/- infinity.
-        SymZero_s,      -- Symmetric rounding towards zero.
-        ConvEven_s,     -- Convergent rounding to even number.
-        ConvOdd_s       -- Convergent rounding to odd number.
+        Trunc_s,        -- Truncation (no rounding).
+        NonSymPos_s,    -- Non-symmetric positive (half-up).
+        NonSymNeg_s,    -- Non-symmetric negative (half-down).
+        SymInf_s,       -- Symmetric towards +/- infinity.
+        SymZero_s,      -- Symmetric towards 0.
+        ConvEven_s,     -- Convergent towards even number.
+        ConvOdd_s       -- Convergent towards odd number.
     );
     
     type FixSaturate_t is
@@ -148,7 +150,7 @@ package en_cl_fix_pkg is
     function cl_fix_abs(
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
+        result_fmt  : FixFormat_t := NullFixFormat_c;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector;
@@ -156,7 +158,7 @@ package en_cl_fix_pkg is
     function cl_fix_neg(
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
+        result_fmt  : FixFormat_t := NullFixFormat_c;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector;
@@ -166,7 +168,7 @@ package en_cl_fix_pkg is
         a_fmt       : FixFormat_t;
         b           : std_logic_vector;
         b_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
+        result_fmt  : FixFormat_t := NullFixFormat_c;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector;
@@ -176,7 +178,7 @@ package en_cl_fix_pkg is
         a_fmt       : FixFormat_t;
         b           : std_logic_vector;
         b_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
+        result_fmt  : FixFormat_t := NullFixFormat_c;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector;
@@ -187,16 +189,7 @@ package en_cl_fix_pkg is
         b           : std_logic_vector;
         b_fmt       : FixFormat_t;
         add         : std_logic;
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
-    ) return std_logic_vector;
-    
-    function cl_fix_shift(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        shift       : integer;
-        result_fmt  : FixFormat_t;
+        result_fmt  : FixFormat_t := NullFixFormat_c;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector;
@@ -206,6 +199,15 @@ package en_cl_fix_pkg is
         a_fmt       : FixFormat_t;
         b           : std_logic_vector;
         b_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t := NullFixFormat_c;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector;
+    
+    function cl_fix_shift(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        shift       : integer;
         result_fmt  : FixFormat_t;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
@@ -982,11 +984,12 @@ package body en_cl_fix_pkg is
     function cl_fix_abs(
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
+        result_fmt  : FixFormat_t := NullFixFormat_c;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
         constant mid_fmt_c  : FixFormat_t := cl_fix_abs_fmt(a_fmt);
+        constant r_fmt_c    : FixFormat_t := choose(result_fmt = NullFixFormat_c, mid_fmt_c, result_fmt);
         variable mid_v      : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
     begin
         if cl_fix_sign(a, a_fmt) = '1' then
@@ -994,23 +997,24 @@ package body en_cl_fix_pkg is
         else
             mid_v := convert(a, a_fmt, mid_fmt_c);
         end if;
-        return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
+        return cl_fix_resize(mid_v, mid_fmt_c, r_fmt_c, round, saturate);
     end;
     
     function cl_fix_neg(
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
+        result_fmt  : FixFormat_t := NullFixFormat_c;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
         constant mid_fmt_c  : FixFormat_t := cl_fix_neg_fmt(a_fmt);
+        constant r_fmt_c    : FixFormat_t := choose(result_fmt = NullFixFormat_c, mid_fmt_c, result_fmt);
         variable a_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
         variable mid_v      : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
     begin
         a_v := convert(a, a_fmt, mid_fmt_c);
         mid_v := std_logic_vector(-signed(a_v));
-        return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
+        return cl_fix_resize(mid_v, mid_fmt_c, r_fmt_c, round, saturate);
     end;
     
     function cl_fix_add(
@@ -1018,11 +1022,12 @@ package body en_cl_fix_pkg is
         a_fmt       : FixFormat_t;
         b           : std_logic_vector;
         b_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
+        result_fmt  : FixFormat_t := NullFixFormat_c;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
         constant mid_fmt_c  : FixFormat_t := cl_fix_add_fmt(a_fmt, b_fmt);
+        constant r_fmt_c    : FixFormat_t := choose(result_fmt = NullFixFormat_c, mid_fmt_c, result_fmt);
         variable a_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
         variable b_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
         variable mid_v      : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
@@ -1034,7 +1039,7 @@ package body en_cl_fix_pkg is
         -- slices (pre-add or post-add) if numeric_std.unsigned is used. There are no known issues
         -- for numeric_std.signed, so we always use that.
         mid_v := std_logic_vector(signed(a_v) + signed(b_v));
-        return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
+        return cl_fix_resize(mid_v, mid_fmt_c, r_fmt_c, round, saturate);
     end;
     
     function cl_fix_sub(
@@ -1042,11 +1047,12 @@ package body en_cl_fix_pkg is
         a_fmt       : FixFormat_t;
         b           : std_logic_vector;
         b_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
+        result_fmt  : FixFormat_t := NullFixFormat_c;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
         constant mid_fmt_c  : FixFormat_t := cl_fix_sub_fmt(a_fmt, b_fmt);
+        constant r_fmt_c    : FixFormat_t := choose(result_fmt = NullFixFormat_c, mid_fmt_c, result_fmt);
         variable a_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
         variable b_v        : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
         variable mid_v      : std_logic_vector(cl_fix_width(mid_fmt_c)-1 downto 0);
@@ -1058,7 +1064,7 @@ package body en_cl_fix_pkg is
         -- slices (pre-add or post-add) if numeric_std.unsigned is used. There are no known issues
         -- for numeric_std.signed, so we always use that.
         mid_v := std_logic_vector(signed(a_v) - signed(b_v));
-        return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
+        return cl_fix_resize(mid_v, mid_fmt_c, r_fmt_c, round, saturate);
     end;
     
     function cl_fix_addsub(
@@ -1067,35 +1073,15 @@ package body en_cl_fix_pkg is
         b           : std_logic_vector;
         b_fmt       : FixFormat_t;
         add         : std_logic;
-        result_fmt  : FixFormat_t;
+        result_fmt  : FixFormat_t := NullFixFormat_c;
         round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
-        variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
         if to01(add) = '1' then
-            result_v := cl_fix_add(a, a_fmt, b, b_fmt, result_fmt, round, saturate);
-        else
-            result_v := cl_fix_sub(a, a_fmt, b, b_fmt, result_fmt, round, saturate);
+            return cl_fix_add(a, a_fmt, b, b_fmt, result_fmt, round, saturate);
         end if;
-        return result_v;
-    end;
-    
-    function cl_fix_shift(
-        a           : std_logic_vector;
-        a_fmt       : FixFormat_t;
-        shift       : integer;
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t    := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
-    ) return std_logic_vector is
-        -- Implicitly shift by resizing to a dummy format, then reinterpreting as result_fmt.
-        constant dummy_fmt_c  : FixFormat_t := (result_fmt.S, result_fmt.I - shift, result_fmt.F + shift);
-    begin
-        -- Note: This function performs a lossless shift (equivalent to *2.0**shift), then resizes
-        --       to the output format. The initial shift does NOT truncate any bits.
-        -- Note: "shift" direction is left. (So shift<0 shifts right).
-        return cl_fix_resize(a, a_fmt, dummy_fmt_c, round, saturate);
+        return cl_fix_sub(a, a_fmt, b, b_fmt, result_fmt, round, saturate);
     end;
     
     function cl_fix_mult(
@@ -1103,8 +1089,8 @@ package body en_cl_fix_pkg is
         a_fmt       : FixFormat_t;
         b           : std_logic_vector;
         b_fmt       : FixFormat_t;
-        result_fmt  : FixFormat_t;
-        round       : FixRound_t    := Trunc_s;
+        result_fmt  : FixFormat_t := NullFixFormat_c;
+        round       : FixRound_t := Trunc_s;
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
         -- Force downto 0
@@ -1124,6 +1110,7 @@ package body en_cl_fix_pkg is
         end function;
         
         constant mid_fmt_c      : FixFormat_t := cl_fix_mult_fmt(a_fmt, b_fmt);
+        constant r_fmt_c        : FixFormat_t := choose(result_fmt = NullFixFormat_c, mid_fmt_c, result_fmt);
         constant mid_width_c    : positive := cl_fix_width(mid_fmt_c);
         variable mid_v          : std_logic_vector(mid_width_c-1 downto 0);
     begin
@@ -1137,7 +1124,24 @@ package body en_cl_fix_pkg is
             mid_v := std_logic_vector(resize_sensible(signed(a_c) * signed(b_c), mid_width_c));
         end if;
         
-        return cl_fix_resize(mid_v, mid_fmt_c, result_fmt, round, saturate);
+        return cl_fix_resize(mid_v, mid_fmt_c, r_fmt_c, round, saturate);
+    end;
+    
+    function cl_fix_shift(
+        a           : std_logic_vector;
+        a_fmt       : FixFormat_t;
+        shift       : integer;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return std_logic_vector is
+        -- Implicitly shift by resizing to a dummy format, then reinterpreting as result_fmt.
+        constant dummy_fmt_c  : FixFormat_t := (result_fmt.S, result_fmt.I - shift, result_fmt.F + shift);
+    begin
+        -- Note: This function performs a lossless shift (equivalent to *2.0**shift), then resizes
+        --       to the output format. The initial shift does NOT truncate any bits.
+        -- Note: "shift" direction is left. (So shift<0 shifts right).
+        return cl_fix_resize(a, a_fmt, dummy_fmt_c, round, saturate);
     end;
     
     function cl_fix_compare(
