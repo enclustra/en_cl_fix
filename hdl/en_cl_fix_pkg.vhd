@@ -772,7 +772,7 @@ package body en_cl_fix_pkg is
         variable Chunk_v        : std_logic_vector(ChunkSize_c-1 downto 0);
         variable Result_v       : std_logic_vector(ChunkSize_c*ChunkCount_c-1 downto 0);
     begin
-        -- Limit
+        -- Saturate
         if a > max_real(result_fmt) then
             ASat_v := max_real(result_fmt);
         elsif a < min_real(result_fmt) then
@@ -781,10 +781,10 @@ package body en_cl_fix_pkg is
             ASat_v := a;
         end if;
         
-        -- Rescale to appropriate fractional bits
-        ASat_v := round(ASat_v * 2.0**(result_fmt.F));
+        -- Rescale to appropriate fractional bits, with half-up rounding
+        ASat_v := floor(ASat_v * 2.0**result_fmt.F + 0.5);
         
-        -- Convert to fixed-point in chunks
+        -- Convert to fixed-point in chunks (required for formats that don't fit into integer)
         for i in 0 to ChunkCount_c-1 loop
             -- Note: Due to a Xilinx Vivado bug, we must explicitly call the math_real mod operator
             Chunk_v := std_logic_vector(to_unsigned(integer(ieee.math_real."mod"(ASat_v, 2.0**ChunkSize_c)), ChunkSize_c));
