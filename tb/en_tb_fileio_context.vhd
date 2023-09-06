@@ -18,5 +18,4 @@ context en_tb_fileio_context is
   library lib_en_cl_fix;
   use lib_en_cl_fix.en_tb_base_pkg.all;
   use lib_en_cl_fix.en_tb_fileio_text_pkg.all;
-  use lib_en_cl_fix.en_tb_fileio_binary_pkg.all;
 end context;
