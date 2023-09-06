@@ -155,6 +155,17 @@ def create_test_suite(vu, args):
                         generics=dict(),
                         pre_config=cl_fix_saturate_cosim.run)
     
+    ####################
+    # cl_fix_from_real #
+    ####################
+    cl_fix_from_real_cosim = cosim("cl_fix_from_real")
+    cl_fix_from_real_tb = lib.test_bench("cl_fix_from_real_tb")
+    
+    for test in cl_fix_from_real_tb.get_tests("test"):
+        test.add_config(name=(f"Test"),
+                        generics=dict(),
+                        pre_config=cl_fix_from_real_cosim.run)
+    
     ###############################################################################################
     # Set compile and simulation options
     ###############################################################################################

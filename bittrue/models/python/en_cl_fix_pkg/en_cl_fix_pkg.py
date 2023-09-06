@@ -67,8 +67,15 @@ def cl_fix_min_value(rFmt : FixFormat):
 
 def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.SatWarn_s):
     """
-    Converts from floating-point to fixed-point (with half-up rounding and optional saturation).
+    Converts from floating-point to fixed-point with half-up rounding and saturation.
+    
+    Note: If a different rounding mode is needed, or if saturation is not desired, then use
+    cl_fix_resize.
     """
+    # Saturation is mandatory in this function (because wrapping has not been implemented)
+    if saturate != FixSaturate.SatWarn_s and saturate != FixSaturate.Sat_s:
+        raise ValueError(f"cl_fix_from_real: Unsupported saturation mode {str(saturate)}")
+    
     if cl_fix_is_wide(rFmt):
         return wide_fxp.FromFloat(a, rFmt, saturate)
     else:
@@ -81,14 +88,17 @@ def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.S
             if amin < cl_fix_min_value(rFmt):
                 warnings.warn(f"cl_fix_from_real: Number {amin} exceeds minimum for format {rFmt}", Warning)
         
-        # Quantize. Always use half-up rounding.
-        # Note: Other rounding modes require aFmt.F. If aFmt is defined, then use cl_fix_resize.
+        # Quantize.
+        # Always use half-up rounding (to avoid implementing all rounding modes in floating point).
         x = np.floor(a*(2.0**rFmt.F)+0.5)/2.0**rFmt.F
         
         # Saturate
         if (saturate == FixSaturate.Sat_s) or (saturate == FixSaturate.SatWarn_s):
             x = np.where(x > cl_fix_max_value(rFmt), cl_fix_max_value(rFmt), x)
             x = np.where(x < cl_fix_min_value(rFmt), cl_fix_min_value(rFmt), x)
+        else:
+            # Wrapping is not supported
+            None
         
         return x
 

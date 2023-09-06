@@ -54,6 +54,10 @@ class wide_fxp:
     # Convert from float data to wide_fxp object, with quantization and bounds checks.
     @staticmethod
     def FromFloat(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.SatWarn_s):
+        # Saturation is mandatory in this function (because wrapping has not been implemented)
+        if saturate != FixSaturate.SatWarn_s and saturate != FixSaturate.Sat_s:
+            raise ValueError(f"wide_fxp.FromFloat: Unsupported saturation mode {str(saturate)}")
+        
         if np.ndim(a) == 0:
             a = np.array(a, ndmin=1)
         
@@ -77,6 +81,9 @@ class wide_fxp:
         if (saturate == FixSaturate.Sat_s) or (saturate == FixSaturate.SatWarn_s):
             x = np.where(x > wide_fxp.MaxValue(rFmt), wide_fxp.MaxValue(rFmt), x)
             x = np.where(x < wide_fxp.MinValue(rFmt), wide_fxp.MinValue(rFmt), x)
+        else:
+            # Wrapping is not supported
+            None
         
         return x
     

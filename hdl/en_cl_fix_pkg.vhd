@@ -772,6 +772,11 @@ package body en_cl_fix_pkg is
         variable Chunk_v        : std_logic_vector(ChunkSize_c-1 downto 0);
         variable Result_v       : std_logic_vector(ChunkSize_c*ChunkCount_c-1 downto 0);
     begin
+        -- Saturation is mandatory in this function (because wrapping has not been implemented)
+        assert saturate = SatWarn_s or saturate = Sat_s
+            report "cl_fix_for_real: Saturation mode must be SatWarn_s or Sat_s"
+            severity Failure;
+            
         -- Saturate
         if a > max_real(result_fmt) then
             ASat_v := max_real(result_fmt);
