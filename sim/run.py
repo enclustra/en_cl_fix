@@ -10,6 +10,7 @@ root = abspath(dirname(__file__))
 
 import common
 from common import VUnit, VUnitCLI, vhdl_standard_rtl, vhdl_standard_tb
+from cosim_runner import cosim_runner
 
 def create_test_suite(vu, args):
     # Add VUnit libraries
@@ -39,10 +40,10 @@ def create_test_suite(vu, args):
     COSIM_PATH = join(root, "../bittrue/cosim")
     
     # Specialize the "common" cosim runner to run specific cosim scripts
-    class cosim(common.cosim_runner):
+    class cosim(cosim_runner):
         def __init__(self, dirname):
-            target = join(COSIM_PATH, dirname, "cosim.py")
-            super().__init__(args.disable_cosim, target)
+            cosim_subdir = join(COSIM_PATH, dirname)
+            super().__init__(args.disable_cosim, cosim_subdir)
     
     ##############
     # cl_fix_add #

@@ -5,8 +5,6 @@
 # Import Python modules
 from os.path import join, dirname, abspath
 from os import environ, system, getcwd, chdir
-import subprocess
-from threading import Lock
 
 # Import VUnit
 try:
@@ -15,29 +13,6 @@ try:
     import VUnitCLI, VUnit
 except ImportError as e:
     from vunit import VUnitCLI, VUnit
-
-# Helper class to run cosim script at most once (thread safe)
-class cosim_runner:
-    def __init__(self, disable, target):
-        self.enable = not disable
-        self.target = target
-        # Thread lock for ensuring thread safety when executing VUnit in parallel (-p)
-        self.lock = Lock()
-    
-    # Callback function to pass to VUnit pre_config
-    def run(self):
-        # Lock thread to ensure thread safety when executing VUnit in parallel (-p)
-        with self.lock:
-            if self.enable:
-                # Launch Python in a new process and exectute cosim script
-                status = subprocess.run(["python3", self.target])
-                # Check returncode and report any error
-                if status.returncode != 0:
-                    print(f"ERROR! Cosim script execution failed: {self.target}")
-                    return False
-                self.enable = False
-        # Must return true to tell VUnit run was successful
-        return True
 
 # Add custom command line arguments
 cli = VUnitCLI()
