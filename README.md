@@ -2,7 +2,9 @@
 
 *en_cl_fix* is a multi-language fixed-point math library for FPGA and ASIC development.
 
-It provides fixed-point functionality in both HDL (currently VHDL) and software languages (currently Python and MATLAB). This allows fixed-point algorithms to be designed, modelled and evaluated in software, before committing to the HDL implementation. Then it allows the HDL implementation to be easily verified in simulation and/or hardware by comparing the simulation/hardware output with the bit-true software model's output.
+It provides fixed-point functionality in both HDL (currently VHDL) and software languages (currently Python and MATLAB). This allows fixed-point algorithms to be designed, modelled and evaluated in software, before committing to the HDL implementation. Similarly, HDL implementations can be easily verified in simulation and/or hardware by comparing the simulation/hardware output with the bit-true software model's output.
+
+This library provides only low-level fixed-point functionality such as basic arithmetic (addition, multiplication, etc) and number format conversions (with rounding and saturation).
 
 This library supports arbitrary precision, but software executes faster for bit-widths ≤ 53 bits.
 
@@ -22,18 +24,6 @@ See [Changelog](Changelog.md).
 - Python
     - *numpy*
     - *vunit-hdl*
-- MATLAB
-    - For normal usage: None.
-    - For handling very wide data (> 53 bits): [*Fixed-Point Designer Toolbox*](https://www.mathworks.com/products/fixed-point-designer.html).
-
-## Simulations and Testbenches
-
-* Python
-  * **TBD**
-* MATLAB
-  * **TBD**
-* VHDL
-  * **TBD**
 
 ## Fixed-Point Representation
 
@@ -139,14 +129,3 @@ If warnings are enabled, then the HDL simulator or software environment will iss
 | Warn_s          | No        | Yes   |
 | Sat_s           | Yes       | No    |
 | SatWarn_s       | Yes       | Yes   |
-
-## Documentation
-
-Documentation 
-
-- Python
-  - **TBD**
-- MATLAB
-  - **TBD**
-- VHDL
-  - **TBD**
