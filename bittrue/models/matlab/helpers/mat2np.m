@@ -8,5 +8,5 @@ function y = mat2np(x)
     else
         shape = int32(size(x));
     end
-    y = py.numpy.array(x(:)).reshape(shape, order='F');
+    y = py.numpy.array(x(:)).reshape(shape, pyargs('order','F'));
 end

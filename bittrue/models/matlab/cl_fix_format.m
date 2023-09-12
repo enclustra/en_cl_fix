@@ -4,5 +4,5 @@
 % MATLAB wrapper for implementation in en_cl_fix_pkg.py.
 % -------------------------------------------------------------------------------------------------
 function fmt = cl_fix_format(s, i, f)
-    fmt = py.en_cl_fix_pkg.FixFormat(int32(s), int32(i), int32(f));
+    fmt = py.en_cl_fix_pkg.FixFormat(int64(s), int64(i), int64(f));
 end
