@@ -5,5 +5,5 @@
 % -------------------------------------------------------------------------------------------------
 function r = cl_fix_in_range(varargin)
     r = py.en_cl_fix_pkg.cl_fix_in_range(varargin{:});
-    r = logical(r);
+    r = py2mat(r);
 end

@@ -96,6 +96,8 @@ function [x_mat] = py2mat(x_py)
           x_mat = uint64(x_py.astype(np.float64));
         case "int64"
           x_mat = int64(x_py.astype(np.float64));
+        case "bool"
+          x_mat = logical(x_py);
         % Complex types require a math operation to coerce the
         % real and imaginary components to contiguous arrays.
         % Use "+0" for minimal performance impact.  Without this,
