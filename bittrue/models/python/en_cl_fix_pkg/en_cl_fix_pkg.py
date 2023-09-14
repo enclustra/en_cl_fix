@@ -13,6 +13,22 @@ from .en_cl_fix_types import *
 from .wide_fxp import wide_fxp
 
 ###################################################################################################
+# Private helpers
+###################################################################################################
+
+def _clean_input(a):
+    """
+    Private method that ensures input data arrays are converted to np.ndarray.
+    
+    This is useful, for example, for data that is passed from MATLAB.
+    """
+    # Note: It is easier to handle this type conversion in Python because that allows each MATLAB
+    # function call to just pass varargin{:} without worrying about which inputs are data.
+    if hasattr(a, "__getitem__"):
+        return np.array(a)
+    return a
+
+###################################################################################################
 # Bit-true methods (available in VHDL)
 ###################################################################################################
 def cl_fix_width(fmt : FixFormat) -> int:
@@ -76,6 +92,8 @@ def cl_fix_from_real(a, rFmt : FixFormat, saturate : FixSaturate = FixSaturate.S
     if saturate != FixSaturate.SatWarn_s and saturate != FixSaturate.Sat_s:
         raise ValueError(f"cl_fix_from_real: Unsupported saturation mode {str(saturate)}")
     
+    a = _clean_input(a)
+    
     if cl_fix_is_wide(rFmt):
         return wide_fxp.FromFloat(a, rFmt, saturate)
     else:
@@ -114,6 +132,7 @@ def cl_fix_from_integer(a : int, aFmt : FixFormat):
             raise ValueError("cl_fix_from_integer: Value not in number format range")
         return wide_fxp(a, aFmt)
     else:
+        a = _clean_input(a)
         value = np.array(a/2**aFmt.F, np.float64)
         if not np.all(cl_fix_in_range(value, aFmt, aFmt)):
             raise ValueError("cl_fix_from_integer: Value not in number format range")
@@ -129,6 +148,7 @@ def cl_fix_to_integer(a, aFmt : FixFormat):
     if type(a) == wide_fxp:
         return a.data
     else:
+        a = _clean_input(a)
         return np.array(np.round(a*2.0**aFmt.F),'int64')
 
 
@@ -147,7 +167,7 @@ def cl_fix_round(a, aFmt : FixFormat, rFmt : int, rnd : FixRound):
         if not cl_fix_is_wide(rFmt):
             rounded = rounded.to_narrow_fxp()
     else:
-        a = np.array(a)
+        a = _clean_input(a)
         
         # Add offset before truncating to implement rounding
         if rFmt.F < aFmt.F:
@@ -189,6 +209,8 @@ def cl_fix_saturate(a, aFmt : FixFormat, rFmt : FixFormat, sat : FixSaturate):
         if not cl_fix_is_wide(rFmt):
             saturated = saturated.to_narrow_fxp()
     else:
+        a = _clean_input(a)
+        
         # Saturation warning
         fmtMax = cl_fix_max_value(rFmt)
         fmtMin = cl_fix_min_value(rFmt)
@@ -275,6 +297,8 @@ def cl_fix_abs(a, aFmt : FixFormat,
     midFmt = FixFormat.ForAbs(aFmt)
     if rFmt is None:
         rFmt = midFmt
+    if type(a) != wide_fxp:
+        a = _clean_input(a)
     aNeg = cl_fix_neg(a, aFmt, midFmt)
     aPos = cl_fix_resize(a, aFmt, midFmt)
     
@@ -293,6 +317,8 @@ def cl_fix_neg(a, aFmt : FixFormat,
         rFmt = midFmt
     if type(a) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
+    else:
+        a = _clean_input(a)
     return cl_fix_resize(-a, midFmt, rFmt, rnd, sat)
 
 
@@ -309,6 +335,9 @@ def cl_fix_add(a, aFmt : FixFormat,
     if type(a) == wide_fxp or type(b) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
         b = wide_fxp.FromFxp(b, bFmt)
+    else:
+        a = _clean_input(a)
+        b = _clean_input(b)
     return cl_fix_resize(a + b, midFmt, rFmt, rnd, sat)
 
 
@@ -325,6 +354,9 @@ def cl_fix_sub(a, aFmt : FixFormat,
     if type(a) == wide_fxp or type(b) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
         b = wide_fxp.FromFxp(b, bFmt)
+    else:
+        a = _clean_input(a)
+        b = _clean_input(b)
     return cl_fix_resize(a - b, midFmt, rFmt, rnd, sat)
 
 
@@ -356,6 +388,9 @@ def cl_fix_mult(a, aFmt : FixFormat,
     if type(a) == wide_fxp or type(b) == wide_fxp or cl_fix_is_wide(midFmt):
         a = wide_fxp.FromFxp(a, aFmt)
         b = wide_fxp.FromFxp(b, bFmt)
+    else:
+        a = _clean_input(a)
+        b = _clean_input(b)
     
     return cl_fix_resize(a * b, midFmt, rFmt, rnd, sat)
 
@@ -372,6 +407,7 @@ def cl_fix_shift(a, aFmt : FixFormat,
     """
     if cl_fix_is_wide(rFmt):
         a = wide_fxp.FromFxp(a, aFmt)
+    
     if type(a) == wide_fxp:
         if np.ndim(shift) == 0:
             # Constant shift
@@ -397,6 +433,7 @@ def cl_fix_shift(a, aFmt : FixFormat,
             
             return r
     else:
+        a = _clean_input(a)
         temp_fmt = FixFormat.ForShift(aFmt, np.min(shift), np.max(shift))
         return cl_fix_resize(a * 2.0 ** shift, temp_fmt, rFmt, rnd, sat)
 

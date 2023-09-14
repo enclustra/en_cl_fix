@@ -14,8 +14,28 @@
 % -------------------------------------------------------------------------------------------------
 close all; clear all; clc;
 
-% Sanity check: Make sure MATLAB can find a Python installation.
+% None of the documented methods for reloading en_cl_fix_pkg "in-process" work. Therefore, if we
+% want to modify Python sources without restarting MATLAB, then we must execute Python "out of
+% process". This is much slower to execute, but useful for debugging.
+RELOAD_PYTHON_MODULES = false;
 pe = pyenv;
+if RELOAD_PYTHON_MODULES
+    if strcmp(pe.Status, 'Loaded') && strcmp(pe.ExecutionMode, 'InProcess')
+        error('MATLAB must be restarted to change the Python environment');
+    end
+    terminate(pe);
+    pe = pyenv(ExecutionMode='OutOfProcess');
+else
+    if strcmp(pe.Status, 'NotLoaded')
+        pe = pyenv(ExecutionMode='InProcess');
+    else
+        if strcmp(pe.ExecutionMode, 'OutOfProcess')
+            error('MATLAB must be restarted to change the Python environment');
+        end
+    end
+end
+
+% Sanity check: Make sure MATLAB can find a Python installation.
 assert(pe.Version ~= "", "Python installation not detected by MATLAB.");
 disp(append('Detected Python version: ', pe.Version, '.'));
 
@@ -25,8 +45,7 @@ python_src_path = fullfile(root, '..', '..', 'models', 'python');
 insert(py.sys.path, int32(0), python_src_path);
 
 % Load the en_cl_fix Python package.
-py_fix = py.importlib.import_module('en_cl_fix_pkg');
-py.importlib.reload(py_fix);
+py.importlib.import_module('en_cl_fix_pkg');
 
 % Add MATLAB sources to MATLAB path
 addpath(fullfile(root, '..', '..', 'models', 'matlab'));
@@ -35,6 +54,9 @@ addpath(fullfile(root, '..', '..', 'models', 'matlab', 'helpers'));
 % -------------------------------------------------------------------------------------------------
 % Example Setup
 % -------------------------------------------------------------------------------------------------
+
+% Load shorthand constants
+cl_fix_constants;
 
 % Specify some input data formats.
 a_fmt = cl_fix_format(1, 0, 15);
@@ -100,46 +122,39 @@ assert(~cl_fix_is_wide(b_fmt), 'Unexpected wide b_fmt.');
 
 % Addition
 assert(~cl_fix_is_wide(add_fmt), 'Unexpected wide add_fmt.');
-add_got = np2mat(add_result);
-add_expected = np2mat(a) + np2mat(b);
-assert(isequal(add_got, add_expected), 'Error in add');
+add_expected = a + b;
+assert(isequal(add_result, add_expected), 'Error in add');
 
 % Subtraction
 assert(~cl_fix_is_wide(sub_fmt), 'Unexpected wide sub_fmt.');
-sub_got = np2mat(sub_result);
-sub_expected = np2mat(a) - np2mat(b);
-assert(isequal(sub_got, sub_expected), 'Error in sub');
+sub_expected = a - b;
+assert(isequal(sub_result, sub_expected), 'Error in sub');
 
 % Add-sub
 assert(~cl_fix_is_wide(addsub_fmt), 'Unexpected wide addsub_fmt.');
-addsub_got = np2mat(addsub_result);
 addsub_expected = sub_expected;
 addsub_expected(addsub) = add_expected(addsub);
-assert(isequal(addsub_got, addsub_expected), 'Error in addsub');
+assert(isequal(addsub_result, addsub_expected), 'Error in addsub');
 
 % Multiplication
 assert(~cl_fix_is_wide(mult_fmt), 'Unexpected wide mult_fmt.');
-mult_got = np2mat(mult_result);
-mult_expected = np2mat(a) .* np2mat(b);
-assert(isequal(mult_got, mult_expected), 'Error in mult');
+mult_expected = a .* b;
+assert(isequal(mult_result, mult_expected), 'Error in mult');
 
 % Absolute value
 assert(~cl_fix_is_wide(abs_fmt), 'Unexpected wide abs_fmt.');
-abs_got = np2mat(abs_result);
-abs_expected = abs(np2mat(a));
-assert(isequal(abs_got, abs_expected), 'Error in abs');
+abs_expected = abs(a);
+assert(isequal(abs_result, abs_expected), 'Error in abs');
 
 % Negation
 assert(~cl_fix_is_wide(neg_fmt), 'Unexpected wide neg_fmt.');
-neg_got = np2mat(neg_result);
-neg_expected = -np2mat(a);
-assert(isequal(neg_got, neg_expected), 'Error in neg');
+neg_expected = -a;
+assert(isequal(neg_result, neg_expected), 'Error in neg');
 
 % Bit-shifting
 assert(~cl_fix_is_wide(shift_fmt), 'Unexpected wide shift_fmt.');
-shift_got = np2mat(shift_result);
-shift_expected = np2mat(a) * 2^shift_size;
-assert(isequal(shift_got, shift_expected), 'Error in shift');
+shift_expected = a * 2^shift_size;
+assert(isequal(shift_result, shift_expected), 'Error in shift');
 
 % -------------------------------------------------------------------------------------------------
 % Misc Functions
@@ -149,12 +164,12 @@ assert(isequal(shift_got, shift_expected), 'Error in shift');
 % Python implementation is tested separately.
 
 % Rounding
-round = py_fix.FixRound.ConvEven_s;
+round = Round.ConvEven_s;
 round_fmt = cl_fix_round_fmt(a_fmt, a_fmt.F - 4, round);
 round_result = cl_fix_round(a, a_fmt, round_fmt, round);
 
 % Saturation
-saturate = py_fix.FixSaturate.Sat_s;
+saturate = Sat.Sat_s;
 sat_fmt = cl_fix_format(0, a_fmt.I - 4, a_fmt.F);
 sat_result = cl_fix_saturate(a, a_fmt, sat_fmt, saturate);
 
@@ -171,7 +186,7 @@ a_check = cl_fix_from_integer(a_int, a_fmt);
 assert(isequal(a_check, a), 'Unexpected values after integer conversions.');
 
 % Conversion from float
-a_check = cl_fix_from_real(a, a_fmt, py_fix.FixSaturate.SatWarn_s);
+a_check = cl_fix_from_real(a, a_fmt, Sat.SatWarn_s);
 assert(isequal(a_check, a), 'Unexpected values after float conversions');
 
 % Max and min values

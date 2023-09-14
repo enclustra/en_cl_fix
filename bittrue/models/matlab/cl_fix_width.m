@@ -5,4 +5,5 @@
 % -------------------------------------------------------------------------------------------------
 function w = cl_fix_width(fmt)
     w = py.en_cl_fix_pkg.cl_fix_width(fmt);
+    w = py2mat(w);
 end

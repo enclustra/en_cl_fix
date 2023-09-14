@@ -5,4 +5,5 @@
 % -------------------------------------------------------------------------------------------------
 function r = cl_fix_min_value(fmt)
     r = py.en_cl_fix_pkg.cl_fix_min_value(fmt);
+    r = py2mat(r);
 end
