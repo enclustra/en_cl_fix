@@ -29,8 +29,6 @@
 % DEALINGS IN THE SOFTWARE.
 % }}}
 function [x_mat] = py2mat(x_py)
-  Im = @py.importlib.import_module;
-  np = Im('numpy');
   switch class(x_py)
       % Python dictionaries
       case 'py.dict'
@@ -77,25 +75,25 @@ function [x_mat] = py2mat(x_py)
           x_mat = x_py.single;
         case "float16"
           % doesn't exist in matlab, upcast to float32
-          x_mat = single(x_py.astype(np.float32));
+          x_mat = single(x_py.astype('float32'));
         % only reals and logicals can be cast to arrays so
         % have to cast the rest to either single or double
         case "uint8"
-          x_mat = uint8(x_py.astype(np.float32));
+          x_mat = uint8(x_py.astype('float32'));
         case "int8"
-          x_mat = int8(x_py.astype(np.float32));
+          x_mat = int8(x_py.astype('float32'));
         case "uint16"
-          x_mat = uint16(x_py.astype(np.float32));
+          x_mat = uint16(x_py.astype('float32'));
         case "int16"
-          x_mat = int16(x_py.astype(np.float32));
+          x_mat = int16(x_py.astype('float32'));
         case "uint32"
-          x_mat = uint32(x_py.astype(np.float32));
+          x_mat = uint32(x_py.astype('float32'));
         case "int32"
-          x_mat = int32(x_py.astype(np.float32));
+          x_mat = int32(x_py.astype('float32'));
         case "uint64"
-          x_mat = uint64(x_py.astype(np.float64));
+          x_mat = uint64(x_py.astype('float64'));
         case "int64"
-          x_mat = int64(x_py.astype(np.float64));
+          x_mat = int64(x_py.astype('float64'));
         case "bool"
           x_mat = logical(x_py);
         % Complex types require a math operation to coerce the
