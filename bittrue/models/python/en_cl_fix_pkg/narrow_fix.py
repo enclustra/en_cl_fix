@@ -21,10 +21,10 @@ class NarrowFix:
         assert a.dtype == np.float64, f"NarrowFix: requires float64 data. Got: {a.dtype}"
         if copy:
             self._data = a.copy()
-            self._fmt = shallow_copy(a_fmt)
         else:
             self._data = a
-            self._fmt = a_fmt
+        # Always copy the format (very small)
+        self._fmt = shallow_copy(a_fmt)
         
     @staticmethod
     def from_real(a, r_fmt : FixFormat, saturate : FixSaturate = FixSaturate.SatWarn_s):
@@ -55,7 +55,7 @@ class NarrowFix:
             # Wrapping has not been implemented
             raise NotImplementedError(f"NarrowFix: Unsupported saturation mode {str(saturate)}")
         
-        return NarrowFix(x, r_fmt)
+        return NarrowFix(x, r_fmt, copy=False)
     
     @staticmethod
     def from_integer(a, a_fmt : FixFormat):
@@ -67,16 +67,16 @@ class NarrowFix:
         value = np.array(a/2**a_fmt.F, dtype=np.float64)
         if not np.all(NarrowFix(value, a_fmt).in_range(a_fmt)):
             raise ValueError("NarrowFix.from_integer: Value not in number format range")
-        return NarrowFix(value, a_fmt)
+        return NarrowFix(value, a_fmt, copy=False)
     
     @staticmethod
     def max_value(fmt : FixFormat):
-        return NarrowFix(np.array(2.0**fmt.I - 2.0**(-fmt.F)), fmt)
+        return NarrowFix(np.array(2.0**fmt.I - 2.0**(-fmt.F)), fmt, copy=False)
     
     @staticmethod
     def min_value(fmt : FixFormat):
         min_val = -2.0**fmt.I if fmt.S == 1 else 0.0
-        return NarrowFix(np.array(min_val), fmt)
+        return NarrowFix(np.array(min_val), fmt, copy=False)
     
     @property
     def data(self):
@@ -147,7 +147,7 @@ class NarrowFix:
         # Truncate
         data = np.floor(data * 2.0 ** r_fmt.F).astype(np.float64) * 2.0 ** -r_fmt.F
             
-        return NarrowFix(data, r_fmt)
+        return NarrowFix(data, r_fmt, copy=False)
     
     def saturate(self, r_fmt : FixFormat, sat : FixSaturate):
         """
@@ -203,7 +203,7 @@ class NarrowFix:
             sat_data = np.where(self > fmt_max, fmt_max._data, data)
             sat_data = np.where(self < fmt_min, fmt_min._data, sat_data)
         
-        return NarrowFix(sat_data, r_fmt)
+        return NarrowFix(sat_data, r_fmt, copy=False)
 
     def resize(self, r_fmt : FixFormat, rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
         """
@@ -227,7 +227,7 @@ class NarrowFix:
         pos = self.resize(mid_fmt)
         
         data_abs = np.where(self._data < 0, neg._data, pos._data)
-        return NarrowFix(data_abs, mid_fmt).resize(r_fmt, rnd, sat)
+        return NarrowFix(data_abs, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
 
     def neg(self, r_fmt : FixFormat = None, rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
         """
@@ -236,7 +236,7 @@ class NarrowFix:
         mid_fmt = FixFormat.ForNeg(self._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
-        return NarrowFix(-self._data, mid_fmt).resize(r_fmt, rnd, sat)
+        return NarrowFix(-self._data, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
 
     def add(self, b : "NarrowFix",
             r_fmt : FixFormat = None,
@@ -247,7 +247,7 @@ class NarrowFix:
         mid_fmt = FixFormat.ForAdd(self._fmt, b._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
-        return NarrowFix(self._data + b._data, mid_fmt).resize(r_fmt, rnd, sat)
+        return NarrowFix(self._data + b._data, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
 
     def sub(self, b : "NarrowFix",
             r_fmt : FixFormat = None,
@@ -258,7 +258,7 @@ class NarrowFix:
         mid_fmt = FixFormat.ForSub(self._fmt, b._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
-        return NarrowFix(self._data - b._data, mid_fmt).resize(r_fmt, rnd, sat)
+        return NarrowFix(self._data - b._data, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
 
     def addsub(self, b : "NarrowFix", add,  # Bool or bool array.
                r_fmt : FixFormat = None,
@@ -274,7 +274,7 @@ class NarrowFix:
         radd = self.add(b, r_fmt, rnd, sat)
         rsub = self.sub(b, r_fmt, rnd, sat)
         r_data = np.where(add, radd._data, rsub._data)
-        return NarrowFix(r_data, r_fmt)
+        return NarrowFix(r_data, r_fmt, copy=False)
 
     def mult(self, b : "NarrowFix",
              r_fmt : FixFormat = None,
@@ -285,7 +285,7 @@ class NarrowFix:
         mid_fmt = FixFormat.ForMult(self._fmt, b._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
-        return NarrowFix(self._data * b._data, mid_fmt).resize(r_fmt, rnd, sat)
+        return NarrowFix(self._data * b._data, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
 
     def shift(self, shift,
               r_fmt : FixFormat = None,
@@ -300,7 +300,7 @@ class NarrowFix:
         mid_fmt = FixFormat.ForShift(self._fmt, np.min(shift), np.max(shift))
         if r_fmt is None:
             r_fmt = mid_fmt
-        return NarrowFix(self._data * 2.0 ** shift, mid_fmt).resize(r_fmt, rnd, sat)
+        return NarrowFix(self._data * 2.0 ** shift, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
 
     # "==" operator
     def __eq__(self, other):
