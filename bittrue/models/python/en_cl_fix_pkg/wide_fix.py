@@ -333,7 +333,7 @@ class WideFix:
         
         # Do addition on internal integer data (binary points are aligned)
         return WideFix(a_round._data - b_round._data, mid_fmt).resize(r_fmt, rnd, sat)
-        
+    
     def addsub(self, b : "WideFix", add,  # Bool or bool array.
                r_fmt : FixFormat = None,
                rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
@@ -342,13 +342,13 @@ class WideFix:
             self + b, where add == True.
             self - b, where add == False.
         """
-        # mid_fmt = FixFormat.ForAddsub(self._fmt, b._fmt)
-        # if r_fmt is None:
-            # r_fmt = mid_fmt
-        # radd = self.add(b, r_fmt, rnd, sat)
-        # rsub = self.sub(b, r_fmt, rnd, sat)
-        # r_data = np.where(add, radd._data, rsub._data)
-        # return NarrowFix(r_data, r_fmt, copy=False)
+        mid_fmt = FixFormat.ForAddsub(self._fmt, b._fmt)
+        if r_fmt is None:
+            r_fmt = mid_fmt
+        radd = self.add(b, r_fmt, rnd, sat)
+        rsub = self.sub(b, r_fmt, rnd, sat)
+        r_data = np.where(add, radd._data, rsub._data)
+        return WideFix(r_data, r_fmt, copy=False)
 
     def mult(self, b : "WideFix",
              r_fmt : FixFormat = None,
@@ -388,7 +388,7 @@ class WideFix:
                 # Resize to the shared intermediate format
                 mid._data[i] = temp.resize(mid_fmt)._data[0]
         
-        return WideFix(mid, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
+        return mid.resize(r_fmt, rnd, sat) 
     
     # Create a new WideFix object with the most significant bit (- index) set to "value"
     def set_msb(self, index, value):

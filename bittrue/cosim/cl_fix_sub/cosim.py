@@ -99,6 +99,8 @@ def run():
                             # Produce all combinations of all a and b values
                             a_all = repeat_whole_array(a, len(b))
                             b_all = repeat_each_value(b, len(a))
+                            a_wide = WideFix.FromNarrowFxp(a_all, aFmt)
+                            b_wide = WideFix.FromNarrowFxp(b_all, bFmt)
                             
                             ########
                             # rFmt #
@@ -123,6 +125,11 @@ def run():
                                             for sat in sat_values:
                                                 # Calculate output
                                                 r = cl_fix_sub(a_all, aFmt, b_all, bFmt, rFmt, rnd, sat)
+                                                
+                                                # Test WideFix input here, as there is no separate test script.
+                                                # This is not actually part of the cosim data generation.
+                                                r_wide = a_wide.sub(b_wide, rFmt, rnd, sat)
+                                                assert np.array_equal(r_wide.to_real(), r)
                                                 
                                                 # Save output to file
                                                 np.savetxt(join(DATA_DIR, f"test{test_count}_output.txt"),

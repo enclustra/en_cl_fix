@@ -88,8 +88,8 @@ def run():
                             # Produce all combinations of all a and b values
                             a_all = repeat_whole_array(a, len(b))
                             b_all = repeat_each_value(b, len(a))
-                            a_wide = WideFix.FromFxp(a_all, aFmt)
-                            b_wide = WideFix.FromFxp(b_all, bFmt)
+                            a_wide = WideFix.FromNarrowFxp(a_all, aFmt)
+                            b_wide = WideFix.FromNarrowFxp(b_all, bFmt)
                             
                             # Calculate outputs
                             r_eq = a_all == b_all

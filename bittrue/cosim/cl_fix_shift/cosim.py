@@ -78,7 +78,7 @@ def run():
                 
                 # Generate A data
                 a = get_data(aFmt)
-                a_wide = WideFix.FromFxp(a, aFmt)
+                a_wide = WideFix.FromNarrowFxp(a, aFmt)
                 
                 for shift in shift_values:
                     shiftFmt = FixFormat.ForShift(aFmt, shift)
@@ -109,8 +109,8 @@ def run():
                                         
                                         # Test WideFix input here, as there is no separate test script.
                                         # This is not actually part of the cosim data generation.
-                                        r_wide = cl_fix_shift(a_wide, aFmt, shift, rFmt, rnd, sat)
-                                        assert np.array_equal(WideFix.FromFxp(r_wide, rFmt), WideFix.FromFxp(r, rFmt))
+                                        r_wide = a_wide.shift(shift, rFmt, rnd, sat)
+                                        assert np.array_equal(r_wide.to_real(), r)
                                         
                                         # Save output to file
                                         np.savetxt(join(DATA_DIR, f"test{test_count}_output.txt"),

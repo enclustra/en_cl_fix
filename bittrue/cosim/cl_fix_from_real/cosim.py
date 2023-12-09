@@ -67,7 +67,6 @@ def run():
                 
                 # Generate A data
                 a = get_data(aFmt)
-                a_wide = WideFix.FromFxp(a, aFmt)
                 
                 ########
                 # rFmt #
