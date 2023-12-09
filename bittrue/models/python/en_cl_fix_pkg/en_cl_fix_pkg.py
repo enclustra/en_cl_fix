@@ -10,7 +10,7 @@ import warnings
 import random
 
 from .en_cl_fix_types import *
-from .wide_fxp import wide_fxp
+from .wide_fix import WideFix
 from .narrow_fix import NarrowFix
 
 ###################################################################################################
@@ -25,7 +25,7 @@ def _clean_input(a):
     """
     # Note: It is easier to handle this type conversion in Python because that allows each MATLAB
     # function call to just pass varargin{:} without worrying about which inputs are data.
-    if hasattr(a, "__getitem__") and not isinstance(a, wide_fxp):
+    if hasattr(a, "__getitem__") and not isinstance(a, WideFix):
         return np.array(a)
     return a
 
@@ -64,7 +64,7 @@ def cl_fix_max_value(r_fmt : FixFormat):
     Returns the maximum representable value in a specific fixed-point format.
     """
     if cl_fix_is_wide(r_fmt):
-        return wide_fxp.MaxValue(r_fmt)._data
+        return WideFix.MaxValue(r_fmt)._data
     else:
         return NarrowFix.max_value(r_fmt)._data
 
@@ -74,7 +74,7 @@ def cl_fix_min_value(r_fmt : FixFormat):
     Returns the minimum representable value in a specific fixed-point format.
     """
     if cl_fix_is_wide(r_fmt):
-        return wide_fxp.MinValue(r_fmt)._data
+        return WideFix.MinValue(r_fmt)._data
     else:
         return NarrowFix.min_value(r_fmt)._data
 
@@ -91,7 +91,7 @@ def cl_fix_from_real(a, r_fmt : FixFormat, saturate : FixSaturate = FixSaturate.
         a = np.array(a)
     
     if cl_fix_is_wide(r_fmt):
-        return wide_fxp.FromFloat(a, r_fmt, saturate)._data
+        return WideFix.FromFloat(a, r_fmt, saturate)._data
     else:
         return NarrowFix.from_real(a, r_fmt, saturate)._data
 
@@ -105,7 +105,7 @@ def cl_fix_from_integer(a, a_fmt : FixFormat):
     a = _clean_input(a)
     
     if cl_fix_is_wide(a_fmt):
-        return wide_fxp(a, a_fmt)._data
+        return WideFix(a, a_fmt)._data
     else:
         return NarrowFix.from_integer(a, a_fmt)._data
 
@@ -118,8 +118,8 @@ def cl_fix_to_integer(a, a_fmt : FixFormat):
     """
     a = _clean_input(a)
     
-    if type(a) == wide_fxp:
-        return a.data
+    if cl_fix_is_wide(a_fmt):
+        return a._data
     else:
         return NarrowFix(a, a_fmt, copy=False).to_integer()
 
@@ -132,8 +132,8 @@ def cl_fix_round(a, a_fmt : FixFormat, r_fmt : int, rnd : FixRound):
     a = _clean_input(a)
     
     if cl_fix_is_wide(a_fmt) or cl_fix_is_wide(r_fmt):
-        # Convert to wide_fxp (if not already wide_fxp)
-        a = wide_fxp.FromFxp(a, a_fmt)
+        # Convert to WideFix (if not already WideFix)
+        a = WideFix.FromFxp(a, a_fmt)
         # Round
         rounded = a.round(r_fmt, rnd)
         # Convert to narrow if required
@@ -153,8 +153,8 @@ def cl_fix_saturate(a, a_fmt : FixFormat, r_fmt : FixFormat, sat : FixSaturate):
     a = _clean_input(a)
     
     if cl_fix_is_wide(a_fmt) or cl_fix_is_wide(r_fmt):
-        # Convert to wide_fxp (if not already wide_fxp)
-        a = wide_fxp.FromFxp(a, a_fmt)
+        # Convert to WideFix (if not already WideFix)
+        a = WideFix.FromFxp(a, a_fmt)
         # Saturate
         saturated = a.saturate(r_fmt, sat)
         # Convert to narrow if required
@@ -223,7 +223,7 @@ def cl_fix_neg(a, a_fmt : FixFormat,
     if r_fmt is None:
         r_fmt = mid_fmt
     if cl_fix_is_wide(a_fmt) or cl_fix_is_wide(mid_fmt):
-        a = wide_fxp.FromFxp(a, a_fmt)
+        a = WideFix.FromFxp(a, a_fmt)
     else:
         a = _clean_input(a)
     return cl_fix_resize(-a, mid_fmt, r_fmt, rnd, sat)
@@ -240,8 +240,8 @@ def cl_fix_add(a, a_fmt : FixFormat,
     if r_fmt is None:
         r_fmt = mid_fmt
     if cl_fix_is_wide(a_fmt) or cl_fix_is_wide(b_fmt) or cl_fix_is_wide(mid_fmt):
-        a = wide_fxp.FromFxp(a, a_fmt)
-        b = wide_fxp.FromFxp(b, b_fmt)
+        a = WideFix.FromFxp(a, a_fmt)
+        b = WideFix.FromFxp(b, b_fmt)
     else:
         a = _clean_input(a)
         b = _clean_input(b)
@@ -259,8 +259,8 @@ def cl_fix_sub(a, a_fmt : FixFormat,
     if r_fmt is None:
         r_fmt = mid_fmt
     if cl_fix_is_wide(a_fmt) or cl_fix_is_wide(b_fmt) or cl_fix_is_wide(mid_fmt):
-        a = wide_fxp.FromFxp(a, a_fmt)
-        b = wide_fxp.FromFxp(b, b_fmt)
+        a = WideFix.FromFxp(a, a_fmt)
+        b = WideFix.FromFxp(b, b_fmt)
     else:
         a = _clean_input(a)
         b = _clean_input(b)
@@ -293,8 +293,8 @@ def cl_fix_mult(a, a_fmt : FixFormat,
     if r_fmt is None:
         r_fmt = mid_fmt
     if cl_fix_is_wide(a_fmt) or cl_fix_is_wide(b_fmt) or cl_fix_is_wide(mid_fmt):
-        a = wide_fxp.FromFxp(a, a_fmt)
-        b = wide_fxp.FromFxp(b, b_fmt)
+        a = WideFix.FromFxp(a, a_fmt)
+        b = WideFix.FromFxp(b, b_fmt)
     else:
         a = _clean_input(a)
         b = _clean_input(b)
@@ -313,24 +313,24 @@ def cl_fix_shift(a, a_fmt : FixFormat,
     output format. The initial shift does NOT truncate any bits.
     """
     if cl_fix_is_wide(r_fmt):
-        a = wide_fxp.FromFxp(a, a_fmt)
+        a = WideFix.FromFxp(a, a_fmt)
     
     if cl_fix_is_wide(a_fmt):
         if np.ndim(shift) == 0:
             # Constant shift
             temp_fmt = FixFormat.ForShift(a_fmt, shift)
             # Change format without changing data values => shift
-            tmp = wide_fxp(a.data, temp_fmt)
+            tmp = WideFix(a.data, temp_fmt)
             return cl_fix_resize(tmp, temp_fmt, r_fmt, rnd, sat)
         else:
             # Variable shift (each value individually)
             assert np.ndim(shift) == 1, "cl_fix_shift : shift must be 0d or 1d"
             assert shift.size == a.data.size, "cl_fix_shift : shift must be 0d or the same length as a"
-            r = wide_fxp(np.zeros(a.data.size, dtype=object), r_fmt)
+            r = WideFix(np.zeros(a.data.size, dtype=object), r_fmt)
             for i, s in enumerate(shift):
                 temp_fmt = FixFormat.ForShift(a_fmt, s)
                 # Change format without changing data values => shift
-                tmp = wide_fxp._FromIntScalar(a.data[i], temp_fmt)
+                tmp = WideFix._FromIntScalar(a.data[i], temp_fmt)
                 # Resize to r_fmt
                 r._data[i] = tmp.resize(r_fmt, rnd, sat).data[0]
             
@@ -404,7 +404,7 @@ def cl_fix_random(shape, fmt : FixFormat):
         for i in range(n):
             xint[i] = random.randrange(fmt_min[0], fmt_max[0]+1)
         
-        return wide_fxp(xint.reshape(shape), fmt)._data
+        return WideFix(xint.reshape(shape), fmt)._data
     else:
         int_min = fmt_min*2**fmt.F
         int_max = fmt_max*2**fmt.F

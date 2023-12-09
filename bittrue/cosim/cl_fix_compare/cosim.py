@@ -88,8 +88,8 @@ def run():
                             # Produce all combinations of all a and b values
                             a_all = repeat_whole_array(a, len(b))
                             b_all = repeat_each_value(b, len(a))
-                            a_wide = wide_fxp.FromFxp(a_all, aFmt)
-                            b_wide = wide_fxp.FromFxp(b_all, bFmt)
+                            a_wide = WideFix.FromFxp(a_all, aFmt)
+                            b_wide = WideFix.FromFxp(b_all, bFmt)
                             
                             # Calculate outputs
                             r_eq = a_all == b_all
@@ -99,7 +99,7 @@ def run():
                             r_leq = a_all <= b_all
                             r_geq = a_all >= b_all
                             
-                            # Test wide_fxp input here, as there is no separate test script.
+                            # Test WideFix input here, as there is no separate test script.
                             # This is not actually part of the cosim data generation.
                             r_eq_wide = a_wide == b_wide
                             r_neq_wide = a_wide != b_wide

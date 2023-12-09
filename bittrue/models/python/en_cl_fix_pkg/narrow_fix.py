@@ -183,7 +183,7 @@ class NarrowFix:
                 convert_to_wide = False
             
             if convert_to_wide:
-                # Do intermediate calculation in wide_fxp (int) to avoid loss of precision
+                # Do intermediate calculation in WideFix (int) to avoid loss of precision
                 data = np.floor(data.astype(object) * 2**r_fmt.F)
                 span = 2**(r_fmt.I + r_fmt.F)
                 if r_fmt.S == 1:

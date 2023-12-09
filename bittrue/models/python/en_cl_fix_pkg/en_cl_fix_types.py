@@ -5,7 +5,7 @@
 ###################################################################################################
 # Description:
 #
-# Common types used by en_cl_fix_pkg and wide_fxp class.
+# Common types used throughout en_cl_fix.
 ###################################################################################################
 
 from enum import Enum

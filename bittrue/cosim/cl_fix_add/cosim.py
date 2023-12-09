@@ -99,8 +99,8 @@ def run():
                             # Produce all combinations of all a and b values
                             a_all = repeat_whole_array(a, len(b))
                             b_all = repeat_each_value(b, len(a))
-                            a_wide = wide_fxp.FromFxp(a_all, aFmt)
-                            b_wide = wide_fxp.FromFxp(b_all, bFmt)
+                            a_wide = WideFix.FromFxp(a_all, aFmt)
+                            b_wide = WideFix.FromFxp(b_all, bFmt)
                             
                             ########
                             # rFmt #
@@ -126,10 +126,10 @@ def run():
                                                 # Calculate output
                                                 r = cl_fix_add(a_all, aFmt, b_all, bFmt, rFmt, rnd, sat)
                                                 
-                                                # Test wide_fxp input here, as there is no separate test script.
+                                                # Test WideFix input here, as there is no separate test script.
                                                 # This is not actually part of the cosim data generation.
                                                 r_wide = cl_fix_add(a_wide, aFmt, b_wide, bFmt, rFmt, rnd, sat)
-                                                assert np.array_equal(wide_fxp.FromFxp(r_wide, rFmt), wide_fxp.FromFxp(r, rFmt))
+                                                assert np.array_equal(WideFix.FromFxp(r_wide, rFmt), WideFix.FromFxp(r, rFmt))
                                                 
                                                 # Save output to file
                                                 np.savetxt(join(DATA_DIR, f"test{test_count}_output.txt"),

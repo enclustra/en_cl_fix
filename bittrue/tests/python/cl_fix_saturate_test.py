@@ -104,15 +104,15 @@ for aS in aS_values:
                         # Calculate using cl_fix_saturate
                         r = cl_fix_saturate(a, a_fmt, r_fmt, sat)
                         
-                        # Repeat using wide_fxp (but still with narrow data)
-                        r_wide = wide_fxp.FromNarrowFxp(a, a_fmt).saturate(r_fmt, sat).to_narrow_fxp()
+                        # Repeat using WideFix (but still with narrow data)
+                        r_wide = WideFix.FromNarrowFxp(a, a_fmt).saturate(r_fmt, sat).to_narrow_fxp()
                         
                         # Local checker function
                         expected = sat_check(a, a_fmt, r_fmt, sat)
                         
                         # Check numerical correctness
                         assert np.array_equal(r, expected), "Numerical error detected."
-                        assert np.array_equal(r_wide, expected), "Numerical error detected (wide_fxp)."
+                        assert np.array_equal(r_wide, expected), "Numerical error detected (WideFix)."
                         
                         test_count += 1
 
