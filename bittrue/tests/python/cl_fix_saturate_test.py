@@ -31,17 +31,17 @@ def get_data(fmt : FixFormat):
     int_data = np.arange(int_min, 1+int_max)
     return cl_fix_from_integer(int_data, fmt)
 
-def sat_check(a, aFmt, rFmt, sat):
+def sat_check(a, a_fmt, r_fmt, sat):
     # Copy array
     a = a.copy()
     
-    assert rFmt.F == aFmt.F, "Number of fractional bits cannot change"
+    assert r_fmt.F == a_fmt.F, "Number of fractional bits cannot change"
     
     if sat is FixSaturate.None_s or sat is FixSaturate.Warn_s:
         # No saturation. Wrap into range.
-        min_r = cl_fix_min_value(rFmt)
-        max_r = cl_fix_max_value(rFmt)
-        offset = 2.0 ** (rFmt.S + rFmt.I)
+        min_r = cl_fix_min_value(r_fmt)
+        max_r = cl_fix_max_value(r_fmt)
+        offset = 2.0 ** (r_fmt.S + r_fmt.I)
         for i in range(len(a)):
             while a[i] < min_r:
                 a[i] += offset
@@ -50,8 +50,8 @@ def sat_check(a, aFmt, rFmt, sat):
         return a
     elif sat is FixSaturate.Sat_s or sat is FixSaturate.SatWarn_s:
         # Saturation
-        a = np.where(a > cl_fix_max_value(rFmt), cl_fix_max_value(rFmt), a)
-        a = np.where(a < cl_fix_min_value(rFmt), cl_fix_min_value(rFmt), a)
+        a = np.where(a > cl_fix_max_value(r_fmt), cl_fix_max_value(r_fmt), a)
+        a = np.where(a < cl_fix_min_value(r_fmt), cl_fix_min_value(r_fmt), a)
         return a
     else:
         raise ValueError(f"Unrecognized rounding mode: {rnd}")
@@ -60,12 +60,12 @@ def sat_check(a, aFmt, rFmt, sat):
 # Config
 ###################################################################################################
 
-# aFmt test points
+# a_fmt test points
 aS_values = [0,1]
 aI_values = np.arange(-4,1+4)
 aF_values = np.arange(-4,1+4)
 
-# rFmt test points
+# r_fmt test points
 rS_values = [0,1]
 rI_values = np.arange(-4,1+4)
 
@@ -75,9 +75,9 @@ rI_values = np.arange(-4,1+4)
 
 test_count = 0
 
-########
-# aFmt #
-########
+#########
+# a_fmt #
+#########
 for aS in aS_values:
     for aI in aI_values:
         for aF in aF_values:
@@ -85,10 +85,10 @@ for aS in aS_values:
             if aS+aI+aF <= 0:
                 continue
             
-            aFmt = FixFormat(aS, aI, aF)
+            a_fmt = FixFormat(aS, aI, aF)
             
             # Generate A data
-            a = get_data(aFmt)
+            a = get_data(a_fmt)
             
             for rS in rS_values:
                 for rI in rI_values:
@@ -96,19 +96,19 @@ for aS in aS_values:
                     
                     # Skip invalid formats
                     try:
-                        rFmt = FixFormat(rS, rI, rF)
+                        r_fmt = FixFormat(rS, rI, rF)
                     except AssertionError:
                         continue
                     
                     for sat in FixSaturate:
                         # Calculate using cl_fix_saturate
-                        r = cl_fix_saturate(a, aFmt, rFmt, sat)
+                        r = cl_fix_saturate(a, a_fmt, r_fmt, sat)
                         
                         # Repeat using wide_fxp (but still with narrow data)
-                        r_wide = wide_fxp.FromNarrowFxp(a, aFmt).saturate(rFmt, sat).to_narrow_fxp()
+                        r_wide = wide_fxp.FromNarrowFxp(a, a_fmt).saturate(r_fmt, sat).to_narrow_fxp()
                         
                         # Local checker function
-                        expected = sat_check(a, aFmt, rFmt, sat)
+                        expected = sat_check(a, a_fmt, r_fmt, sat)
                         
                         # Check numerical correctness
                         assert np.array_equal(r, expected), "Numerical error detected."
