@@ -29,8 +29,8 @@ architecture rtl of cl_fix_compare_tb is
     constant DataPath_c         : string := tb_path(runner_cfg) & "../bittrue/cosim/cl_fix_compare/data/";
     
     -- Formats
-    constant AFmt_c             : FixFormatArray_t := cl_fix_read_format_file(DataPath_c & "aFmt.txt");
-    constant BFmt_c             : FixFormatArray_t := cl_fix_read_format_file(DataPath_c & "bFmt.txt");
+    constant AFmt_c             : FixFormatArray_t := cl_fix_read_format_file(DataPath_c & "a_fmt.txt");
+    constant BFmt_c             : FixFormatArray_t := cl_fix_read_format_file(DataPath_c & "b_fmt.txt");
     
     constant TestCount_c        : positive := AFmt_c'length;
     

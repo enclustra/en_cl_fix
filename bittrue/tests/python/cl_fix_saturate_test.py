@@ -105,7 +105,7 @@ for aS in aS_values:
                         r = cl_fix_saturate(a, a_fmt, r_fmt, sat)
                         
                         # Repeat using WideFix (but still with narrow data)
-                        r_wide = WideFix.FromNarrowFxp(a, a_fmt).saturate(r_fmt, sat).to_real()
+                        r_wide = WideFix.from_narrowfix(a, a_fmt).saturate(r_fmt, sat).to_real()
                         
                         # Local checker function
                         expected = sat_check(a, a_fmt, r_fmt, sat)

@@ -29,12 +29,12 @@ def run():
     # Config
     ###############################################################################################
 
-    # aFmt test points
+    # a_fmt test points
     aS_values = [0,1]
     aI_values = np.arange(-3,1+3)
     aF_values = np.arange(-3,1+3)
 
-    # bFmt test points
+    # b_fmt test points
     bS_values = [0,1]
     bI_values = np.arange(-3,1+3)
     bF_values = np.arange(-3,1+3)
@@ -51,9 +51,9 @@ def run():
     test_rnd = []
     test_sat = []
 
-    ########
-    # aFmt #
-    ########
+    #########
+    # a_fmt #
+    #########
     progress = ProgressReporter((aS_values, aI_values, aF_values))
     for aS in aS_values:
         for aI in aI_values:
@@ -65,14 +65,14 @@ def run():
                 if aS+aI+aF < 1:
                     continue
                 
-                aFmt = FixFormat(aS, aI, aF)
+                a_fmt = FixFormat(aS, aI, aF)
                 
                 # Generate A data
-                a = get_data(aFmt)
+                a = get_data(a_fmt)
                 
-                ########
-                # bFmt #
-                ########
+                #########
+                # b_fmt #
+                #########
                 for bS in bS_values:
                     for bI in bI_values:
                         for bF in bF_values:
@@ -80,16 +80,16 @@ def run():
                             if bS+bI+bF <= 0:
                                 continue
                             
-                            bFmt = FixFormat(bS, bI, bF)
+                            b_fmt = FixFormat(bS, bI, bF)
                             
                             # Generate B data
-                            b = get_data(bFmt)
+                            b = get_data(b_fmt)
                             
                             # Produce all combinations of all a and b values
                             a_all = repeat_whole_array(a, len(b))
                             b_all = repeat_each_value(b, len(a))
-                            a_wide = WideFix.FromNarrowFxp(a_all, aFmt)
-                            b_wide = WideFix.FromNarrowFxp(b_all, bFmt)
+                            a_wide = WideFix.from_narrowfix(a_all, a_fmt)
+                            b_wide = WideFix.from_narrowfix(b_all, b_fmt)
                             
                             # Calculate outputs
                             r_eq = a_all == b_all
@@ -135,17 +135,17 @@ def run():
                                        fmt="%i", header=f"r_geq[{r_geq.size}]")
                             
                             # Save test parameters into lists
-                            test_aFmt.append(aFmt)
-                            test_bFmt.append(bFmt)
+                            test_aFmt.append(a_fmt)
+                            test_bFmt.append(b_fmt)
                             
                             test_count += 1
 
     # Save formats
-    aFmt_names = ["aFmt" + str(i) for i in range(test_count)]
-    cl_fix_write_formats(test_aFmt, aFmt_names, join(DATA_DIR, f"aFmt.txt"))
+    a_fmt_names = ["a_fmt" + str(i) for i in range(test_count)]
+    cl_fix_write_formats(test_aFmt, a_fmt_names, join(DATA_DIR, f"a_fmt.txt"))
 
-    bFmt_names = ["bFmt" + str(i) for i in range(test_count)]
-    cl_fix_write_formats(test_bFmt, bFmt_names, join(DATA_DIR, f"bFmt.txt"))
+    b_fmt_names = ["b_fmt" + str(i) for i in range(test_count)]
+    cl_fix_write_formats(test_bFmt, b_fmt_names, join(DATA_DIR, f"b_fmt.txt"))
 
 ###################################################################################################
 # Support execution as a script

@@ -25,21 +25,21 @@ def run():
     DATA_DIR = join(root, "data")
     clear_directory(DATA_DIR)
     
-    ###################################################################################################
+    ###############################################################################################
     # Config
-    ###################################################################################################
+    ###############################################################################################
 
-    # aFmt test points
+    # a_fmt test points
     aS_values = [0,1]
     aI_values = np.arange(-5,1+5)
     aF_values = np.arange(-5,1+5)
 
-    # rFmt test points
+    # r_fmt test points
     rF_values = np.arange(-5,1+5)
 
-    ###################################################################################################
+    ###############################################################################################
     # Run
-    ###################################################################################################
+    ###############################################################################################
 
     test_count = 0
 
@@ -47,9 +47,9 @@ def run():
     test_rFmt = []
     test_rnd = []
 
-    ########
-    # aFmt #
-    ########
+    #########
+    # a_fmt #
+    #########
     progress = ProgressReporter((aS_values, aI_values, aF_values))
     for aS in aS_values:
         for aI in aI_values:
@@ -61,38 +61,38 @@ def run():
                 if aS+aI+aF < 1:
                     continue
                 
-                aFmt = FixFormat(aS, aI, aF)
+                a_fmt = FixFormat(aS, aI, aF)
                 
                 # Generate A data
-                a = get_data(aFmt)
-                a_wide = WideFix.FromNarrowFxp(a, aFmt)
+                a = get_data(a_fmt)
+                a_wide = WideFix.from_narrowfix(a, a_fmt)
                 
-                ########
-                # rFmt #
-                ########
+                #########
+                # r_fmt #
+                #########
                 for rF in rF_values:
                     #######
                     # rnd #
                     #######
                     for rnd in FixRound:
-                        rFmt = FixFormat.ForRound(aFmt, rF, rnd)
+                        r_fmt = FixFormat.ForRound(a_fmt, rF, rnd)
                         
                         # Calculate output
-                        r = cl_fix_round(a, aFmt, rFmt, rnd)
+                        r = cl_fix_round(a, a_fmt, r_fmt, rnd)
                         
                         # Test WideFix input here, as there is no separate test script.
                         # This is not actually part of the cosim data generation.
-                        r_wide = a_wide.round(rFmt, rnd)
+                        r_wide = a_wide.round(r_fmt, rnd)
                         assert np.array_equal(r_wide.to_real(), r)
                         
                         # Save output to file
                         np.savetxt(join(DATA_DIR, f"test{test_count}_output.txt"),
-                                   cl_fix_to_integer(r, rFmt),
+                                   cl_fix_to_integer(r, r_fmt),
                                    fmt="%i", header=f"r[{r.size}]")
                         
                         # Save test parameters into lists
-                        test_aFmt.append(aFmt)
-                        test_rFmt.append(rFmt)
+                        test_aFmt.append(a_fmt)
+                        test_rFmt.append(r_fmt)
                         test_rnd.append(rnd.value)
                         
                         test_count += 1
@@ -100,11 +100,11 @@ def run():
     print(f"Cosim generated {test_count} tests.")
 
     # Save formats
-    aFmt_names = ["aFmt" + str(i) for i in range(test_count)]
-    cl_fix_write_formats(test_aFmt, aFmt_names, join(DATA_DIR, f"aFmt.txt"))
+    a_fmt_names = ["a_fmt" + str(i) for i in range(test_count)]
+    cl_fix_write_formats(test_aFmt, a_fmt_names, join(DATA_DIR, f"a_fmt.txt"))
 
-    rFmt_names = ["rFmt" + str(i) for i in range(test_count)]
-    cl_fix_write_formats(test_rFmt, rFmt_names, join(DATA_DIR, f"rFmt.txt"))
+    r_fmt_names = ["r_fmt" + str(i) for i in range(test_count)]
+    cl_fix_write_formats(test_rFmt, r_fmt_names, join(DATA_DIR, f"r_fmt.txt"))
 
     # Save rounding and saturation modes
     np.savetxt(join(DATA_DIR, f"rnd.txt"), test_rnd, fmt="%i", header=f"Rounding modes")

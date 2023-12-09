@@ -30,10 +30,6 @@ from .en_cl_fix_types import *
 
 class WideFix:
     
-    ###############################################################################################
-    # Public Functions 
-    ###############################################################################################
-    
     # Construct WideFix object from internal integer data representation and FixFormat.
     # Example: the fixed-point value 3.0 in FixFormat(0,2,4) has internal data value 3.0*2**4 = 48
     # and *not* 3.
@@ -51,10 +47,10 @@ class WideFix:
     
     # Convert from float data to WideFix object, with quantization and bounds checks.
     @staticmethod
-    def FromFloat(a, r_fmt : FixFormat, saturate : FixSaturate = FixSaturate.SatWarn_s):
+    def from_real(a, r_fmt : FixFormat, saturate : FixSaturate = FixSaturate.SatWarn_s):
         # Saturation is mandatory in this function (because wrapping has not been implemented)
         if saturate != FixSaturate.SatWarn_s and saturate != FixSaturate.Sat_s:
-            raise ValueError(f"WideFix.FromFloat: Unsupported saturation mode {str(saturate)}")
+            raise ValueError(f"WideFix.from_real: Unsupported saturation mode {str(saturate)}")
         if isinstance(a, float):
             a = np.array(a)
         
@@ -62,12 +58,12 @@ class WideFix:
         if (saturate == FixSaturate.SatWarn_s) or (saturate == FixSaturate.Warn_s):
             amax_float = a.max()
             amin_float = a.min()
-            amax = WideFix.FromNarrowFxp(np.array([amax_float]), r_fmt)._data
-            amin = WideFix.FromNarrowFxp(np.array([amin_float]), r_fmt)._data
-            if amax > WideFix.MaxValue(r_fmt)._data:
-                warnings.warn(f"FromFloat: Number {amax_float} exceeds maximum for format {r_fmt}", Warning)
-            if amin < WideFix.MinValue(r_fmt)._data:
-                warnings.warn(f"FromFloat: Number {amin_float} exceeds minimum for format {r_fmt}", Warning)
+            amax = WideFix.from_narrowfix(np.array([amax_float]), r_fmt)._data
+            amin = WideFix.from_narrowfix(np.array([amin_float]), r_fmt)._data
+            if amax > WideFix.max_value(r_fmt)._data:
+                warnings.warn(f"from_real: Number {amax_float} exceeds maximum for format {r_fmt}", Warning)
+            if amin < WideFix.min_value(r_fmt)._data:
+                warnings.warn(f"from_real: Number {amin_float} exceeds minimum for format {r_fmt}", Warning)
         
         # Quantize. Always use half-up rounding.
         x = (a*(2.0**r_fmt.F)+0.5).astype('object')
@@ -75,8 +71,8 @@ class WideFix:
         
         # Saturate
         if (saturate == FixSaturate.Sat_s) or (saturate == FixSaturate.SatWarn_s):
-            x = np.where(x > WideFix.MaxValue(r_fmt)._data, WideFix.MaxValue(r_fmt)._data, x)
-            x = np.where(x < WideFix.MinValue(r_fmt)._data, WideFix.MinValue(r_fmt)._data, x)
+            x = np.where(x > WideFix.max_value(r_fmt)._data, WideFix.max_value(r_fmt)._data, x)
+            x = np.where(x < WideFix.min_value(r_fmt)._data, WideFix.min_value(r_fmt)._data, x)
         else:
             # Wrapping is not supported
             None
@@ -85,17 +81,17 @@ class WideFix:
     
     # Convert from narrow (double-precision float) data to WideFix object, without bounds checks.
     @staticmethod
-    def FromNarrowFxp(data : np.ndarray, fmt : FixFormat):
+    def from_narrowfix(data : np.ndarray, fmt : FixFormat):
         data = np.array(data, ndmin=1)
-        assert data.dtype == float, "FromNarrowFxp : requires input dtype == float."
+        assert data.dtype == float, "from_narrowfix : requires input dtype == float."
         int_data = (data*2.0**fmt.F).astype(object)
         int_data = np.floor(int_data)
         return WideFix(int_data, fmt)
     
     # Convert from uint64 array (e.g. from MATLAB).
     @staticmethod
-    def FromUint64Array(data : np.ndarray, fmt : FixFormat):
-        assert data.dtype == 'uint64', "FromUint64Array : requires input dtype == uint64."
+    def from_uint64_array(data : np.ndarray, fmt : FixFormat):
+        assert data.dtype == 'uint64', "from_uint64_array : requires input dtype == uint64."
         # Weighted sum to recombine uint64s into wide *unsigned* integers
         weights = 2**(64*np.arange(data.shape[0]).astype(object))
         val = np.matmul(weights, data)
@@ -105,13 +101,13 @@ class WideFix:
     
     # Calculate maximum representable internal data value (WideFix._data) for a given FixFormat.
     @staticmethod
-    def MaxValue(fmt : FixFormat):
+    def max_value(fmt : FixFormat):
         val = 2**(fmt.I+fmt.F)-1
         return WideFix(val, fmt, copy=False)
     
     # Calculate minimum representable internal data value (WideFix._data) for a given FixFormat.
     @staticmethod
-    def MinValue(fmt : FixFormat):
+    def min_value(fmt : FixFormat):
         if fmt.S == 1:
             val = -2**(fmt.I+fmt.F)
         else:
@@ -120,7 +116,7 @@ class WideFix:
     
     # Align binary points of 2 or more WideFix objects (e.g. to perform numerical comparisons).
     @staticmethod
-    def AlignBinaryPoints(values):
+    def align_binary_points(values):
         values = deep_copy(values)
         
         # Find the maximum number of frac bits
@@ -240,7 +236,7 @@ class WideFix:
         
         # Saturation warning
         if sat == FixSaturate.Warn_s or sat == FixSaturate.SatWarn_s:
-            if np.any(val > WideFix.MaxValue(r_fmt).data) or np.any(val < WideFix.MinValue(r_fmt).data):
+            if np.any(val > WideFix.max_value(r_fmt).data) or np.any(val < WideFix.min_value(r_fmt).data):
                 warnings.warn("resize : Saturation warning!", Warning)
         
         # Saturation
@@ -253,8 +249,8 @@ class WideFix:
                 val = val % satSpan
         else:
             # Saturate
-            val = np.where(val > WideFix.MaxValue(r_fmt).data, WideFix.MaxValue(r_fmt).data, val)
-            val = np.where(val < WideFix.MinValue(r_fmt).data, WideFix.MinValue(r_fmt).data, val)
+            val = np.where(val > WideFix.max_value(r_fmt).data, WideFix.max_value(r_fmt).data, val)
+            val = np.where(val < WideFix.min_value(r_fmt).data, WideFix.min_value(r_fmt).data, val)
             
         return WideFix(val, r_fmt)
 
@@ -476,32 +472,32 @@ class WideFix:
     
     # "==" operator
     def __eq__(self, other):
-        a, b = WideFix.AlignBinaryPoints([self, other])
+        a, b = WideFix.align_binary_points([self, other])
         return a._data == b._data
     
     # "!=" operator
     def __ne__(self, other):
-        a, b = WideFix.AlignBinaryPoints([self, other])
+        a, b = WideFix.align_binary_points([self, other])
         return a._data != b._data
     
     # "<" operator
     def __lt__(self, other):
-        a, b = WideFix.AlignBinaryPoints([self, other])
+        a, b = WideFix.align_binary_points([self, other])
         return a._data < b._data
     
     # "<=" operator
     def __le__(self, other):
-        a, b = WideFix.AlignBinaryPoints([self, other])
+        a, b = WideFix.align_binary_points([self, other])
         return a._data <= b._data
     
     # ">" operator
     def __gt__(self, other):
-        a, b = WideFix.AlignBinaryPoints([self, other])
+        a, b = WideFix.align_binary_points([self, other])
         return a._data > b._data
     
     # ">=" operator
     def __ge__(self, other):
-        a, b = WideFix.AlignBinaryPoints([self, other])
+        a, b = WideFix.align_binary_points([self, other])
         return a._data >= b._data
     
     # len()

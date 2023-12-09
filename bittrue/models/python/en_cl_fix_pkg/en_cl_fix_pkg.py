@@ -64,7 +64,7 @@ def cl_fix_max_value(r_fmt : FixFormat):
     Returns the maximum representable value in a specific fixed-point format.
     """
     if cl_fix_is_wide(r_fmt):
-        return WideFix.MaxValue(r_fmt)._data
+        return WideFix.max_value(r_fmt)._data
     else:
         return NarrowFix.max_value(r_fmt)._data
 
@@ -74,7 +74,7 @@ def cl_fix_min_value(r_fmt : FixFormat):
     Returns the minimum representable value in a specific fixed-point format.
     """
     if cl_fix_is_wide(r_fmt):
-        return WideFix.MinValue(r_fmt)._data
+        return WideFix.min_value(r_fmt)._data
     else:
         return NarrowFix.min_value(r_fmt)._data
 
@@ -89,7 +89,7 @@ def cl_fix_from_real(a, r_fmt : FixFormat, saturate : FixSaturate = FixSaturate.
     a = _clean_input(a)
     
     if cl_fix_is_wide(r_fmt):
-        return WideFix.FromFloat(a, r_fmt, saturate)._data
+        return WideFix.from_real(a, r_fmt, saturate)._data
     else:
         return NarrowFix.from_real(a, r_fmt, saturate)._data
 
@@ -134,7 +134,7 @@ def cl_fix_round(a, a_fmt : FixFormat, r_fmt : int, rnd : FixRound):
     
     if a_wide or r_wide:
         # WideFix
-        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
+        a = WideFix(a, a_fmt) if a_wide else WideFix.from_narrowfix(a, a_fmt)
         # Round
         r = a.round(r_fmt, rnd)
         # Convert to narrow if required
@@ -159,7 +159,7 @@ def cl_fix_saturate(a, a_fmt : FixFormat, r_fmt : FixFormat, sat : FixSaturate):
     
     if a_wide or r_wide:
         # WideFix
-        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
+        a = WideFix(a, a_fmt) if a_wide else WideFix.from_narrowfix(a, a_fmt)
         # Saturate
         r = a.saturate(r_fmt, sat)
         # Convert to narrow
@@ -219,7 +219,7 @@ def cl_fix_abs(a, a_fmt : FixFormat,
     mid_wide = cl_fix_is_wide(mid_fmt)
     if a_wide or mid_wide:
         # WideFix
-        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
+        a = WideFix(a, a_fmt) if a_wide else WideFix.from_narrowfix(a, a_fmt)
     else:
         # NarrowFix
         a = NarrowFix(a, a_fmt, copy=False)
@@ -246,7 +246,7 @@ def cl_fix_neg(a, a_fmt : FixFormat,
     mid_wide = cl_fix_is_wide(mid_fmt)
     if a_wide or mid_wide:
         # WideFix
-        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
+        a = WideFix(a, a_fmt) if a_wide else WideFix.from_narrowfix(a, a_fmt)
     else:
         # NarrowFix
         a = NarrowFix(a, a_fmt, copy=False)
@@ -276,8 +276,8 @@ def cl_fix_add(a, a_fmt : FixFormat,
     mid_wide = cl_fix_is_wide(mid_fmt)
     if a_wide or b_wide or mid_wide:
         # WideFix
-        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
-        b = WideFix(b, b_fmt) if b_wide else WideFix.FromNarrowFxp(b, b_fmt)
+        a = WideFix(a, a_fmt) if a_wide else WideFix.from_narrowfix(a, a_fmt)
+        b = WideFix(b, b_fmt) if b_wide else WideFix.from_narrowfix(b, b_fmt)
     else:
         # NarrowFix
         a = NarrowFix(a, a_fmt, copy=False)
@@ -308,8 +308,8 @@ def cl_fix_sub(a, a_fmt : FixFormat,
     mid_wide = cl_fix_is_wide(mid_fmt)
     if a_wide or b_wide or mid_wide:
         # WideFix
-        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
-        b = WideFix(b, b_fmt) if b_wide else WideFix.FromNarrowFxp(b, b_fmt)
+        a = WideFix(a, a_fmt) if a_wide else WideFix.from_narrowfix(a, a_fmt)
+        b = WideFix(b, b_fmt) if b_wide else WideFix.from_narrowfix(b, b_fmt)
     else:
         # NarrowFix
         a = NarrowFix(a, a_fmt, copy=False)
@@ -355,8 +355,8 @@ def cl_fix_mult(a, a_fmt : FixFormat,
     mid_wide = cl_fix_is_wide(mid_fmt)
     if a_wide or b_wide or mid_wide:
         # WideFix
-        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
-        b = WideFix(b, b_fmt) if b_wide else WideFix.FromNarrowFxp(b, b_fmt)
+        a = WideFix(a, a_fmt) if a_wide else WideFix.from_narrowfix(a, a_fmt)
+        b = WideFix(b, b_fmt) if b_wide else WideFix.from_narrowfix(b, b_fmt)
     else:
         # NarrowFix
         a = NarrowFix(a, a_fmt, copy=False)
@@ -388,7 +388,7 @@ def cl_fix_shift(a, a_fmt : FixFormat,
     mid_wide = cl_fix_is_wide(mid_fmt)
     if a_wide or mid_wide:
         # WideFix
-        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
+        a = WideFix(a, a_fmt) if a_wide else WideFix.from_narrowfix(a, a_fmt)
     else:
         # NarrowFix
         a = NarrowFix(a, a_fmt, copy=False)

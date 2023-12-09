@@ -29,17 +29,17 @@ def run():
     # Config
     ###############################################################################################
 
-    # aFmt test points
+    # a_fmt test points
     aS_values = [0,1]
     aI_values = np.arange(-2,1+2)
     aF_values = np.arange(-2,1+2)
 
-    # bFmt test points
+    # b_fmt test points
     bS_values = [0,1]
     bI_values = np.arange(-2,1+2)
     bF_values = np.arange(-2,1+2)
 
-    # rFmt test points
+    # r_fmt test points
     rS_values = [0,1]
     rI_values = 2 * np.arange(-2,1+2)
     rF_values = 2 * np.arange(-2,1+2)
@@ -62,9 +62,9 @@ def run():
     test_rnd = []
     test_sat = []
 
-    ########
-    # aFmt #
-    ########
+    #########
+    # a_fmt #
+    #########
     progress = ProgressReporter((aS_values, aI_values, aF_values))
     for aS in aS_values:
         for aI in aI_values:
@@ -76,14 +76,14 @@ def run():
                 if aS+aI+aF < 1:
                     continue
                 
-                aFmt = FixFormat(aS, aI, aF)
+                a_fmt = FixFormat(aS, aI, aF)
                 
                 # Generate A data
-                a = get_data(aFmt)
+                a = get_data(a_fmt)
                 
-                ########
-                # bFmt #
-                ########
+                #########
+                # b_fmt #
+                #########
                 for bS in bS_values:
                     for bI in bI_values:
                         for bF in bF_values:
@@ -91,20 +91,20 @@ def run():
                             if bS+bI+bF < 1:
                                 continue
                             
-                            bFmt = FixFormat(bS, bI, bF)
+                            b_fmt = FixFormat(bS, bI, bF)
                             
                             # Generate B data
-                            b = get_data(bFmt)
+                            b = get_data(b_fmt)
                             
                             # Produce all combinations of all a and b values
                             a_all = repeat_whole_array(a, len(b))
                             b_all = repeat_each_value(b, len(a))
-                            a_wide = WideFix.FromNarrowFxp(a_all, aFmt)
-                            b_wide = WideFix.FromNarrowFxp(b_all, bFmt)
+                            a_wide = WideFix.from_narrowfix(a_all, a_fmt)
+                            b_wide = WideFix.from_narrowfix(b_all, b_fmt)
                             
-                            ########
-                            # rFmt #
-                            ########
+                            #########
+                            # r_fmt #
+                            #########
                             for rS in rS_values:
                                 for rI in rI_values:
                                     for rF in rF_values:
@@ -112,7 +112,7 @@ def run():
                                         if rS+rI+rF < 1:
                                             continue
                                         
-                                        rFmt = FixFormat(rS, rI, rF)
+                                        r_fmt = FixFormat(rS, rI, rF)
                                         
                                         #######
                                         # rnd #
@@ -124,22 +124,22 @@ def run():
                                             #######
                                             for sat in sat_values:
                                                 # Calculate output
-                                                r = cl_fix_mult(a_all, aFmt, b_all, bFmt, rFmt, rnd, sat)
+                                                r = cl_fix_mult(a_all, a_fmt, b_all, b_fmt, r_fmt, rnd, sat)
                                                 
                                                 # Test WideFix input here, as there is no separate test script.
                                                 # This is not actually part of the cosim data generation.
-                                                r_wide = a_wide.mult(b_wide, rFmt, rnd, sat)
+                                                r_wide = a_wide.mult(b_wide, r_fmt, rnd, sat)
                                                 assert np.array_equal(r_wide.to_real(), r)
                                                 
                                                 # Save output to file
                                                 np.savetxt(join(DATA_DIR, f"test{test_count}_output.txt"),
-                                                           cl_fix_to_integer(r, rFmt),
+                                                           cl_fix_to_integer(r, r_fmt),
                                                            fmt="%i", header=f"r[{r.size}]")
                                                 
                                                 # Save test parameters into lists
-                                                test_aFmt.append(aFmt)
-                                                test_bFmt.append(bFmt)
-                                                test_rFmt.append(rFmt)
+                                                test_aFmt.append(a_fmt)
+                                                test_bFmt.append(b_fmt)
+                                                test_rFmt.append(r_fmt)
                                                 test_rnd.append(rnd.value)
                                                 test_sat.append(sat.value)
                                                 
@@ -148,14 +148,14 @@ def run():
     print(f"Cosim generated {test_count} tests.")
 
     # Save formats
-    aFmt_names = ["aFmt" + str(i) for i in range(test_count)]
-    cl_fix_write_formats(test_aFmt, aFmt_names, join(DATA_DIR, f"aFmt.txt"))
+    a_fmt_names = ["a_fmt" + str(i) for i in range(test_count)]
+    cl_fix_write_formats(test_aFmt, a_fmt_names, join(DATA_DIR, f"a_fmt.txt"))
 
-    bFmt_names = ["bFmt" + str(i) for i in range(test_count)]
-    cl_fix_write_formats(test_bFmt, bFmt_names, join(DATA_DIR, f"bFmt.txt"))
+    b_fmt_names = ["b_fmt" + str(i) for i in range(test_count)]
+    cl_fix_write_formats(test_bFmt, b_fmt_names, join(DATA_DIR, f"b_fmt.txt"))
 
-    rFmt_names = ["rFmt" + str(i) for i in range(test_count)]
-    cl_fix_write_formats(test_rFmt, rFmt_names, join(DATA_DIR, f"rFmt.txt"))
+    r_fmt_names = ["r_fmt" + str(i) for i in range(test_count)]
+    cl_fix_write_formats(test_rFmt, r_fmt_names, join(DATA_DIR, f"r_fmt.txt"))
 
     # Save rounding and saturation modes
     np.savetxt(join(DATA_DIR, f"rnd.txt"), test_rnd, fmt="%i", header=f"Rounding modes")

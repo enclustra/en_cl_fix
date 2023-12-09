@@ -29,8 +29,8 @@ architecture rtl of cl_fix_neg_tb is
     constant DataPath_c         : string := tb_path(runner_cfg) & "../bittrue/cosim/cl_fix_neg/data/";
     
     -- Formats
-    constant AFmt_c             : FixFormatArray_t := cl_fix_read_format_file(DataPath_c & "aFmt.txt");
-    constant RFmt_c             : FixFormatArray_t := cl_fix_read_format_file(DataPath_c & "rFmt.txt");
+    constant AFmt_c             : FixFormatArray_t := cl_fix_read_format_file(DataPath_c & "a_fmt.txt");
+    constant RFmt_c             : FixFormatArray_t := cl_fix_read_format_file(DataPath_c & "r_fmt.txt");
     
     -- Rounding and saturation modes
     constant Rnd_c              : integer_vector := read_file(DataPath_c & "rnd.txt", 32, ascii_dec, 1);
