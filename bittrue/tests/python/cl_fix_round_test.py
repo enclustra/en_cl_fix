@@ -107,7 +107,7 @@ for aS in aS_values:
                     r = cl_fix_round(a, aFmt, rFmt, rnd)
                     
                     # Repeat using wide_fxp (but still with narrow data)
-                    r_wide = cl_fix_round(wide_fxp.FromNarrowFxp(a, aFmt), aFmt, rFmt, rnd)
+                    r_wide = wide_fxp.FromNarrowFxp(a, aFmt).round(rFmt, rnd).to_narrow_fxp()
                     
                     # Local checker function
                     expected = round_check(a, aFmt, rFmt, rnd)

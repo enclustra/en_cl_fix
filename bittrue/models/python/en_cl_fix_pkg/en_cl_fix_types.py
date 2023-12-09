@@ -365,3 +365,24 @@ class FixFormat:
         Returns the total bit-width of the FixFormat: S + I + F.
         """
         return self.S + self.I + self.F
+    
+    @property
+    def is_wide(self):
+        """
+        Determines whether "narrow" (double precision float) or "wide" (arbitrary-precision integer)
+        fixed-point representation should be used for this fixed-point format.
+        An IEEE 754 double has:
+          * 1 explicit sign bit.
+          * 11 exponent bits (supports -1022 to +1023 due to values reserved for special cases).
+          * 52 fractional bits.
+          * 1 implicit integer bit := '1'.
+        The values +0 and -0 are supported as special cases (exponent = 0x000). This means integers
+        on [-2**53, 2**53] can be represented exactly. In other words, if we assume the exponent
+        is never overflowed, then 54-bit signed numbers and 53-bit unsigned numbers are guaranteed
+        to be represented exactly. In theory, this would mean: return fmt.I + fmt.F > 53.
+        However, handling wrapping of signed numbers (when saturation is disabled) is made simpler
+        if we reserve an extra integer bit for signed numbers. This gives a consistent 53-bit limit
+        for both signed and unsigned numbers.
+        """
+        return self.width > 53
+    

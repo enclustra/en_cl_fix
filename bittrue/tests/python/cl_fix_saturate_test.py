@@ -105,7 +105,7 @@ for aS in aS_values:
                         r = cl_fix_saturate(a, aFmt, rFmt, sat)
                         
                         # Repeat using wide_fxp (but still with narrow data)
-                        r_wide = cl_fix_saturate(wide_fxp.FromNarrowFxp(a, aFmt), aFmt, rFmt, sat)
+                        r_wide = wide_fxp.FromNarrowFxp(a, aFmt).saturate(rFmt, sat).to_narrow_fxp()
                         
                         # Local checker function
                         expected = sat_check(a, aFmt, rFmt, sat)
