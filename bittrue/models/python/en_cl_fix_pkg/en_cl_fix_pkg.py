@@ -376,37 +376,25 @@ def cl_fix_shift(a, a_fmt : FixFormat,
     Note: This function performs a lossless shift (equivalent to *2.0**shift), then resizes to the
     output format. The initial shift does NOT truncate any bits.
     """
-    if cl_fix_is_wide(r_fmt):
-        a = WideFix.FromFxp(a, a_fmt)
+    a = _clean_input(a)
     
-    if cl_fix_is_wide(a_fmt):
-        if np.ndim(shift) == 0:
-            # Constant shift
-            temp_fmt = FixFormat.ForShift(a_fmt, shift)
-            # Change format without changing data values => shift
-            tmp = WideFix(a.data, temp_fmt)
-            return cl_fix_resize(tmp, temp_fmt, r_fmt, rnd, sat)
-        else:
-            # Variable shift (each value individually)
-            assert np.ndim(shift) == 1, "cl_fix_shift : shift must be 0d or 1d"
-            assert shift.size == a.data.size, "cl_fix_shift : shift must be 0d or the same length as a"
-            r = WideFix(np.zeros(a.data.size, dtype=object), r_fmt)
-            for i, s in enumerate(shift):
-                temp_fmt = FixFormat.ForShift(a_fmt, s)
-                # Change format without changing data values => shift
-                tmp = WideFix._FromIntScalar(a.data[i], temp_fmt)
-                # Resize to r_fmt
-                r._data[i] = tmp.resize(r_fmt, rnd, sat).data[0]
-            
-            # Convert to narrow if required
-            if not cl_fix_is_wide(r_fmt):
-                r = r.to_narrow_fxp()
-            
-            return r
+    # Full-precision result format
+    mid_fmt = cl_fix_shift_fmt(a_fmt, np.min(shift), np.max(shift))
+    if r_fmt is None:
+        r_fmt = mid_fmt
+    
+    # Handle narrow/wide internal representation
+    a_wide = cl_fix_is_wide(a_fmt)
+    mid_wide = cl_fix_is_wide(mid_fmt)
+    if a_wide or mid_wide:
+        # WideFix
+        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
     else:
-        a = _clean_input(a)
-        temp_fmt = FixFormat.ForShift(a_fmt, np.min(shift), np.max(shift))
-        return cl_fix_resize(a * 2.0 ** shift, temp_fmt, r_fmt, rnd, sat)
+        # NarrowFix
+        a = NarrowFix(a, a_fmt, copy=False)
+    
+    mid = a << shift
+    return cl_fix_resize(mid._data, mid_fmt, r_fmt, rnd, sat)
 
 
 # Function aliases
@@ -466,7 +454,7 @@ def cl_fix_random(shape, fmt : FixFormat):
         n = np.prod(shape)
         xint = np.empty((n,), dtype=object)
         for i in range(n):
-            xint[i] = random.randrange(fmt_min[0], fmt_max[0]+1)
+            xint[i] = random.randrange(fmt_min, fmt_max+1)
         
         return WideFix(xint.reshape(shape), fmt)._data
     else:

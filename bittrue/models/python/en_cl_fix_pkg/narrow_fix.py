@@ -16,7 +16,7 @@ class NarrowFix:
     
     def __init__(self, data, fmt : FixFormat, copy=True):
         if isinstance(data, float):
-            data = np.array(data)
+            data = np.array(data, dtype=np.float64)
         assert not fmt.is_wide, "NarrowFix: Requested format is too wide. Use WideFix."
         assert data.dtype == np.float64, f"NarrowFix: requires float64 data. Got: {data.dtype}"
         if copy:
@@ -318,38 +318,41 @@ class NarrowFix:
     def __mul__(self, other):
         return self.mult(other)
     
+    def __lshift__(self, n):
+        return self.shift(n)
+    
     # "==" operator
     def __eq__(self, other):
-        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Use _data."
+        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Try _data."
         return self._data == other._data
     
     # "!=" operator
     def __ne__(self, other):
-        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Use _data."
+        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Try _data."
         return self._data != other._data
     
     # "<" operator
     def __lt__(self, other):
-        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Use _data."
+        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Try _data."
         return self._data < other._data
     
     # "<=" operator
     def __le__(self, other):
-        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Use _data."
+        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Try _data."
         return self._data <= other._data
     
     # ">" operator
     def __gt__(self, other):
-        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Use _data."
+        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Try _data."
         return self._data > other._data
     
     # ">=" operator
     def __ge__(self, other):
-        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Use _data."
+        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Try _data."
         return self._data >= other._data
     
     # len()
     def __len__(self):
-        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Use _data."
+        assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Try _data."
         return len(self._data)
     
