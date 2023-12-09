@@ -139,7 +139,7 @@ def cl_fix_round(a, a_fmt : FixFormat, r_fmt : int, rnd : FixRound):
         r = a.round(r_fmt, rnd)
         # Convert to narrow if required
         if not r_wide:
-            r = r.to_narrow_fxp()
+            r = NarrowFix(r.to_real(), r_fmt)
     else:
         # NarrowFix
         r = NarrowFix(a, a_fmt, copy=False).round(r_fmt, rnd)
@@ -164,7 +164,7 @@ def cl_fix_saturate(a, a_fmt : FixFormat, r_fmt : FixFormat, sat : FixSaturate):
         r = a.saturate(r_fmt, sat)
         # Convert to narrow
         if not r_wide:
-            r = r.to_narrow_fxp()
+            r = NarrowFix(r.to_real(), r_fmt)
     else:
         # NarrowFix
         r = NarrowFix(a, a_fmt, copy=False).saturate(r_fmt, sat)

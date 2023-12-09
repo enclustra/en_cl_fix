@@ -83,7 +83,6 @@ class WideFix:
         
         return WideFix(x, r_fmt)
     
-    
     # Convert from narrow (double-precision float) data to WideFix object, without bounds checks.
     @staticmethod
     def FromNarrowFxp(data : np.ndarray, fmt : FixFormat):
@@ -92,7 +91,6 @@ class WideFix:
         int_data = (data*2.0**fmt.F).astype(object)
         int_data = np.floor(int_data)
         return WideFix(int_data, fmt)
-    
     
     # Convert from uint64 array (e.g. from MATLAB).
     @staticmethod
@@ -105,13 +103,11 @@ class WideFix:
         val = np.where(val >= 2**(fmt.I+fmt.F), val - 2**(fmt.I+fmt.F+1), val)
         return WideFix(val, fmt)
     
-    
     # Calculate maximum representable internal data value (WideFix._data) for a given FixFormat.
     @staticmethod
     def MaxValue(fmt : FixFormat):
         val = 2**(fmt.I+fmt.F)-1
         return WideFix(val, fmt, copy=False)
-    
     
     # Calculate minimum representable internal data value (WideFix._data) for a given FixFormat.
     @staticmethod
@@ -121,7 +117,6 @@ class WideFix:
         else:
             val = 0
         return WideFix(val, fmt, copy=False)
-    
     
     # Align binary points of 2 or more WideFix objects (e.g. to perform numerical comparisons).
     @staticmethod
@@ -138,33 +133,23 @@ class WideFix:
 
         return values
     
-    
     # Get internal integer data
     @property
     def data(self):
         return self._data.copy()
-    
     
     # Get fixed-point format
     @property
     def fmt(self):
         return shallow_copy(self._fmt)
     
-    
     # Get data in human-readable floating-point format (with loss of precision), with bounds checks
-    def to_float(self):
-        # To avoid this warning, call to_narrow_fxp() directly.
-        if (self.fmt.S == 1 and (np.any(self.data < -2**52) or np.any(self.data >= 2**52))) \
-            or (self.fmt.S == 0 and np.any(self.data >= 2**53)):
-            warnings.warn("to_float : Possible loss of precision when converting WideFix data to float!", Warning)
-        return self.to_narrow_fxp()
-    
-    
-    # Get narrow (double-precision float) representation of data. No bounds checks.
-    def to_narrow_fxp(self):
-        # Note: This function performs no range/precision checks.
-        return np.array(self._data/2.0**self._fmt.F).astype(float)
-
+    def to_real(self, warn=True):
+        if warn:
+            if (self.fmt.S == 1 and (np.any(self.data < -2**52) or np.any(self.data >= 2**52))) \
+                or (self.fmt.S == 0 and np.any(self.data >= 2**53)):
+                warnings.warn("WideFix.to_real: Possible loss of precision when converting WideFix data to float!", Warning)
+        return np.array(self._data/2.0**self._fmt.F, dtype=np.float64)
 
     # Pack data into uint64 array (e.g. for passing to MATLAB).
     # Data is packed into columns, so result[:,k] corresponds to data[k].
@@ -186,7 +171,6 @@ class WideFix:
             val >>= 64
         
         return uint64Array
-
 
     # Create a new WideFix object with a new fixed-point format after rounding.
     def round(self, r_fmt : FixFormat, rnd : FixRound = FixRound.Trunc_s):
@@ -288,6 +272,124 @@ class WideFix:
         
         return result
     
+    def abs(self, r_fmt : FixFormat = None, rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
+        """
+        Calculates absolute values, abs(self).
+        """
+        mid_fmt = FixFormat.ForAbs(self._fmt)
+        if r_fmt is None:
+            r_fmt = mid_fmt
+        neg = self.neg(mid_fmt)
+        pos = self.resize(mid_fmt)
+        
+        data_abs = np.where(self._data < 0, neg._data, pos._data)
+        return WideFix(data_abs, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
+
+    def neg(self, r_fmt : FixFormat = None, rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
+        """
+        Calculates negation, -self.
+        """
+        mid_fmt = FixFormat.ForNeg(self._fmt)
+        if r_fmt is None:
+            r_fmt = mid_fmt
+        return WideFix(-self._data, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
+        
+    def add(self, b : "WideFix",
+            r_fmt : FixFormat = None,
+            rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
+        """
+        Calculates addition, self + b.
+        """
+        a = self
+        mid_fmt = FixFormat.ForAdd(a._fmt, b._fmt)
+        if r_fmt is None:
+            r_fmt = mid_fmt
+        
+        # Align binary points without truncating any MSBs or LSBs
+        a_round_fmt = FixFormat.ForRound(a._fmt, mid_fmt.F, FixRound.Trunc_s)
+        b_round_fmt = FixFormat.ForRound(b._fmt, mid_fmt.F, FixRound.Trunc_s)
+        a_round = a.round(a_round_fmt)
+        b_round = b.round(b_round_fmt)
+        
+        # Do addition on internal integer data (binary points are aligned)
+        return WideFix(a_round._data + b_round._data, mid_fmt).resize(r_fmt, rnd, sat)
+
+    def sub(self, b : "WideFix",
+            r_fmt : FixFormat = None,
+            rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
+        """
+        Calculates subtraction, self - b.
+        """
+        a = self
+        mid_fmt = FixFormat.ForSub(a._fmt, b._fmt)
+        if r_fmt is None:
+            r_fmt = mid_fmt
+        
+        # Align binary points without truncating any MSBs or LSBs
+        a_round_fmt = FixFormat.ForRound(a._fmt, mid_fmt.F, FixRound.Trunc_s)
+        b_round_fmt = FixFormat.ForRound(b._fmt, mid_fmt.F, FixRound.Trunc_s)
+        a_round = a.round(a_round_fmt)
+        b_round = b.round(b_round_fmt)
+        
+        # Do addition on internal integer data (binary points are aligned)
+        return WideFix(a_round._data - b_round._data, mid_fmt).resize(r_fmt, rnd, sat)
+        
+    def addsub(self, b : "WideFix", add,  # Bool or bool array.
+               r_fmt : FixFormat = None,
+               rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+        """
+        Calculates addition/subtraction:
+            self + b, where add == True.
+            self - b, where add == False.
+        """
+        # mid_fmt = FixFormat.ForAddsub(self._fmt, b._fmt)
+        # if r_fmt is None:
+            # r_fmt = mid_fmt
+        # radd = self.add(b, r_fmt, rnd, sat)
+        # rsub = self.sub(b, r_fmt, rnd, sat)
+        # r_data = np.where(add, radd._data, rsub._data)
+        # return NarrowFix(r_data, r_fmt, copy=False)
+
+    def mult(self, b : "WideFix",
+             r_fmt : FixFormat = None,
+             rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+        """
+        Calculates multiplication, self * b.
+        """
+        mid_fmt = FixFormat.ForMult(self._fmt, b._fmt)
+        if r_fmt is None:
+            r_fmt = mid_fmt
+        return WideFix(self._data * b._data, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
+
+    def shift(self, shift,
+              r_fmt : FixFormat = None,
+              rnd: FixRound = FixRound.Trunc_s, sat: FixSaturate = FixSaturate.None_s):
+        """
+        Calculates a left bit-shift (equivalent to *2.0**shift). To shift right, set shift < 0.
+        
+        Note: This function performs a lossless shift (equivalent to *2.0**shift), then resizes to the
+        output format. The initial shift does NOT truncate any bits.
+        """
+        mid_fmt = FixFormat.ForShift(self._fmt, np.min(shift), np.max(shift))
+        if r_fmt is None:
+            r_fmt = mid_fmt
+        
+        if np.ndim(shift) == 0:
+            # Change format without changing data values => shift
+            mid = WideFix(self._data, mid_fmt)
+        else:
+            # Variable shift (each value individually)
+            assert shift.size == self._data.size, "WideFix.__lshift__: shift must be 0d or the same length as data"
+            mid = WideFix(np.zeros(self._data.size, dtype=object), mid_fmt)
+            for i, s in enumerate(shift):
+                # Change format without changing data values => shift
+                temp_fmt = FixFormat.ForShift(self._fmt, s)
+                temp = WideFix(self._data[i], temp_fmt, copy=False)
+                # Resize to the shared intermediate format
+                mid._data[i] = temp.resize(mid_fmt)._data[0]
+        
+        return WideFix(mid, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
+    
     # Create a new WideFix object with the most significant bit (- index) set to "value"
     def set_msb(self, index, value):
         if np.any(value > 1) or np.any(value < 0):
@@ -300,7 +402,6 @@ class WideFix:
         val = np.where(self.get_msb(index) != value, self.data - weight*(-1)**value, self.data)
         return WideFix(val, fmt)
     
-    
     # Get most significant bit (- index)
     def get_msb(self, index):
         fmt = self._fmt
@@ -309,7 +410,6 @@ class WideFix:
         else:
             shift = fmt.width-1 - index
             return ((self._data >> shift) % 2).astype(int)
-    
     
     # Discard fractional bits (keeping integer bits). Rounds towards -Inf.
     def floor(self):
@@ -320,11 +420,9 @@ class WideFix:
         else:
             return WideFix(self._data << -fmt.F, r_fmt)
     
-    
     # Get the integer part
     def int_part(self):
         return self.floor()
-    
     
     # Get the fractional part.
     # Note: Result has implicit frac bits if I<0.
@@ -339,11 +437,6 @@ class WideFix:
         # Retain fractional LSBs
         val = val % 2**r_fmt.width
         return WideFix(val, r_fmt)
-
-
-    ###############################################################################################
-    # Private Functions 
-    ###############################################################################################
     
     # Default string representations: Convert to float for consistency with "narrow" en_cl_fix_pkg.
     # Note: To print raw internal integer data, use print(x.data).
@@ -351,127 +444,65 @@ class WideFix:
         return (
             "WideFix : " + repr(self.fmt) + "\n"
             + "Note: Possible loss of precision in float printout.\n"
-            + repr(self.to_narrow_fxp())
+            + repr(self.to_real(warn=False))
         )
     
     def __str__(self):
         return (
             f"WideFix {self.fmt}\n"
             f"Note: Possible loss of precision in float printout.\n"
-            f"{self.to_narrow_fxp()}"
+            f"{self.to_real(warn=False)}"
         )
-    
     
     # "+" operator
     def __add__(self, other):
-        aFmt = self._fmt
-        bFmt = other._fmt
-        r_fmt = FixFormat.ForAdd(aFmt, bFmt)
-        
-        a = self.copy()
-        b = other.copy()
-        
-        # Align binary points without truncating any MSBs or LSBs
-        aRoundFmt = FixFormat.ForRound(a.fmt, r_fmt.F, FixRound.Trunc_s)
-        bRoundFmt = FixFormat.ForRound(b.fmt, r_fmt.F, FixRound.Trunc_s)
-        a = a.round(aRoundFmt)
-        b = b.round(bRoundFmt)
-        
-        # Do addition on internal integer data (binary points are aligned)
-        return WideFix(a.data + b.data, r_fmt)
-    
+        return self.add(other)
     
     # "-" operator
     def __sub__(self, other):
-        aFmt = self._fmt
-        bFmt = other._fmt
-        r_fmt = FixFormat.ForSub(aFmt, bFmt)
-        
-        a = self.copy()
-        b = other.copy()
-        
-        # Align binary points without truncating any MSBs or LSBs
-        aRoundFmt = FixFormat.ForRound(a.fmt, r_fmt.F, FixRound.Trunc_s)
-        bRoundFmt = FixFormat.ForRound(b.fmt, r_fmt.F, FixRound.Trunc_s)
-        a = a.round(aRoundFmt)
-        b = b.round(bRoundFmt)
-        
-        # Do subtraction on internal integer data (binary points are aligned)
-        return WideFix(a.data - b.data, r_fmt)
+        return self.sub(other)
     
     # Unary "-" operator
     def __neg__(self):
-        r_fmt = FixFormat.ForNeg(self._fmt)
-        return WideFix(-self._data, r_fmt)
-    
+        return self.neg()
     
     # "*" operator
     def __mul__(self, other):
-        r_fmt = FixFormat.ForMult(self._fmt, other.fmt)
-        return WideFix(self._data * other.data, r_fmt)
+        return self.mult(other)
     
     # "<<" operator
     def __lshift__(self, shift):
-        r_fmt = FixFormat.ForShift(self._fmt, np.min(shift), np.max(shift))
-        if np.ndim(shift) == 0:
-            # Change format without changing data values => shift
-            return WideFix(self._data, r_fmt)
-        else:
-            # Variable shift (each value individually)
-            assert shift.size == self._data.size, "WideFix.__lshift__: shift must be 0d or the same length as data"
-            r = WideFix(np.zeros(self._data.size, dtype=object), r_fmt)
-            for i, s in enumerate(shift):
-                # Change format without changing data values => shift
-                temp_fmt = FixFormat.ForShift(self._fmt, s)
-                temp = WideFix(self._data[i], temp_fmt, copy=False)
-                # Resize to the shared intermediate format
-                r._data[i] = temp.resize(r_fmt)._data[0]
-            
-            return r
-    
-    
-    # Helper function to consistently extract data for comparison operators
-    def _extract_comparison_data(self, other):
-        # For consistency with narrow implementation, convert to a common format
-        a, b = WideFix.AlignBinaryPoints([self, other])
-        return a.data, b.data
-    
+        return self.shift(shift)
     
     # "==" operator
     def __eq__(self, other):
-        a, b = self._extract_comparison_data(other)
-        return a == b
-    
+        a, b = WideFix.AlignBinaryPoints([self, other])
+        return a._data == b._data
     
     # "!=" operator
     def __ne__(self, other):
-        a, b = self._extract_comparison_data(other)
-        return a != b
-    
+        a, b = WideFix.AlignBinaryPoints([self, other])
+        return a._data != b._data
     
     # "<" operator
     def __lt__(self, other):
-        a, b = self._extract_comparison_data(other)
-        return a < b
-    
+        a, b = WideFix.AlignBinaryPoints([self, other])
+        return a._data < b._data
     
     # "<=" operator
     def __le__(self, other):
-        a, b = self._extract_comparison_data(other)
-        return a <= b
-    
+        a, b = WideFix.AlignBinaryPoints([self, other])
+        return a._data <= b._data
     
     # ">" operator
     def __gt__(self, other):
-        a, b = self._extract_comparison_data(other)
-        return a > b
-    
+        a, b = WideFix.AlignBinaryPoints([self, other])
+        return a._data > b._data
     
     # ">=" operator
     def __ge__(self, other):
-        a, b = self._extract_comparison_data(other)
-        return a >= b
-    
+        a, b = WideFix.AlignBinaryPoints([self, other])
+        return a._data >= b._data
     
     # len()
     def __len__(self):
