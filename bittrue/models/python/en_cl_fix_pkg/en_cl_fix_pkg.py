@@ -25,7 +25,7 @@ def _clean_input(a):
     """
     # Note: It is easier to handle this type conversion in Python because that allows each MATLAB
     # function call to just pass varargin{:} without worrying about which inputs are data.
-    if hasattr(a, "__getitem__") and not isinstance(a, WideFix):
+    if hasattr(a, "__getitem__"):
         return np.array(a)
     return a
 
@@ -86,9 +86,7 @@ def cl_fix_from_real(a, r_fmt : FixFormat, saturate : FixSaturate = FixSaturate.
     Note: If a different rounding mode is needed, or if saturation is not desired, then use
     cl_fix_resize.
     """
-    # Convert to numpy ndarray (e.g. for input from MATLAB)
-    if hasattr(a, "__getitem__"):
-        a = np.array(a)
+    a = _clean_input(a)
     
     if cl_fix_is_wide(r_fmt):
         return WideFix.FromFloat(a, r_fmt, saturate)._data
@@ -105,7 +103,7 @@ def cl_fix_from_integer(a, a_fmt : FixFormat):
     a = _clean_input(a)
     
     if cl_fix_is_wide(a_fmt):
-        return WideFix(a, a_fmt)._data
+        return a
     else:
         return NarrowFix.from_integer(a, a_fmt)._data
 
@@ -119,7 +117,7 @@ def cl_fix_to_integer(a, a_fmt : FixFormat):
     a = _clean_input(a)
     
     if cl_fix_is_wide(a_fmt):
-        return a._data
+        return a
     else:
         return NarrowFix(a, a_fmt, copy=False).to_integer()
 
@@ -128,21 +126,25 @@ def cl_fix_round(a, a_fmt : FixFormat, r_fmt : int, rnd : FixRound):
     """
     Performs rounding (when the number of fractional bits is being reduced).
     """
-    assert r_fmt == FixFormat.ForRound(a_fmt, r_fmt.F, rnd), "cl_fix_round: Invalid result format. Use FixFormat.ForRound()."
+    assert r_fmt == cl_fix_round_fmt(a_fmt, r_fmt.F, rnd), "cl_fix_round: Invalid result format. Use cl_fix_round_fmt()."
     a = _clean_input(a)
     
-    if cl_fix_is_wide(a_fmt) or cl_fix_is_wide(r_fmt):
-        # Convert to WideFix (if not already WideFix)
-        a = WideFix.FromFxp(a, a_fmt)
-        # Round
-        rounded = a.round(r_fmt, rnd)
-        # Convert to narrow if required
-        if not cl_fix_is_wide(r_fmt):
-            rounded = rounded.to_narrow_fxp()
-    else:
-        rounded = NarrowFix(a, a_fmt, copy=False).round(r_fmt, rnd)._data
+    a_wide = cl_fix_is_wide(a_fmt)
+    r_wide = cl_fix_is_wide(r_fmt)
     
-    return rounded
+    if a_wide or r_wide:
+        # WideFix
+        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
+        # Round
+        r = a.round(r_fmt, rnd)
+        # Convert to narrow if required
+        if not r_wide:
+            r = r.to_narrow_fxp()
+    else:
+        # NarrowFix
+        r = NarrowFix(a, a_fmt, copy=False).round(r_fmt, rnd)
+    
+    return r._data
 
 
 def cl_fix_saturate(a, a_fmt : FixFormat, r_fmt : FixFormat, sat : FixSaturate):
@@ -152,18 +154,22 @@ def cl_fix_saturate(a, a_fmt : FixFormat, r_fmt : FixFormat, sat : FixSaturate):
     assert r_fmt.F == a_fmt.F, "cl_fix_saturate: Number of frac bits cannot change."
     a = _clean_input(a)
     
-    if cl_fix_is_wide(a_fmt) or cl_fix_is_wide(r_fmt):
-        # Convert to WideFix (if not already WideFix)
-        a = WideFix.FromFxp(a, a_fmt)
-        # Saturate
-        saturated = a.saturate(r_fmt, sat)
-        # Convert to narrow if required
-        if not cl_fix_is_wide(r_fmt):
-            saturated = saturated.to_narrow_fxp()
-    else:
-        saturated = NarrowFix(a, a_fmt, copy=False).saturate(r_fmt, sat)._data
+    a_wide = cl_fix_is_wide(a_fmt)
+    r_wide = cl_fix_is_wide(r_fmt)
     
-    return saturated
+    if a_wide or r_wide:
+        # WideFix
+        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
+        # Saturate
+        r = a.saturate(r_fmt, sat)
+        # Convert to narrow
+        if not r_wide:
+            r = r.to_narrow_fxp()
+    else:
+        # NarrowFix
+        r = NarrowFix(a, a_fmt, copy=False).saturate(r_fmt, sat)
+    
+    return r._data
 
 
 def cl_fix_resize(a, a_fmt : FixFormat,
@@ -201,16 +207,25 @@ def cl_fix_abs(a, a_fmt : FixFormat,
     """
     Calculates absolute values, abs(a).
     """
-    mid_fmt = FixFormat.ForAbs(a_fmt)
+    a = _clean_input(a)
+    
+    # Full-precision result format
+    mid_fmt = cl_fix_abs_fmt(a_fmt)
     if r_fmt is None:
         r_fmt = mid_fmt
-    if not cl_fix_is_wide(a_fmt):
-        a = _clean_input(a)
-    aNeg = cl_fix_neg(a, a_fmt, mid_fmt)
-    aPos = cl_fix_resize(a, a_fmt, mid_fmt)
     
-    a = np.where(a < 0, aNeg, aPos)
-    return cl_fix_resize(a, mid_fmt, r_fmt, rnd, sat)
+    # Handle narrow/wide internal representation
+    a_wide = cl_fix_is_wide(a_fmt)
+    mid_wide = cl_fix_is_wide(mid_fmt)
+    if a_wide or mid_wide:
+        # WideFix
+        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
+    else:
+        # NarrowFix
+        a = NarrowFix(a, a_fmt, copy=False)
+    
+    mid = a.abs()
+    return cl_fix_resize(mid._data, mid_fmt, r_fmt, rnd, sat)
 
 
 def cl_fix_neg(a, a_fmt : FixFormat,
@@ -219,14 +234,25 @@ def cl_fix_neg(a, a_fmt : FixFormat,
     """
     Calculates negation, -a.
     """
-    mid_fmt = FixFormat.ForNeg(a_fmt)
+    a = _clean_input(a)
+    
+    # Full-precision result format
+    mid_fmt = cl_fix_neg_fmt(a_fmt)
     if r_fmt is None:
         r_fmt = mid_fmt
-    if cl_fix_is_wide(a_fmt) or cl_fix_is_wide(mid_fmt):
-        a = WideFix.FromFxp(a, a_fmt)
+    
+    # Handle narrow/wide internal representation
+    a_wide = cl_fix_is_wide(a_fmt)
+    mid_wide = cl_fix_is_wide(mid_fmt)
+    if a_wide or mid_wide:
+        # WideFix
+        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
     else:
-        a = _clean_input(a)
-    return cl_fix_resize(-a, mid_fmt, r_fmt, rnd, sat)
+        # NarrowFix
+        a = NarrowFix(a, a_fmt, copy=False)
+    
+    mid = -a
+    return cl_fix_resize(mid._data, mid_fmt, r_fmt, rnd, sat)
 
 
 def cl_fix_add(a, a_fmt : FixFormat,
@@ -236,16 +262,29 @@ def cl_fix_add(a, a_fmt : FixFormat,
     """
     Calculates addition, a + b.
     """
-    mid_fmt = FixFormat.ForAdd(a_fmt, b_fmt)
+    a = _clean_input(a)
+    b = _clean_input(b)
+    
+    # Full-precision result format
+    mid_fmt = cl_fix_add_fmt(a_fmt, b_fmt)
     if r_fmt is None:
         r_fmt = mid_fmt
-    if cl_fix_is_wide(a_fmt) or cl_fix_is_wide(b_fmt) or cl_fix_is_wide(mid_fmt):
-        a = WideFix.FromFxp(a, a_fmt)
-        b = WideFix.FromFxp(b, b_fmt)
+    
+    # Handle narrow/wide internal representation
+    a_wide = cl_fix_is_wide(a_fmt)
+    b_wide = cl_fix_is_wide(b_fmt)
+    mid_wide = cl_fix_is_wide(mid_fmt)
+    if a_wide or b_wide or mid_wide:
+        # WideFix
+        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
+        b = WideFix(b, b_fmt) if b_wide else WideFix.FromNarrowFxp(b, b_fmt)
     else:
-        a = _clean_input(a)
-        b = _clean_input(b)
-    return cl_fix_resize(a + b, mid_fmt, r_fmt, rnd, sat)
+        # NarrowFix
+        a = NarrowFix(a, a_fmt, copy=False)
+        b = NarrowFix(b, b_fmt, copy=False)
+    
+    mid = a+b
+    return cl_fix_resize(mid._data, mid_fmt, r_fmt, rnd, sat)
 
 
 def cl_fix_sub(a, a_fmt : FixFormat,
@@ -255,16 +294,29 @@ def cl_fix_sub(a, a_fmt : FixFormat,
     """
     Calculates subtraction, a - b.
     """
-    mid_fmt = FixFormat.ForSub(a_fmt, b_fmt)
+    a = _clean_input(a)
+    b = _clean_input(b)
+    
+    # Full-precision result format
+    mid_fmt = cl_fix_sub_fmt(a_fmt, b_fmt)
     if r_fmt is None:
         r_fmt = mid_fmt
-    if cl_fix_is_wide(a_fmt) or cl_fix_is_wide(b_fmt) or cl_fix_is_wide(mid_fmt):
-        a = WideFix.FromFxp(a, a_fmt)
-        b = WideFix.FromFxp(b, b_fmt)
+    
+    # Handle narrow/wide internal representation
+    a_wide = cl_fix_is_wide(a_fmt)
+    b_wide = cl_fix_is_wide(b_fmt)
+    mid_wide = cl_fix_is_wide(mid_fmt)
+    if a_wide or b_wide or mid_wide:
+        # WideFix
+        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
+        b = WideFix(b, b_fmt) if b_wide else WideFix.FromNarrowFxp(b, b_fmt)
     else:
-        a = _clean_input(a)
-        b = _clean_input(b)
-    return cl_fix_resize(a - b, mid_fmt, r_fmt, rnd, sat)
+        # NarrowFix
+        a = NarrowFix(a, a_fmt, copy=False)
+        b = NarrowFix(b, b_fmt, copy=False)
+    
+    mid = a-b
+    return cl_fix_resize(mid._data, mid_fmt, r_fmt, rnd, sat)
 
 
 def cl_fix_addsub(a, a_fmt : FixFormat,
@@ -289,17 +341,29 @@ def cl_fix_mult(a, a_fmt : FixFormat,
     """
     Calculates multiplication, a * b.
     """
-    mid_fmt = FixFormat.ForMult(a_fmt, b_fmt)
+    a = _clean_input(a)
+    b = _clean_input(b)
+    
+    # Full-precision result format
+    mid_fmt = cl_fix_mult_fmt(a_fmt, b_fmt)
     if r_fmt is None:
         r_fmt = mid_fmt
-    if cl_fix_is_wide(a_fmt) or cl_fix_is_wide(b_fmt) or cl_fix_is_wide(mid_fmt):
-        a = WideFix.FromFxp(a, a_fmt)
-        b = WideFix.FromFxp(b, b_fmt)
-    else:
-        a = _clean_input(a)
-        b = _clean_input(b)
     
-    return cl_fix_resize(a * b, mid_fmt, r_fmt, rnd, sat)
+    # Handle narrow/wide internal representation
+    a_wide = cl_fix_is_wide(a_fmt)
+    b_wide = cl_fix_is_wide(b_fmt)
+    mid_wide = cl_fix_is_wide(mid_fmt)
+    if a_wide or b_wide or mid_wide:
+        # WideFix
+        a = WideFix(a, a_fmt) if a_wide else WideFix.FromNarrowFxp(a, a_fmt)
+        b = WideFix(b, b_fmt) if b_wide else WideFix.FromNarrowFxp(b, b_fmt)
+    else:
+        # NarrowFix
+        a = NarrowFix(a, a_fmt, copy=False)
+        b = NarrowFix(b, b_fmt, copy=False)
+    
+    mid = a*b
+    return cl_fix_resize(mid._data, mid_fmt, r_fmt, rnd, sat)
 
 
 def cl_fix_shift(a, a_fmt : FixFormat,

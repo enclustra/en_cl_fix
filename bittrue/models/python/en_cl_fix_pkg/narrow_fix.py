@@ -14,17 +14,17 @@ from .en_cl_fix_types import *
 
 class NarrowFix:
     
-    def __init__(self, a, a_fmt : FixFormat, copy=True):
-        if isinstance(a, float):
-            a = np.array(a)
-        assert not a_fmt.is_wide, "NarrowFix: Requested format is too wide. Use WideFix."
-        assert a.dtype == np.float64, f"NarrowFix: requires float64 data. Got: {a.dtype}"
+    def __init__(self, data, fmt : FixFormat, copy=True):
+        if isinstance(data, float):
+            data = np.array(data)
+        assert not fmt.is_wide, "NarrowFix: Requested format is too wide. Use WideFix."
+        assert data.dtype == np.float64, f"NarrowFix: requires float64 data. Got: {data.dtype}"
         if copy:
-            self._data = a.copy()
+            self._data = data.copy()
         else:
-            self._data = a
+            self._data = data
         # Always copy the format (very small)
-        self._fmt = shallow_copy(a_fmt)
+        self._fmt = shallow_copy(fmt)
         
     @staticmethod
     def from_real(a, r_fmt : FixFormat, saturate : FixSaturate = FixSaturate.SatWarn_s):
@@ -301,7 +301,23 @@ class NarrowFix:
         if r_fmt is None:
             r_fmt = mid_fmt
         return NarrowFix(self._data * 2.0 ** shift, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
-
+    
+    # "+" operator
+    def __add__(self, other):
+        return self.add(other)
+    
+    # "-" operator
+    def __sub__(self, other):
+        return self.sub(other)
+    
+    # Unary "-" operator
+    def __neg__(self):
+        return self.neg()
+    
+    # "*" operator
+    def __mul__(self, other):
+        return self.mult(other)
+    
     # "==" operator
     def __eq__(self, other):
         assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Use _data."

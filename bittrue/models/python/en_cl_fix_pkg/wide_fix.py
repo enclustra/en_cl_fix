@@ -21,12 +21,11 @@
 ###################################################################################################
 
 import warnings
-import copy
 import numpy as np
+from copy import copy as shallow_copy
+from copy import deepcopy as deep_copy
 
 from .en_cl_fix_types import *
-
-_HANDLED_NUMPY_FUNCTIONS = {}
 
 
 class WideFix:
@@ -35,21 +34,20 @@ class WideFix:
     # Public Functions 
     ###############################################################################################
     
-    # Default string representations: Convert to float for consistency with "narrow" en_cl_fix_pkg.
-    # Note: To print raw internal integer data, use print(x.data).
-    def __repr__(self):
-        return (
-            "WideFix : " + repr(self.fmt) + "\n"
-            + "Note: Possible loss of precision in float printout.\n"
-            + repr(self.to_narrow_fxp())
-        )
-    
-    def __str__(self):
-        return (
-            f"WideFix {self.fmt}\n"
-            f"Note: Possible loss of precision in float printout.\n"
-            f"{self.to_narrow_fxp()}"
-        )
+    # Construct WideFix object from internal integer data representation and FixFormat.
+    # Example: the fixed-point value 3.0 in FixFormat(0,2,4) has internal data value 3.0*2**4 = 48
+    # and *not* 3.
+    def __init__(self, data, fmt : FixFormat, copy=True):
+        if isinstance(data, int):
+            data = np.array(data)
+        assert data.dtype == object, "WideFix: requires arbitrary-precision int (dtype == object)."
+        assert isinstance(data.flat[0], int), "WideFix: requires arbitrary-precision int (dtype == object)."
+        if copy:
+            self._data = data.copy()
+        else:
+            self._data = data
+        # Always copy the format (very small)
+        self._fmt = shallow_copy(fmt)
     
     # Convert from float data to WideFix object, with quantization and bounds checks.
     @staticmethod
@@ -57,35 +55,33 @@ class WideFix:
         # Saturation is mandatory in this function (because wrapping has not been implemented)
         if saturate != FixSaturate.SatWarn_s and saturate != FixSaturate.Sat_s:
             raise ValueError(f"WideFix.FromFloat: Unsupported saturation mode {str(saturate)}")
-        
-        if np.ndim(a) == 0:
-            a = np.array(a, ndmin=1)
+        if isinstance(a, float):
+            a = np.array(a)
         
         # Saturation warning
         if (saturate == FixSaturate.SatWarn_s) or (saturate == FixSaturate.Warn_s):
             amax_float = a.max()
             amin_float = a.min()
-            amax = WideFix.FromNarrowFxp(np.array([amax_float]), rFmt)
-            amin = WideFix.FromNarrowFxp(np.array([amin_float]), rFmt)
-            if amax > WideFix.MaxValue(rFmt):
+            amax = WideFix.FromNarrowFxp(np.array([amax_float]), rFmt)._data
+            amin = WideFix.FromNarrowFxp(np.array([amin_float]), rFmt)._data
+            if amax > WideFix.MaxValue(rFmt)._data:
                 warnings.warn(f"FromFloat: Number {amax_float} exceeds maximum for format {rFmt}", Warning)
-            if amin < WideFix.MinValue(rFmt):
+            if amin < WideFix.MinValue(rFmt)._data:
                 warnings.warn(f"FromFloat: Number {amin_float} exceeds minimum for format {rFmt}", Warning)
         
         # Quantize. Always use half-up rounding.
         x = (a*(2.0**rFmt.F)+0.5).astype('object')
         x = np.floor(x)
-        x = WideFix(x, rFmt)
         
         # Saturate
         if (saturate == FixSaturate.Sat_s) or (saturate == FixSaturate.SatWarn_s):
-            x = np.where(x > WideFix.MaxValue(rFmt), WideFix.MaxValue(rFmt), x)
-            x = np.where(x < WideFix.MinValue(rFmt), WideFix.MinValue(rFmt), x)
+            x = np.where(x > WideFix.MaxValue(rFmt)._data, WideFix.MaxValue(rFmt)._data, x)
+            x = np.where(x < WideFix.MinValue(rFmt)._data, WideFix.MinValue(rFmt)._data, x)
         else:
             # Wrapping is not supported
             None
         
-        return x
+        return WideFix(x, rFmt)
     
     
     # Convert from narrow (double-precision float) data to WideFix object, without bounds checks.
@@ -96,17 +92,6 @@ class WideFix:
         int_data = (data*2.0**fmt.F).astype(object)
         int_data = np.floor(int_data)
         return WideFix(int_data, fmt)
-    
-    
-    # Same as FromNarrowFxp, but also allow input to already be WideFix. No bounds checks.
-    @staticmethod
-    def FromFxp(x, fmt : FixFormat):
-        if type(x) == WideFix:
-            assert x.fmt == fmt, "FromFxp : Input was already WideFix and its fmt mismatched." \
-            f" Got: {x.fmt}. Requested: {fmt}."
-            return x
-        else:
-            return WideFix.FromNarrowFxp(x, fmt)
     
     
     # Convert from uint64 array (e.g. from MATLAB).
@@ -139,45 +124,31 @@ class WideFix:
     
     
     # Align binary points of 2 or more WideFix objects (e.g. to perform numerical comparisons).
-    # Note: Call as AlignBinaryPoints([a.copy(), b.copy()]) to prevent originals being modified.
     @staticmethod
-    def AlignBinaryPoints(WfxpList):
+    def AlignBinaryPoints(values):
+        values = deep_copy(values)
+        
         # Find the maximum number of frac bits
-        Fmax = max(Array.fmt.F for Array in WfxpList)
+        Fmax = max(value.fmt.F for value in values)
 
         # Resize every input to align binary points
-        for i, Wfxp in enumerate(WfxpList):
-            rFmt = FixFormat(Wfxp.fmt.S, Wfxp.fmt.I, Fmax)
-            WfxpList[i] = Wfxp.resize(rFmt)
+        for i, value in enumerate(values):
+            rFmt = FixFormat(value.fmt.S, value.fmt.I, Fmax)
+            values[i] = value.resize(rFmt)
 
-        return WfxpList
+        return values
     
     
     # Get internal integer data
     @property
     def data(self):
-        return self._data
+        return self._data.copy()
     
     
     # Get fixed-point format
     @property
     def fmt(self):
-        return self._fmt
-    
-    
-    @property
-    def size(self):
-        return self._data.size
-    
-    
-    @property
-    def shape(self):
-        return self._data.shape
-    
-    
-    @property
-    def T(self):
-        return WideFix(self._data.T, self._fmt)
+        return shallow_copy(self._fmt)
     
     
     # Get data in human-readable floating-point format (with loss of precision), with bounds checks
@@ -215,21 +186,6 @@ class WideFix:
             val >>= 64
         
         return uint64Array
-
-
-    # Shallow copy
-    def copy(self):
-        return WideFix(self._data.copy(), copy.copy(self._fmt))
-
-
-    # Maximum value in object's data array
-    def max(self):
-        return WideFix._FromIntScalar(self._data.max(), self._fmt)
-
-
-    # Minimum value in object's data array
-    def min(self):
-        return WideFix._FromIntScalar(self._data.min(), self._fmt)
 
 
     # Create a new WideFix object with a new fixed-point format after rounding.
@@ -385,68 +341,30 @@ class WideFix:
         return WideFix(val, rFmt)
 
 
-    def reshape(self, shape, order='C'):
-        return WideFix(self._data.reshape(shape, order=order), self._fmt)
-    
-    
-    def flatten(self, order='C'):
-        return WideFix(self._data.flatten(order=order), self._fmt)
-
     ###############################################################################################
     # Private Functions 
     ###############################################################################################
-
-    # Construct WideFix object from internal integer data representation and FixFormat.
-    # Note: Call as WideFix(x.copy(), copy.copy(fmt)) to prevent originals from being modified.
-    # Note: Considered private to avoid a user thinking they can pass normalized fixed-point
-    # numbers (which happen to be round integers) instead of unnormalized internal data. For
-    # example, the fixed-point value 3.0 in FixFormat(0,2,4) has internal data value 3.0*2**4 = 48
-    # and *not* 3.
-    # Note: en_cl_fix_pkg is considered like a friend class, so may call this constructor directly.
-    # Note: Users can use public static methods such as FromFloat() to construct WideFix objects,
-    #       but it is recommended to just use the en_cl_fix_pkg functions instead (since they
-    #       choose the best internal representation automatically).
-    def __init__(self, data : np.ndarray, fmt : FixFormat):
-        assert data.dtype == object, "WideFix : requires arbitrary-precision int (dtype == object)."
-        assert type(fmt) == FixFormat, "WideFix : fmt must be of type en_cl_fix_types.FixFormat."
-        self._data = data
-        self._fmt = fmt
-        
     
     # Same as __init__, except the internal integer data is a scalar (arbitrary-precision int).
     @staticmethod
     def _FromIntScalar(data : int, fmt : FixFormat):
         return WideFix(np.array([data]).astype(object), fmt)
     
+    # Default string representations: Convert to float for consistency with "narrow" en_cl_fix_pkg.
+    # Note: To print raw internal integer data, use print(x.data).
+    def __repr__(self):
+        return (
+            "WideFix : " + repr(self.fmt) + "\n"
+            + "Note: Possible loss of precision in float printout.\n"
+            + repr(self.to_narrow_fxp())
+        )
     
-    # Reference: https://numpy.org/doc/stable/user/basics.dispatch.html
-    def __array_function__(self, func, types, args, kwargs):
-        if func not in _HANDLED_NUMPY_FUNCTIONS:
-            return NotImplemented
-        # Note: this allows subclasses that don't override __array_function__ to handle WideFix
-        # objects.
-        # WARNING! The "any" below should be "all"? But then the method fails to register. TODO.
-        if not any(issubclass(t, self.__class__) for t in types):
-            return NotImplemented
-        return _HANDLED_NUMPY_FUNCTIONS[func](*args, **kwargs)
-    
-    
-    # Support [] access (get)
-    def __getitem__(self, key):
-        data = self._data[key]
-        if isinstance(data, int):
-            return WideFix._FromIntScalar(data, self._fmt)
-        else:
-            return WideFix(data, self._fmt)
-    
-    
-    # Support [] access (set)
-    def __setitem__(self, key, value):
-        assert value.fmt == self._fmt, "Format mismatch in WideFix[key] = value assignment."
-        if isinstance(self._data[key], int):
-            self._data[key] = value.data[0]
-        else:
-            self._data[key] = value.data
+    def __str__(self):
+        return (
+            f"WideFix {self.fmt}\n"
+            f"Note: Possible loss of precision in float printout.\n"
+            f"{self.to_narrow_fxp()}"
+        )
     
     
     # "+" operator
@@ -506,7 +424,7 @@ class WideFix:
             "All other values can be converted using WideFix._FromIntScalar(val, fmt)"
             other = WideFix._FromIntScalar(other, self._fmt)
         # For consistency with narrow implementation, convert to a common format
-        a, b = WideFix.AlignBinaryPoints([self.copy(), other.copy()])
+        a, b = WideFix.AlignBinaryPoints([self, other])
         return a.data, b.data
     
     
@@ -549,56 +467,3 @@ class WideFix:
     # len()
     def __len__(self):
         return len(self._data)
-    
-    
-###################################################################################################
-# Non-Member Functions
-###################################################################################################
-    
-# Decorator for adding functions to _HANDLED_NUMPY_FUNCTIONS.
-# Reference: https://numpy.org/doc/stable/user/basics.dispatch.html
-def implements(np_function):
-    """Register an __array_function__ implementation for WideFix objects."""
-    def decorator(func):
-        _HANDLED_NUMPY_FUNCTIONS[np_function] = func
-        return func
-    return decorator
-    
-    
-# Implementation of np.where() for WideFix objects.
-@implements(np.where)
-def where(*args, **kwargs):
-    # The condition is an ordinary np.ndarray(bool)
-    condition = args[0]
-    # Both of the choices are WideFix objects
-    x = args[1]
-    y = args[2]
-    assert x.fmt == y.fmt, "WideFix np.where() : Cannot mix formats."
-    
-    result = np.where(condition, x.data, y.data, *args[3:], **kwargs)
-    return WideFix(result, x.fmt)
-    
-    
-# Implementation of np.array_equal() for WideFix objects.
-@implements(np.array_equal)
-def array_equal(*args, **kwargs):
-    # Both of the inputs are WideFix objects
-    x = args[0]
-    y = args[1]
-    
-    # Preferable to raise error if shapes mismatch (instead of quietly returning False)
-    assert x.data.shape == y.data.shape, "WideFix array_equal : data shape mismatch"
-    
-    return np.all(x == y)
-    
-    
-# Implementation of np.concatenate() for WideFix objects.
-@implements(np.concatenate)
-def concatenate(*args, **kwargs):
-    # Inputs are passed in a tuple
-    tup = args[0]
-    for x in tup:
-        assert x.fmt == tup[0].fmt, "WideFix np.concatenate() : Cannot mix formats."
-    
-    result = np.concatenate(tuple(x.data for x in tup), *args[1:], **kwargs)
-    return WideFix(result, tup[0].fmt)

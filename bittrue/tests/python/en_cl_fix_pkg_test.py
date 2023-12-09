@@ -370,21 +370,21 @@ class cl_fix_sub_Test(unittest.TestCase):
         self.assertEqual(
             -16.0,
             cl_fix_sub(0.0, FixFormat(True, 4, 0),
-                      -16, FixFormat(True, 4, 0),
+                      -16.0, FixFormat(True, 4, 0),
                       FixFormat(True, 4, 0), FixRound.NonSymPos_s, FixSaturate.None_s))
 
     def test_InvertMostNegative_Signed_Sat(self):
         self.assertEqual(
             15.0,
             cl_fix_sub(0.0, FixFormat(True, 4, 0),
-                      -16, FixFormat(True, 4, 0),
+                      -16.0, FixFormat(True, 4, 0),
                       FixFormat(True, 4, 0), FixRound.NonSymPos_s, FixSaturate.Sat_s))
 
     def test_InvertMostNegative_Unsigned_NoSat(self):
         self.assertEqual(
             0.0,
             cl_fix_sub(0.0, FixFormat(False, 4, 0),
-                      -16, FixFormat(False, 4, 0),
+                      -16.0, FixFormat(False, 4, 0),
                       FixFormat(False, 4, 0), FixRound.NonSymPos_s, FixSaturate.None_s))
 
     def test_InvertUnsigned_Sat(self):
