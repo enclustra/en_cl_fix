@@ -52,12 +52,12 @@ architecture rtl of cl_fix_compare_tb is
     
     procedure Check(i : natural) is
         -- Load response data for this test case
-        constant Eq_c       : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_eq.txt", 32, ascii_dec, 1);
-        constant Neq_c      : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_neq.txt", 32, ascii_dec, 1);
-        constant Less_c     : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_less.txt", 32, ascii_dec, 1);
-        constant Greater_c  : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_greater.txt", 32, ascii_dec, 1);
-        constant Leq_c      : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_leq.txt", 32, ascii_dec, 1);
-        constant Geq_c      : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_geq.txt", 32, ascii_dec, 1);
+        constant Eq_c       : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_eq.txt", 32);
+        constant Neq_c      : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_neq.txt", 32);
+        constant Less_c     : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_less.txt", 32);
+        constant Greater_c  : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_greater.txt", 32);
+        constant Leq_c      : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_leq.txt", 32);
+        constant Geq_c      : integer_vector := read_file(DataPath_c & "test" & to_string(i) & "_geq.txt", 32);
         
         constant Amin       : integer := cl_fix_to_integer(cl_fix_min_value(AFmt_c(i)), AFmt_c(i));
         constant Amax       : integer := cl_fix_to_integer(cl_fix_max_value(AFmt_c(i)), AFmt_c(i));

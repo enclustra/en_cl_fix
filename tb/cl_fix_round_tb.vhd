@@ -33,7 +33,7 @@ architecture rtl of cl_fix_round_tb is
     constant RFmt_c             : FixFormatArray_t := cl_fix_read_format_file(DataPath_c & "r_fmt.txt");
     
     -- Rounding modes
-    constant Rnd_c              : integer_vector := read_file(DataPath_c & "rnd.txt", 32, ascii_dec, 1);
+    constant Rnd_c              : integer_vector := read_file(DataPath_c & "rnd.txt", 32);
     
     constant TestCount_c        : positive := AFmt_c'length;
     
@@ -47,7 +47,7 @@ architecture rtl of cl_fix_round_tb is
     
     procedure Check(i : natural) is
         -- Load response data for this test case
-        constant Expected_c : SlvArray_t := cl_fix_read_file(DataPath_c & "test" & to_string(i) & "_output.txt", RFmt_c(i), ascii_dec, 1);
+        constant Expected_c : SlvArray_t := cl_fix_read_file(DataPath_c & "test" & to_string(i) & "_output.txt", RFmt_c(i));
         constant Amin       : integer := cl_fix_to_integer(cl_fix_min_value(AFmt_c(i)), AFmt_c(i));
         constant Amax       : integer := cl_fix_to_integer(cl_fix_max_value(AFmt_c(i)), AFmt_c(i));
         variable Idx_v      : natural := 0;
