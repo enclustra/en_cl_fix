@@ -17,7 +17,6 @@
 # cl_fix_* calls (in this module).
 ###################################################################################################
 import numpy as np
-import warnings
 import random
 
 from .en_cl_fix_types import *

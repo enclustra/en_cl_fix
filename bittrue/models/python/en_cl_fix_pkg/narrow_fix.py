@@ -15,7 +15,6 @@
 
 import numpy as np
 import warnings
-import random
 from copy import copy as shallow_copy
 
 from .en_cl_fix_types import *
