@@ -9,7 +9,7 @@
 ###################################################################################################
 
 from enum import Enum
-import copy
+from copy import copy as shallow_copy
 
 
 class FixRound(Enum):
@@ -339,7 +339,7 @@ class FixFormat:
         else:
             Fmts = (aFmt, bFmt)
         
-        rFmt = copy.copy(Fmts[0])
+        rFmt = shallow_copy(Fmts[0])
         for i in range(1, len(Fmts)):
             rFmt.S = max(rFmt.S, Fmts[i].S)
             rFmt.I = max(rFmt.I, Fmts[i].I)
