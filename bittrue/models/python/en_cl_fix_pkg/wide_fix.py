@@ -8,16 +8,15 @@
 # The WideFix class adds arbitrary-precision support to en_cl_fix_pkg.
 #
 # Internal data is stored in arbitrary-precision Python integers and all calculations are performed
-# on (wide) integers. This differs from "narrow" en_cl_fix_pkg calculations, which are performed
-# on (double-precision) floats.
+# on (wide) integers. This differs from NarrowFix, which uses (double-precision) floats.
 #
 # Therefore, WideFix internal data is not explicitly normalized according to the fractional bits.
 # For example, the fixed-point number 1.25 in FixFormat(0,2,4) has binary representation "01.0100".
-# In WideFix this is stored internally as integer value 1.25*2**4 = 20. In "narrow" en_cl_fix_pkg,
-# it is stored as float value 1.25.
+# In WideFix this is stored internally as integer value 1.25*2**4 = 20. In NarrowFix, it would be
+# stored as float value 1.25.
 #
-# WideFix executes significantly more slowly than the "narrow" float implementation, but provides
-# support for data widths exceeding 53 bits.
+# WideFix executes significantly more slowly than the NarrowFix, but provides support for data
+# widths exceeding 53 bits.
 ###################################################################################################
 
 import warnings

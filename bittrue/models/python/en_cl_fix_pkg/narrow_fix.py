@@ -3,14 +3,23 @@
 ###################################################################################################
 
 ###################################################################################################
-# Imports
+# Description:
+#
+# The NarrowFix class provides support for ordinary "narrow" (<= 53-bit) fixed-point numbers.
+#
+# Internal data is simply stored in (double-precision) floats, with the proper normalization.
+#
+# NarrowFix executes significantly faster than the WideFix, but only supports data widths up to
+# 53 bits.
 ###################################################################################################
+
 import numpy as np
 import warnings
 import random
 from copy import copy as shallow_copy
 
 from .en_cl_fix_types import *
+
 
 class NarrowFix:
     
