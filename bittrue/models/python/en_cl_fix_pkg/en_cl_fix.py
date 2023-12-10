@@ -10,8 +10,8 @@
 #
 # Internally, this module uses the NarrowFix and WideFix classes for doing numerical calculations.
 # However, all data I/O from this module comprises the raw internal data. That means "narrow" and
-# "wide" data have different representations -- but it is uniquely determined according to
-# cl_fix_is_wide(fmt).
+# "wide" data have different representations -- but the representation is uniquely determined
+# according to cl_fix_is_wide(fmt).
 #
 # In other words, WideFix can handle "narrow" data via direct method calls, but *cannot* do so via
 # cl_fix_* calls (in this module).
