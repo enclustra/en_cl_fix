@@ -23,10 +23,25 @@ from .en_cl_fix_types import *
 
 class NarrowFix:
     
+    # An IEEE 754 double has:
+    #   * 1 explicit sign bit.
+    #   * 11 exponent bits (supports -1022 to +1023 due to values reserved for special cases).
+    #   * 52 fractional bits.
+    #   * 1 implicit integer bit := '1'.
+    # The values +0 and -0 are supported as special cases (exponent = 0x000). This means integers
+    # on [-2**53, 2**53] can be represented exactly. In other words, if we assume the exponent
+    # is never overflowed, then 54-bit signed numbers and 53-bit unsigned numbers are guaranteed to
+    # be represented exactly. In theory, this would mean: return fmt.I + fmt.F > 53.
+    # However, handling wrapping of signed numbers (when saturation is disabled) is made simpler if
+    # we reserve an extra integer bit for signed numbers. This gives a consistent 53-bit limit for
+    # both signed and unsigned numbers.
+    MAX_WIDTH = 53
+    
     def __init__(self, data, fmt : FixFormat, copy=True):
         if isinstance(data, float):
             data = np.array(data, dtype=np.float64)
-        assert not fmt.is_wide, "NarrowFix: Requested format is too wide. Use WideFix."
+        # See cl_fix_is_wide() for details on "narrow" versus "wide"
+        assert fmt.width <= NarrowFix.MAX_WIDTH, "NarrowFix: Requested format is too wide. Use WideFix."
         assert data.dtype == np.float64, f"NarrowFix: requires float64 data. Got: {data.dtype}"
         if copy:
             self._data = data.copy()
@@ -119,7 +134,7 @@ class NarrowFix:
         """
         Determines if the input values could be represented in r_fmt without saturation.
         """
-        rounded_fmt = FixFormat.ForRound(self._fmt, r_fmt.F, rnd)
+        rounded_fmt = FixFormat.for_round(self._fmt, r_fmt.F, rnd)
         rounded = self.round(rounded_fmt, rnd)
         lo = np.where(rounded < NarrowFix.min_value(r_fmt), False, True)
         hi = np.where(rounded > NarrowFix.max_value(r_fmt), False, True)
@@ -129,7 +144,7 @@ class NarrowFix:
         """
         Returns a rounded copy (when the number of LSBs is reduced).
         """
-        assert r_fmt == FixFormat.ForRound(self._fmt, r_fmt.F, rnd), "NarrowFix.round: Invalid result format. Use FixFormat.ForRound()."
+        assert r_fmt == FixFormat.for_round(self._fmt, r_fmt.F, rnd), "NarrowFix.round: Invalid result format. Use FixFormat.for_round()."
         
         data = self.data
         fmt = self._fmt
@@ -186,8 +201,8 @@ class NarrowFix:
                     offset_fmt = FixFormat(0,r_fmt.I+1,0)
                 else:
                     offset_fmt = FixFormat(0,r_fmt.I+1,-r_fmt.I)
-                add_fmt = FixFormat.ForAdd(fmt, offset_fmt)
-                convert_to_wide = add_fmt.is_wide
+                add_fmt = FixFormat.for_add(fmt, offset_fmt)
+                convert_to_wide = (add_fmt.width > NarrowFix.MAX_WIDTH)
             else:
                 convert_to_wide = False
             
@@ -219,7 +234,7 @@ class NarrowFix:
         Returns a resized (rounded and saturated copy).
         """
         # Round
-        rounded_fmt = FixFormat.ForRound(self._fmt, r_fmt.F, rnd)
+        rounded_fmt = FixFormat.for_round(self._fmt, r_fmt.F, rnd)
         rounded = self.round(rounded_fmt, rnd)
         
         # Saturate
@@ -229,7 +244,7 @@ class NarrowFix:
         """
         Calculates absolute values, abs(self).
         """
-        mid_fmt = FixFormat.ForAbs(self._fmt)
+        mid_fmt = FixFormat.for_abs(self._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
         neg = self.neg(mid_fmt)
@@ -242,7 +257,7 @@ class NarrowFix:
         """
         Calculates negation, -self.
         """
-        mid_fmt = FixFormat.ForNeg(self._fmt)
+        mid_fmt = FixFormat.for_neg(self._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
         return NarrowFix(-self._data, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
@@ -253,7 +268,7 @@ class NarrowFix:
         """
         Calculates addition, self + b.
         """
-        mid_fmt = FixFormat.ForAdd(self._fmt, b._fmt)
+        mid_fmt = FixFormat.for_add(self._fmt, b._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
         return NarrowFix(self._data + b._data, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
@@ -264,7 +279,7 @@ class NarrowFix:
         """
         Calculates subtraction, self - b.
         """
-        mid_fmt = FixFormat.ForSub(self._fmt, b._fmt)
+        mid_fmt = FixFormat.for_sub(self._fmt, b._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
         return NarrowFix(self._data - b._data, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
@@ -277,7 +292,7 @@ class NarrowFix:
             self + b, where add == True.
             self - b, where add == False.
         """
-        mid_fmt = FixFormat.ForAddsub(self._fmt, b._fmt)
+        mid_fmt = FixFormat.for_addsub(self._fmt, b._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
         radd = self.add(b, r_fmt, rnd, sat)
@@ -291,7 +306,7 @@ class NarrowFix:
         """
         Calculates multiplication, self * b.
         """
-        mid_fmt = FixFormat.ForMult(self._fmt, b._fmt)
+        mid_fmt = FixFormat.for_mult(self._fmt, b._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
         return NarrowFix(self._data * b._data, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
@@ -306,7 +321,7 @@ class NarrowFix:
         output format. The initial shift does NOT truncate any bits.
         """
         
-        mid_fmt = FixFormat.ForShift(self._fmt, np.min(shift), np.max(shift))
+        mid_fmt = FixFormat.for_shift(self._fmt, np.min(shift), np.max(shift))
         if r_fmt is None:
             r_fmt = mid_fmt
         return NarrowFix(self._data * 2.0 ** shift, mid_fmt, copy=False).resize(r_fmt, rnd, sat)

@@ -188,7 +188,7 @@ class WideFix:
         """
         Returns a rounded copy (when the number of LSBs is reduced).
         """
-        assert r_fmt == FixFormat.ForRound(self._fmt, r_fmt.F, rnd), "round: Invalid result format. Use FixFormat.ForRound()."
+        assert r_fmt == FixFormat.for_round(self._fmt, r_fmt.F, rnd), "round: Invalid result format. Use FixFormat.for_round()."
         
         # Copy object data so self is not modified and take floor to enforce int object type
         val = np.floor(self._data)
@@ -281,7 +281,7 @@ class WideFix:
         Returns a resized (rounded and saturated copy).
         """
         # Round
-        roundedFmt = FixFormat.ForRound(self._fmt, r_fmt.F, rnd)
+        roundedFmt = FixFormat.for_round(self._fmt, r_fmt.F, rnd)
         rounded = self.round(roundedFmt, rnd)
         
         # Saturate
@@ -293,7 +293,7 @@ class WideFix:
         """
         Calculates absolute values, abs(self).
         """
-        mid_fmt = FixFormat.ForAbs(self._fmt)
+        mid_fmt = FixFormat.for_abs(self._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
         neg = self.neg(mid_fmt)
@@ -306,7 +306,7 @@ class WideFix:
         """
         Calculates negation, -self.
         """
-        mid_fmt = FixFormat.ForNeg(self._fmt)
+        mid_fmt = FixFormat.for_neg(self._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
         return WideFix(-self._data, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
@@ -318,13 +318,13 @@ class WideFix:
         Calculates addition, self + b.
         """
         a = self
-        mid_fmt = FixFormat.ForAdd(a._fmt, b._fmt)
+        mid_fmt = FixFormat.for_add(a._fmt, b._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
         
         # Align binary points without truncating any MSBs or LSBs
-        a_round_fmt = FixFormat.ForRound(a._fmt, mid_fmt.F, FixRound.Trunc_s)
-        b_round_fmt = FixFormat.ForRound(b._fmt, mid_fmt.F, FixRound.Trunc_s)
+        a_round_fmt = FixFormat.for_round(a._fmt, mid_fmt.F, FixRound.Trunc_s)
+        b_round_fmt = FixFormat.for_round(b._fmt, mid_fmt.F, FixRound.Trunc_s)
         a_round = a.round(a_round_fmt)
         b_round = b.round(b_round_fmt)
         
@@ -338,13 +338,13 @@ class WideFix:
         Calculates subtraction, self - b.
         """
         a = self
-        mid_fmt = FixFormat.ForSub(a._fmt, b._fmt)
+        mid_fmt = FixFormat.for_sub(a._fmt, b._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
         
         # Align binary points without truncating any MSBs or LSBs
-        a_round_fmt = FixFormat.ForRound(a._fmt, mid_fmt.F, FixRound.Trunc_s)
-        b_round_fmt = FixFormat.ForRound(b._fmt, mid_fmt.F, FixRound.Trunc_s)
+        a_round_fmt = FixFormat.for_round(a._fmt, mid_fmt.F, FixRound.Trunc_s)
+        b_round_fmt = FixFormat.for_round(b._fmt, mid_fmt.F, FixRound.Trunc_s)
         a_round = a.round(a_round_fmt)
         b_round = b.round(b_round_fmt)
         
@@ -359,7 +359,7 @@ class WideFix:
             self + b, where add == True.
             self - b, where add == False.
         """
-        mid_fmt = FixFormat.ForAddsub(self._fmt, b._fmt)
+        mid_fmt = FixFormat.for_addsub(self._fmt, b._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
         radd = self.add(b, r_fmt, rnd, sat)
@@ -373,7 +373,7 @@ class WideFix:
         """
         Calculates multiplication, self * b.
         """
-        mid_fmt = FixFormat.ForMult(self._fmt, b._fmt)
+        mid_fmt = FixFormat.for_mult(self._fmt, b._fmt)
         if r_fmt is None:
             r_fmt = mid_fmt
         return WideFix(self._data * b._data, mid_fmt, copy=False).resize(r_fmt, rnd, sat)
@@ -387,7 +387,7 @@ class WideFix:
         Note: This function performs a lossless shift (equivalent to *2.0**shift), then resizes to the
         output format. The initial shift does NOT truncate any bits.
         """
-        mid_fmt = FixFormat.ForShift(self._fmt, np.min(shift), np.max(shift))
+        mid_fmt = FixFormat.for_shift(self._fmt, np.min(shift), np.max(shift))
         if r_fmt is None:
             r_fmt = mid_fmt
         
@@ -400,7 +400,7 @@ class WideFix:
             mid = WideFix(np.zeros(self._data.size, dtype=object), mid_fmt)
             for i, s in enumerate(shift):
                 # Change format without changing data values => shift
-                temp_fmt = FixFormat.ForShift(self._fmt, s)
+                temp_fmt = FixFormat.for_shift(self._fmt, s)
                 temp = WideFix(self._data[i], temp_fmt, copy=False)
                 # Resize to the shared intermediate format
                 mid._data[i] = temp.resize(mid_fmt)._data[0]

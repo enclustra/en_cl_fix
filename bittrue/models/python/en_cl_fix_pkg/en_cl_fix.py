@@ -53,21 +53,9 @@ def cl_fix_width(fmt : FixFormat) -> int:
 def cl_fix_is_wide(fmt : FixFormat) -> bool:
     """
     Determines whether "narrow" (double precision float) or "wide" (arbitrary-precision integer)
-    fixed-point representation should be used for this fixed-point format.
-    An IEEE 754 double has:
-      * 1 explicit sign bit.
-      * 11 exponent bits (supports -1022 to +1023 due to values reserved for special cases).
-      * 52 fractional bits.
-      * 1 implicit integer bit := '1'.
-    The values +0 and -0 are supported as special cases (exponent = 0x000). This means integers
-    on [-2**53, 2**53] can be represented exactly. In other words, if we assume the exponent
-    is never overflowed, then 54-bit signed numbers and 53-bit unsigned numbers are guaranteed to
-    be represented exactly. In theory, this would mean: return fmt.I + fmt.F > 53.
-    However, handling wrapping of signed numbers (when saturation is disabled) is made simpler if
-    we reserve an extra integer bit for signed numbers. This gives a consistent 53-bit limit for
-    both signed and unsigned numbers.
+    internal data representation should be used for this fixed-point format.
     """
-    return cl_fix_width(fmt) > 53
+    return cl_fix_width(fmt) > NarrowFix.MAX_WIDTH
 
 
 def cl_fix_max_value(r_fmt : FixFormat):
@@ -190,7 +178,7 @@ def cl_fix_resize(a, a_fmt : FixFormat,
     Resizes data values (with rounding, then saturation) to fit a new fixed-point format.
     """
     # Round
-    rounded_fmt = FixFormat.ForRound(a_fmt, r_fmt.F, rnd)
+    rounded_fmt = FixFormat.for_round(a_fmt, r_fmt.F, rnd)
     rounded = cl_fix_round(a, a_fmt, rounded_fmt, rnd)
     
     # Saturate
@@ -205,7 +193,7 @@ def cl_fix_in_range(a, a_fmt : FixFormat,
     """
     Determines if the input values could be represented in r_fmt without saturation.
     """
-    rounded_fmt = FixFormat.ForRound(a_fmt, r_fmt.F, rnd)
+    rounded_fmt = FixFormat.for_round(a_fmt, r_fmt.F, rnd)
     rounded = cl_fix_round(a, a_fmt, rounded_fmt, rnd)
     lo = np.where(rounded < cl_fix_min_value(r_fmt), False, True)
     hi = np.where(rounded > cl_fix_max_value(r_fmt), False, True)
@@ -409,15 +397,15 @@ def cl_fix_shift(a, a_fmt : FixFormat,
 
 
 # Function aliases
-cl_fix_add_fmt = FixFormat.ForAdd
-cl_fix_sub_fmt = FixFormat.ForSub
-cl_fix_addsub_fmt = FixFormat.ForAddsub
-cl_fix_mult_fmt = FixFormat.ForMult
-cl_fix_neg_fmt = FixFormat.ForNeg
-cl_fix_abs_fmt = FixFormat.ForAbs
-cl_fix_shift_fmt = FixFormat.ForShift
-cl_fix_round_fmt = FixFormat.ForRound
-cl_fix_union_fmt = FixFormat.Union
+cl_fix_add_fmt = FixFormat.for_add
+cl_fix_sub_fmt = FixFormat.for_sub
+cl_fix_addsub_fmt = FixFormat.for_addsub
+cl_fix_mult_fmt = FixFormat.for_mult
+cl_fix_neg_fmt = FixFormat.for_neg
+cl_fix_abs_fmt = FixFormat.for_abs
+cl_fix_shift_fmt = FixFormat.for_shift
+cl_fix_round_fmt = FixFormat.for_round
+cl_fix_union_fmt = FixFormat.union
 
 ###################################################################################################
 # Simulation utility functions (not available in VHDL)

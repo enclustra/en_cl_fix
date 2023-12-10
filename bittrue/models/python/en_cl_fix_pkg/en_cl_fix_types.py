@@ -56,7 +56,7 @@ class FixFormat:
     
     
     @staticmethod
-    def ForAdd(aFmt, bFmt):
+    def for_add(aFmt, bFmt):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of an
         addition, a + b.
@@ -107,7 +107,7 @@ class FixFormat:
     
     
     @staticmethod
-    def ForSub(aFmt, bFmt):
+    def for_sub(aFmt, bFmt):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of a
         subtraction, a - b.
@@ -169,7 +169,7 @@ class FixFormat:
     
     
     @staticmethod
-    def ForAddsub(aFmt, bFmt):
+    def for_addsub(aFmt, bFmt):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of an
         addition/subtraction, a +/- b.
@@ -178,13 +178,13 @@ class FixFormat:
         values of a and/or b are constrained, then a narrower format may be feasible.
         """
         assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
-        addFmt = FixFormat.ForAdd(aFmt, bFmt)
-        subFmt = FixFormat.ForSub(aFmt, bFmt)
-        return FixFormat.Union(addFmt, subFmt)
+        addFmt = FixFormat.for_add(aFmt, bFmt)
+        subFmt = FixFormat.for_sub(aFmt, bFmt)
+        return FixFormat.union(addFmt, subFmt)
     
     
     @staticmethod
-    def ForMult(aFmt, bFmt):
+    def for_mult(aFmt, bFmt):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of a
         multiplication, a * b.
@@ -226,20 +226,20 @@ class FixFormat:
         # If aFmt.S == 0 and bFmt.S == 1, then:
         #     rmin = amax * bmin = (2**aFmt.I - 2**-aFmt.F) * -2**bFmt.I
         #                        = -amax * 2**bFmt.I
-        #     ==> Same as FixFormat.ForNeg(aFmt).I + bFmt.I
+        #     ==> Same as FixFormat.for_neg(aFmt).I + bFmt.I
         # If aFmt.S == 1 and bFmt.S == 0, then:
         #     rmin = amin * bmax
-        #     ==> Same as FixFormat.ForNeg(bFmt).I + aFmt.I
+        #     ==> Same as FixFormat.for_neg(bFmt).I + aFmt.I
         # If aFmt.S == 1 and bFmt.S == 1, then:
         #     rmin = min(amax * bmin, amin * bmax)
         #     ==> Never exceeds rmaxI ==> Ignore.
         
         # The requirement can exceed rmaxI only if aFmt.S != bFmt.S and we don't run into the same
-        # special case as FixFormat.ForNeg() (i.e. the unsigned value being 1-bit).
+        # special case as FixFormat.for_neg() (i.e. the unsigned value being 1-bit).
         if aFmt.S == 0 and bFmt.S == 1:
-            I = max(rmaxI, FixFormat.ForNeg(aFmt).I + bFmt.I)
+            I = max(rmaxI, FixFormat.for_neg(aFmt).I + bFmt.I)
         elif aFmt.S == 1 and bFmt.S == 0:
-            I = max(rmaxI, aFmt.I + FixFormat.ForNeg(bFmt).I)
+            I = max(rmaxI, aFmt.I + FixFormat.for_neg(bFmt).I)
         else:
             I = rmaxI
         
@@ -255,7 +255,7 @@ class FixFormat:
     
     
     @staticmethod
-    def ForNeg(aFmt):
+    def for_neg(aFmt):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of a
         negation, -a.
@@ -271,7 +271,7 @@ class FixFormat:
     
     
     @staticmethod
-    def ForAbs(aFmt):
+    def for_abs(aFmt):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of an
         absolute value, abs(a).
@@ -280,12 +280,12 @@ class FixFormat:
         of a are constrained, then a narrower format may be feasible.
         """
         assert aFmt.width > 0, "Data width must be positive"
-        negFmt = FixFormat.ForNeg(aFmt)
-        return FixFormat.Union(aFmt, negFmt)
+        negFmt = FixFormat.for_neg(aFmt)
+        return FixFormat.union(aFmt, negFmt)
     
     
     @staticmethod
-    def ForShift(aFmt, minShift, maxShift=None):
+    def for_shift(aFmt, minShift, maxShift=None):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of a
         left shift, a << n.
@@ -301,7 +301,7 @@ class FixFormat:
     
     # Format for result of rounding
     @staticmethod
-    def ForRound(aFmt, rFracBits : int, rnd : FixRound):
+    def for_round(aFmt, rFracBits : int, rnd : FixRound):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of
         fixed-point rounding (for a specific rounding mode).
@@ -328,7 +328,7 @@ class FixFormat:
     
     
     @staticmethod
-    def Union(aFmt, bFmt=None):
+    def union(aFmt, bFmt=None):
         """
         Returns the minimal FixFormat that can exactly represent ALL of the input formats.
         
@@ -365,24 +365,4 @@ class FixFormat:
         Returns the total bit-width of the FixFormat: S + I + F.
         """
         return self.S + self.I + self.F
-    
-    @property
-    def is_wide(self):
-        """
-        Determines whether "narrow" (double precision float) or "wide" (arbitrary-precision integer)
-        fixed-point representation should be used for this fixed-point format.
-        An IEEE 754 double has:
-          * 1 explicit sign bit.
-          * 11 exponent bits (supports -1022 to +1023 due to values reserved for special cases).
-          * 52 fractional bits.
-          * 1 implicit integer bit := '1'.
-        The values +0 and -0 are supported as special cases (exponent = 0x000). This means integers
-        on [-2**53, 2**53] can be represented exactly. In other words, if we assume the exponent
-        is never overflowed, then 54-bit signed numbers and 53-bit unsigned numbers are guaranteed
-        to be represented exactly. In theory, this would mean: return fmt.I + fmt.F > 53.
-        However, handling wrapping of signed numbers (when saturation is disabled) is made simpler
-        if we reserve an extra integer bit for signed numbers. This gives a consistent 53-bit limit
-        for both signed and unsigned numbers.
-        """
-        return self.width > 53
     

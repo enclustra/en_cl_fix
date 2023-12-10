@@ -91,7 +91,7 @@ for aS in aS_values:
                         assert rmin == np.amin([amin + bmin, amin + bmax, amax + bmin, amax + bmax])
                         
                         # Format to test
-                        rFmt = FixFormat.ForAdd(aFmt, bFmt)
+                        rFmt = FixFormat.for_add(aFmt, bFmt)
                         
                         # Check int bits are sufficient
                         assert rmax <= cl_fix_max_value(rFmt), "add: Max value exceeded" \
@@ -119,7 +119,7 @@ for aS in aS_values:
                         assert rmin == np.amin([amin - bmin, amin - bmax, amax - bmin, amax - bmax])
                         
                         # Format to test
-                        rFmt = FixFormat.ForSub(aFmt, bFmt)
+                        rFmt = FixFormat.for_sub(aFmt, bFmt)
                         
                         # Check int bits are sufficient
                         assert rmax <= cl_fix_max_value(rFmt), "sub: Max value exceeded" \
@@ -147,7 +147,7 @@ for aS in aS_values:
                         assert rmin == np.amin([amin + bmin, amin + bmax, amax + bmin, amax + bmax, amin - bmin, amin - bmax, amax - bmin, amax - bmax])
                         
                         # Format to test
-                        rFmt = FixFormat.ForAddsub(aFmt, bFmt)
+                        rFmt = FixFormat.for_addsub(aFmt, bFmt)
                         
                         # Check int bits are sufficient
                         assert rmax <= cl_fix_max_value(rFmt), "addsub: Max value exceeded" \
@@ -188,7 +188,7 @@ for aS in aS_values:
                         assert rmin == np.amin([amin * bmin, amin * bmax, amax * bmin, amax * bmax])
                         
                         # Format to test
-                        rFmt = FixFormat.ForMult(aFmt, bFmt)
+                        rFmt = FixFormat.for_mult(aFmt, bFmt)
                         
                         # Check int bits are sufficient
                         assert rmax <= cl_fix_max_value(rFmt), "mult: Max value exceeded" \
@@ -219,7 +219,7 @@ for aS in aS_values:
             assert rmin == np.amin([-amax, -amin])
             
             # Format to test
-            rFmt = FixFormat.ForNeg(aFmt)
+            rFmt = FixFormat.for_neg(aFmt)
             
             # Check int bits are sufficient
             assert rmax <= cl_fix_max_value(rFmt), "neg: Max value exceeded" \
@@ -248,7 +248,7 @@ for aS in aS_values:
             assert rmin == np.amin([amax, amin, -amax, -amin])
             
             # Format to test
-            rFmt = FixFormat.ForAbs(aFmt)
+            rFmt = FixFormat.for_abs(aFmt)
             
             # Check int bits are sufficient
             assert rmax <= cl_fix_max_value(rFmt), "abs: Max value exceeded" \
@@ -282,7 +282,7 @@ for aS in aS_values:
                     assert rmin == np.amin([amax * 2.0**max_shift, amax * 2.0**min_shift, amin * 2.0**max_shift, amin * 2.0**min_shift])
                     
                     # Format to test
-                    rFmt = FixFormat.ForShift(aFmt, min_shift, max_shift)
+                    rFmt = FixFormat.for_shift(aFmt, min_shift, max_shift)
                     
                     # Check int bits are sufficient
                     assert rmax <= cl_fix_max_value(rFmt), "shift: Max value exceeded" \

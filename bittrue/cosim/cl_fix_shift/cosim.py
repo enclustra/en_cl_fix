@@ -81,7 +81,7 @@ def run():
                 a_wide = WideFix.from_narrowfix(NarrowFix(a, a_fmt))
                 
                 for shift in shift_values:
-                    shiftFmt = FixFormat.ForShift(a_fmt, shift)
+                    shiftFmt = FixFormat.for_shift(a_fmt, shift)
                     
                     #########
                     # r_fmt #

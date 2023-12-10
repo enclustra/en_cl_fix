@@ -75,7 +75,7 @@ def run():
                     # rnd #
                     #######
                     for rnd in FixRound:
-                        r_fmt = FixFormat.ForRound(a_fmt, rF, rnd)
+                        r_fmt = FixFormat.for_round(a_fmt, rF, rnd)
                         
                         # Calculate output
                         r = cl_fix_round(a, a_fmt, r_fmt, rnd)

@@ -99,7 +99,7 @@ for aS in aS_values:
                 for rnd in FixRound:
                     # Skip invalid formats
                     try:
-                        r_fmt = FixFormat.ForRound(a_fmt, rF, rnd)
+                        r_fmt = FixFormat.for_round(a_fmt, rF, rnd)
                     except AssertionError:
                         continue
                     
