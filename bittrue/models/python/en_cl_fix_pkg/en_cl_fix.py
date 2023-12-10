@@ -40,8 +40,20 @@ def _clean_input(a):
     return a
 
 ###################################################################################################
-# Bit-true methods (available in VHDL)
+# Format functions
 ###################################################################################################
+
+# Function aliases
+cl_fix_add_fmt = FixFormat.for_add
+cl_fix_sub_fmt = FixFormat.for_sub
+cl_fix_addsub_fmt = FixFormat.for_addsub
+cl_fix_mult_fmt = FixFormat.for_mult
+cl_fix_neg_fmt = FixFormat.for_neg
+cl_fix_abs_fmt = FixFormat.for_abs
+cl_fix_shift_fmt = FixFormat.for_shift
+cl_fix_round_fmt = FixFormat.for_round
+cl_fix_union_fmt = FixFormat.union
+
 def cl_fix_width(fmt : FixFormat) -> int:
     """
     Returns the bit-width of a fixed-point format.
@@ -57,25 +69,48 @@ def cl_fix_is_wide(fmt : FixFormat) -> bool:
     return cl_fix_width(fmt) > NarrowFix.MAX_WIDTH
 
 
-def cl_fix_max_value(r_fmt : FixFormat):
+def cl_fix_max_value(fmt : FixFormat):
     """
     Returns the maximum representable value in a specific fixed-point format.
     """
-    if cl_fix_is_wide(r_fmt):
-        return WideFix.max_value(r_fmt)._data
+    if cl_fix_is_wide(fmt):
+        return WideFix.max_value(fmt)._data
     else:
-        return NarrowFix.max_value(r_fmt)._data
+        return NarrowFix.max_value(fmt)._data
 
 
-def cl_fix_min_value(r_fmt : FixFormat):
+def cl_fix_min_value(fmt : FixFormat):
     """
     Returns the minimum representable value in a specific fixed-point format.
     """
-    if cl_fix_is_wide(r_fmt):
-        return WideFix.min_value(r_fmt)._data
+    if cl_fix_is_wide(fmt):
+        return WideFix.min_value(fmt)._data
     else:
-        return NarrowFix.min_value(r_fmt)._data
+        return NarrowFix.min_value(fmt)._data
 
+
+def cl_fix_format_to_string(fmt : FixFormat) -> str:
+    """
+    Converts a FixFormat to string.
+    """
+    return str(fmt)
+
+
+def cl_fix_in_range(a, a_fmt : FixFormat,
+                    r_fmt : FixFormat,
+                    rnd : FixRound = FixRound.Trunc_s):
+    """
+    Determines if the input values could be represented in r_fmt without saturation.
+    """
+    rounded_fmt = FixFormat.for_round(a_fmt, r_fmt.F, rnd)
+    rounded = cl_fix_round(a, a_fmt, rounded_fmt, rnd)
+    lo = np.where(rounded < cl_fix_min_value(r_fmt), False, True)
+    hi = np.where(rounded > cl_fix_max_value(r_fmt), False, True)
+    return np.where(np.logical_and(lo,hi), True, False)
+
+###################################################################################################
+# Data conversions
+###################################################################################################
 
 def cl_fix_from_real(a, r_fmt : FixFormat, saturate : FixSaturate = FixSaturate.SatWarn_s):
     """
@@ -119,6 +154,23 @@ def cl_fix_to_integer(a, a_fmt : FixFormat):
     else:
         return NarrowFix(a, a_fmt, copy=False).to_integer()
 
+
+def cl_fix_to_real(a, a_fmt : FixFormat):
+    """
+    Converts from fixed-point to normalized float data.
+    
+    Example: cl_fix_to_real(2.5, FixFormat(0, 2, 1)) = 2.5
+    """
+    a = _clean_input(a)
+    
+    if cl_fix_is_wide(a_fmt):
+        return WideFix(a, a_fmt, copy=False).to_real()
+    else:
+        return a
+
+###################################################################################################
+# Format conversions
+###################################################################################################
 
 def cl_fix_round(a, a_fmt : FixFormat, r_fmt : int, rnd : FixRound):
     """
@@ -185,19 +237,9 @@ def cl_fix_resize(a, a_fmt : FixFormat,
 
     return result
 
-
-def cl_fix_in_range(a, a_fmt : FixFormat,
-                    r_fmt : FixFormat,
-                    rnd : FixRound = FixRound.Trunc_s):
-    """
-    Determines if the input values could be represented in r_fmt without saturation.
-    """
-    rounded_fmt = FixFormat.for_round(a_fmt, r_fmt.F, rnd)
-    rounded = cl_fix_round(a, a_fmt, rounded_fmt, rnd)
-    lo = np.where(rounded < cl_fix_min_value(r_fmt), False, True)
-    hi = np.where(rounded > cl_fix_max_value(r_fmt), False, True)
-    return np.where(np.logical_and(lo,hi), True, False)
-
+###################################################################################################
+# Arithmetic operations
+###################################################################################################
 
 def cl_fix_abs(a, a_fmt : FixFormat,
                r_fmt : FixFormat = None,
@@ -394,28 +436,9 @@ def cl_fix_shift(a, a_fmt : FixFormat,
     mid = a << shift
     return cl_fix_resize(mid._data, mid_fmt, r_fmt, rnd, sat)
 
-
-# Function aliases
-cl_fix_add_fmt = FixFormat.for_add
-cl_fix_sub_fmt = FixFormat.for_sub
-cl_fix_addsub_fmt = FixFormat.for_addsub
-cl_fix_mult_fmt = FixFormat.for_mult
-cl_fix_neg_fmt = FixFormat.for_neg
-cl_fix_abs_fmt = FixFormat.for_abs
-cl_fix_shift_fmt = FixFormat.for_shift
-cl_fix_round_fmt = FixFormat.for_round
-cl_fix_union_fmt = FixFormat.union
-
 ###################################################################################################
 # Simulation utility functions (not available in VHDL)
 ###################################################################################################
-
-def cl_fix_format_to_string(fmt : FixFormat) -> str:
-    """
-    Converts a FixFormat to string.
-    """
-    return str(fmt)
-
 
 def cl_fix_write_formats(fmts, names, filename : str):
     """
