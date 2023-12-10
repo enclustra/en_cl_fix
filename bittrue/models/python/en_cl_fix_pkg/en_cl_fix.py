@@ -452,7 +452,7 @@ def cl_fix_random(shape, fmt : FixFormat):
         n = np.prod(shape)
         xint = np.empty((n,), dtype=object)
         for i in range(n):
-            xint[i] = random.randrange(fmt_min, fmt_max+1)
+            xint[i] = random.randrange(int(fmt_min), int(fmt_max)+1)
         
         return WideFix(xint.reshape(shape), fmt)._data
     else:
