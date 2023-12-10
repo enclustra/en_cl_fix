@@ -170,19 +170,18 @@ class WideFix:
         fmt = self._fmt
         
         # Calculate number of uint64s needed per element
-        fmtWidth = fmt.width
-        nInts = (fmtWidth + 63) // 64  # ceil(width / 64)
+        n_ints = (fmt.width + 63) // 64  # ceil(width / 64)
 
         # Cast to unsigned by reintepreting the sign bit
-        val = np.where(val < 0, val + 2**fmtWidth, val)
+        val = np.where(val < 0, val + 2**fmt.width, val)
 
         # Populate 2D uint64 array
-        uint64Array = np.empty((nInts,) + val.shape, dtype='uint64')
-        for i in range(nInts):
-            uint64Array[i,:] = val % 2**64
+        u64_array = np.empty((n_ints,) + val.shape, dtype='uint64')
+        for i in range(n_ints):
+            u64_array[i,:] = val % 2**64
             val >>= 64
         
-        return uint64Array
+        return u64_array
 
     def round(self, r_fmt : FixFormat, rnd : FixRound = FixRound.Trunc_s):
         """
