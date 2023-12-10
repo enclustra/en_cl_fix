@@ -100,8 +100,8 @@ for aS in aS_values:
                             + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
                         # Check int bits are necessary
-                        smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
-                        assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "add: Format is excessively wide." \
+                        smaller_fmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
+                        assert rmax > cl_fix_max_value(smaller_fmt) or rmin < cl_fix_min_value(smaller_fmt), "add: Format is excessively wide." \
                             + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
                         # The optimal number of frac bits is trivial: max(a_fmt.F, b_fmt.F)
@@ -128,8 +128,8 @@ for aS in aS_values:
                             + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
                         # Check int bits are necessary
-                        smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
-                        assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "sub: Format is excessively wide." \
+                        smaller_fmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
+                        assert rmax > cl_fix_max_value(smaller_fmt) or rmin < cl_fix_min_value(smaller_fmt), "sub: Format is excessively wide." \
                             + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
                         # The optimal number of frac bits is trivial: max(a_fmt.F, b_fmt.F)
@@ -156,8 +156,8 @@ for aS in aS_values:
                             + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
                         # Check int bits are necessary
-                        smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
-                        assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "addsub: Format is excessively wide." \
+                        smaller_fmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
+                        assert rmax > cl_fix_max_value(smaller_fmt) or rmin < cl_fix_min_value(smaller_fmt), "addsub: Format is excessively wide." \
                             + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
                         # The optimal number of frac bits is trivial: max(a_fmt.F, b_fmt.F)
@@ -198,8 +198,8 @@ for aS in aS_values:
                         
                         # Check int bits are necessary
                         if r_fmt.I + r_fmt.F > 0:
-                            smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
-                            assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "mult: Format is excessively wide." \
+                            smaller_fmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
+                            assert rmax > cl_fix_max_value(smaller_fmt) or rmin < cl_fix_min_value(smaller_fmt), "mult: Format is excessively wide." \
                                 + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
                         # The optimal number of frac bits is straightforward: a_fmt.F + b_fmt.F. For example,
@@ -229,8 +229,8 @@ for aS in aS_values:
             
             # Check int bits are necessary
             if r_fmt.I + r_fmt.F > 0:
-                smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
-                assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "neg: Format is excessively wide." \
+                smaller_fmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
+                assert rmax > cl_fix_max_value(smaller_fmt) or rmin < cl_fix_min_value(smaller_fmt), "neg: Format is excessively wide." \
                     + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
             
             # The optimal number of frac bits is trivial: a_fmt.F
@@ -257,8 +257,8 @@ for aS in aS_values:
                 + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
             
             # Check int bits are necessary
-            smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
-            assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "abs: Format is excessively wide." \
+            smaller_fmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
+            assert rmax > cl_fix_max_value(smaller_fmt) or rmin < cl_fix_min_value(smaller_fmt), "abs: Format is excessively wide." \
                 + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
             
             # The optimal number of frac bits is trivial: a_fmt.F
@@ -292,8 +292,8 @@ for aS in aS_values:
                     
                     # Check int bits are necessary
                     if r_fmt.I + r_fmt.F > 0:
-                        smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
-                        assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "shift: Format is excessively wide." \
+                        smaller_fmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
+                        assert rmax > cl_fix_max_value(smaller_fmt) or rmin < cl_fix_min_value(smaller_fmt), "shift: Format is excessively wide." \
                             + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}, min_shift: {min_shift}, max_shift: {max_shift}"
                     
                     # The optimal number of frac bits is trivial: a_fmt.F - min_shift
