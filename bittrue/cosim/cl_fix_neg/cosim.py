@@ -74,7 +74,7 @@ def run():
                 
                 # Generate A data
                 a = get_data(a_fmt)
-                a_wide = WideFix.from_narrowfix(a, a_fmt)
+                a_wide = WideFix.from_narrowfix(NarrowFix(a, a_fmt))
                 
                 #########
                 # r_fmt #

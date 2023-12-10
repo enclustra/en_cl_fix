@@ -29,7 +29,7 @@ class NarrowFix:
     @staticmethod
     def from_real(a, r_fmt : FixFormat, saturate : FixSaturate = FixSaturate.SatWarn_s):
         """
-        Converts from floating-point to fixed-point with half-up rounding and saturation.
+        Converts from floating-point to NarrowFix, with half-up rounding and saturation.
         
         Note: If a different rounding mode is needed, or if saturation is not desired, then use
         resize().
@@ -60,9 +60,9 @@ class NarrowFix:
     @staticmethod
     def from_integer(a, a_fmt : FixFormat):
         """
-        Converts from unnormalized integer data to fixed-point.
+        Converts from unnormalized integer data to NarrowFix.
         
-        Example: from_integer(5, FixFormat(0, 2, 1)) = 2.5
+        Example: from_integer(5, FixFormat(0, 2, 1)) = NarrowFix(2.5, FixFormat(0, 2, 1)).
         """
         value = np.array(a/2**a_fmt.F, dtype=np.float64)
         if not np.all(NarrowFix(value, a_fmt).in_range(a_fmt)):
@@ -71,32 +71,32 @@ class NarrowFix:
     
     @staticmethod
     def max_value(fmt : FixFormat):
+        """
+        Calculates the maximum representable value for a given FixFormat.
+        """
         return NarrowFix(np.array(2.0**fmt.I - 2.0**(-fmt.F)), fmt, copy=False)
     
     @staticmethod
     def min_value(fmt : FixFormat):
+        """
+        Calculates the minimum representable value for a given FixFormat.
+        """
         min_val = -2.0**fmt.I if fmt.S == 1 else 0.0
         return NarrowFix(np.array(min_val), fmt, copy=False)
     
     @property
     def data(self):
+        """
+        Returns a copy of the internal data array.
+        """
         return self._data.copy()
     
     @property
     def fmt(self):
+        """
+        Returns a copy of the fixed-point format.
+        """
         return shallow_copy(self._fmt)
-    
-    def __repr__(self):
-        return (
-            "narrow_fix : " + repr(self._fmt) + "\n"
-            + repr(self._data)
-        )
-    
-    def __str__(self):
-        return (
-            f"narrow_fix {self._fmt}\n"
-            f"{self._data}"
-        )
     
     def to_integer(self):
         """
@@ -118,7 +118,7 @@ class NarrowFix:
     
     def round(self, r_fmt, rnd : FixRound):
         """
-        Performs rounding (when the number of fractional bits is being reduced).
+        Returns a rounded copy (when the number of LSBs is reduced).
         """
         assert r_fmt == FixFormat.ForRound(self._fmt, r_fmt.F, rnd), "NarrowFix.round: Invalid result format. Use FixFormat.ForRound()."
         
@@ -151,7 +151,7 @@ class NarrowFix:
     
     def saturate(self, r_fmt : FixFormat, sat : FixSaturate):
         """
-        Performs saturation (when the number of integer/sign bits is being reduced).
+        Returns a saturated copy (when the number of MSBs is reduced).
         """
         data = self.data
         fmt = self._fmt
@@ -207,7 +207,7 @@ class NarrowFix:
 
     def resize(self, r_fmt : FixFormat, rnd : FixRound = FixRound.Trunc_s, sat : FixSaturate = FixSaturate.None_s):
         """
-        Resizes data values (with rounding, then saturation) to fit a new fixed-point format.
+        Returns a resized (rounded and saturated copy).
         """
         # Round
         rounded_fmt = FixFormat.ForRound(self._fmt, r_fmt.F, rnd)
@@ -356,3 +356,14 @@ class NarrowFix:
         assert isinstance(other, NarrowFix), "NarrowFix can only be compared with NarrowFix. Try _data."
         return len(self._data)
     
+    def __repr__(self):
+        return (
+            "narrow_fix : " + repr(self._fmt) + "\n"
+            + repr(self._data)
+        )
+    
+    def __str__(self):
+        return (
+            f"narrow_fix {self._fmt}\n"
+            f"{self._data}"
+        )

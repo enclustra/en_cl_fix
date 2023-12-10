@@ -104,8 +104,8 @@ def run():
                             do_add = np.concatenate((np.zeros(len(a_all)), np.ones(len(a_all)))).astype(bool)
                             a_all = repeat_whole_array(a_all, 2)
                             b_all = repeat_whole_array(b_all, 2)
-                            a_wide = WideFix.from_narrowfix(a_all, a_fmt)
-                            b_wide = WideFix.from_narrowfix(b_all, b_fmt)
+                            a_wide = WideFix.from_narrowfix(NarrowFix(a_all, a_fmt))
+                            b_wide = WideFix.from_narrowfix(NarrowFix(b_all, b_fmt))
                             
                             #########
                             # r_fmt #

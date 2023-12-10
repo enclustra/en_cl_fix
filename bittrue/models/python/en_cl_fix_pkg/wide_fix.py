@@ -30,10 +30,12 @@ from .en_cl_fix_types import *
 
 class WideFix:
     
-    # Construct WideFix object from internal integer data representation and FixFormat.
-    # Example: the fixed-point value 3.0 in FixFormat(0,2,4) has internal data value 3.0*2**4 = 48
-    # and *not* 3.
     def __init__(self, data, fmt : FixFormat, copy=True):
+        """
+        Constructs a WideFix object from the internal integer data representation.
+        Example: the fixed-point value 3.0 in FixFormat(0,2,4) has internal data value 3.0*2**4 =
+        48 (and *not* 3).
+        """
         if isinstance(data, int):
             data = np.array(data, dtype=object)
         assert data.dtype == object, "WideFix: requires arbitrary-precision int (dtype == object)."
@@ -45,21 +47,20 @@ class WideFix:
         # Always copy the format (very small)
         self._fmt = shallow_copy(fmt)
     
-    # Convert from float data to WideFix object, with quantization and bounds checks.
     @staticmethod
     def from_real(a, r_fmt : FixFormat, saturate : FixSaturate = FixSaturate.SatWarn_s):
-        # Saturation is mandatory in this function (because wrapping has not been implemented)
-        if saturate != FixSaturate.SatWarn_s and saturate != FixSaturate.Sat_s:
-            raise ValueError(f"WideFix.from_real: Unsupported saturation mode {str(saturate)}")
-        if isinstance(a, float):
-            a = np.array(a)
+        """
+        Converts from floating-point to WideFix, with half-up rounding and saturation.
         
+        Note: If a different rounding mode is needed, or if saturation is not desired, then use
+        resize().
+        """
         # Saturation warning
         if (saturate == FixSaturate.SatWarn_s) or (saturate == FixSaturate.Warn_s):
-            amax_float = a.max()
-            amin_float = a.min()
-            amax = WideFix.from_narrowfix(np.array([amax_float]), r_fmt)._data
-            amin = WideFix.from_narrowfix(np.array([amin_float]), r_fmt)._data
+            amax_float = np.max(a)
+            amin_float = np.min(a)
+            amax = int(amax_float*2.0**r_fmt.F)
+            amin = int(amin_float*2.0**r_fmt.F)
             if amax > WideFix.max_value(r_fmt)._data:
                 warnings.warn(f"from_real: Number {amax_float} exceeds maximum for format {r_fmt}", Warning)
             if amin < WideFix.min_value(r_fmt)._data:
@@ -74,23 +75,24 @@ class WideFix:
             x = np.where(x > WideFix.max_value(r_fmt)._data, WideFix.max_value(r_fmt)._data, x)
             x = np.where(x < WideFix.min_value(r_fmt)._data, WideFix.min_value(r_fmt)._data, x)
         else:
-            # Wrapping is not supported
-            None
+            # Wrapping has not been implemented
+            raise NotImplementedError(f"WideFix: Unsupported saturation mode {str(saturate)}")
         
         return WideFix(x, r_fmt)
     
-    # Convert from narrow (double-precision float) data to WideFix object, without bounds checks.
     @staticmethod
-    def from_narrowfix(data : np.ndarray, fmt : FixFormat):
-        data = np.array(data, ndmin=1)
-        assert data.dtype == float, "from_narrowfix : requires input dtype == float."
-        int_data = (data*2.0**fmt.F).astype(object)
-        int_data = np.floor(int_data)
-        return WideFix(int_data, fmt)
+    def from_narrowfix(a : "NarrowFix"):
+        """
+        Converts from NarrowFix to WideFix, without quantization or bounds checks.
+        """
+        int_data = np.floor((a._data*2.0**a._fmt.F).astype(object))
+        return WideFix(int_data, a._fmt, copy=False)
     
-    # Convert from uint64 array (e.g. from MATLAB).
     @staticmethod
     def from_uint64_array(data : np.ndarray, fmt : FixFormat):
+        """
+        Converts from uint64 array (e.g. from MATLAB) to WideFix.
+        """
         assert data.dtype == 'uint64', "from_uint64_array : requires input dtype == uint64."
         # Weighted sum to recombine uint64s into wide *unsigned* integers
         weights = 2**(64*np.arange(data.shape[0]).astype(object))
@@ -99,24 +101,30 @@ class WideFix:
         val = np.where(val >= 2**(fmt.I+fmt.F), val - 2**(fmt.I+fmt.F+1), val)
         return WideFix(val, fmt)
     
-    # Calculate maximum representable internal data value (WideFix._data) for a given FixFormat.
     @staticmethod
     def max_value(fmt : FixFormat):
+        """
+        Calculates the maximum representable value for a given FixFormat.
+        """
         val = 2**(fmt.I+fmt.F)-1
         return WideFix(val, fmt, copy=False)
     
-    # Calculate minimum representable internal data value (WideFix._data) for a given FixFormat.
     @staticmethod
     def min_value(fmt : FixFormat):
+        """
+        Calculates the minimum representable value for a given FixFormat.
+        """
         if fmt.S == 1:
             val = -2**(fmt.I+fmt.F)
         else:
             val = 0
         return WideFix(val, fmt, copy=False)
     
-    # Align binary points of 2 or more WideFix objects (e.g. to perform numerical comparisons).
     @staticmethod
     def align_binary_points(values):
+        """
+        Aligns the binary points of 2 or more WideFix objects (e.g. to perform comparisons).
+        """
         values = deep_copy(values)
         
         # Find the maximum number of frac bits
@@ -129,27 +137,36 @@ class WideFix:
 
         return values
     
-    # Get internal integer data
     @property
     def data(self):
+        """
+        Returns a copy of the internal data array.
+        """
         return self._data.copy()
     
-    # Get fixed-point format
     @property
     def fmt(self):
+        """
+        Returns a copy of the fixed-point format.
+        """
         return shallow_copy(self._fmt)
     
-    # Get data in human-readable floating-point format (with loss of precision), with bounds checks
     def to_real(self, warn=True):
+        """
+        Returns a human-readable (floating-point) approximation of the  WideFxp data.
+        Includes boundes check to report possible loss of precision.
+        """
         if warn:
             if (self.fmt.S == 1 and (np.any(self.data < -2**52) or np.any(self.data >= 2**52))) \
                 or (self.fmt.S == 0 and np.any(self.data >= 2**53)):
                 warnings.warn("WideFix.to_real: Possible loss of precision when converting WideFix data to float!", Warning)
         return np.array(self._data/2.0**self._fmt.F, dtype=np.float64)
-
-    # Pack data into uint64 array (e.g. for passing to MATLAB).
-    # Data is packed into columns, so result[:,k] corresponds to data[k].
+    
     def to_uint64_array(self):
+        """
+        Packs WideFxp data into a uint64 array (e.g. for passing to MATLAB).
+        Data is packed into columns, so result[:,k] corresponds to data[k].
+        """
         val = self._data
         fmt = self._fmt
         
@@ -168,8 +185,10 @@ class WideFix:
         
         return uint64Array
 
-    # Create a new WideFix object with a new fixed-point format after rounding.
     def round(self, r_fmt : FixFormat, rnd : FixRound = FixRound.Trunc_s):
+        """
+        Returns a rounded copy (when the number of LSBs is reduced).
+        """
         assert r_fmt == FixFormat.ForRound(self._fmt, r_fmt.F, rnd), "round: Invalid result format. Use FixFormat.ForRound()."
         
         # Copy object data so self is not modified and take floor to enforce int object type
@@ -229,8 +248,10 @@ class WideFix:
             
         return WideFix(val, r_fmt)
 
-    # Create a new WideFix object with a new fixed-point format after saturation.
     def saturate(self, r_fmt : FixFormat, sat : FixSaturate = FixSaturate.None_s):
+        """
+        Returns a saturated copy (when the number of MSBs is reduced).
+        """
         # Copy object data so self is not modified and take floor to enforce int object type
         val = np.floor(self._data)
         
@@ -254,11 +275,12 @@ class WideFix:
             
         return WideFix(val, r_fmt)
 
-    # Create a new WideFix object with a new fixed-point format after rounding and saturation.
     def resize(self, r_fmt : FixFormat,
                rnd : FixRound = FixRound.Trunc_s,
                sat : FixSaturate = FixSaturate.None_s):
-        
+        """
+        Returns a resized (rounded and saturated copy).
+        """
         # Round
         roundedFmt = FixFormat.ForRound(self._fmt, r_fmt.F, rnd)
         rounded = self.round(roundedFmt, rnd)
@@ -384,71 +406,7 @@ class WideFix:
                 # Resize to the shared intermediate format
                 mid._data[i] = temp.resize(mid_fmt)._data[0]
         
-        return mid.resize(r_fmt, rnd, sat) 
-    
-    # Create a new WideFix object with the most significant bit (- index) set to "value"
-    def set_msb(self, index, value):
-        if np.any(value > 1) or np.any(value < 0):
-            raise Exception("WideFix.set_msb: only 1 and 0 allowed for value")
-        fmt = self.fmt
-        if fmt.S == 1 and index == 0:
-            weight = -2**(fmt.width-1-index)
-        else:
-            weight = 2**(fmt.width-1-index)
-        val = np.where(self.get_msb(index) != value, self.data - weight*(-1)**value, self.data)
-        return WideFix(val, fmt)
-    
-    # Get most significant bit (- index)
-    def get_msb(self, index):
-        fmt = self._fmt
-        if fmt.S == 1 and index == 0:
-            return (self._data < 0).astype(int)
-        else:
-            shift = fmt.width-1 - index
-            return ((self._data >> shift) % 2).astype(int)
-    
-    # Discard fractional bits (keeping integer bits). Rounds towards -Inf.
-    def floor(self):
-        fmt = self._fmt
-        r_fmt = FixFormat(fmt.S, fmt.I, 0)
-        if fmt.F >= 0:
-            return WideFix(self._data >> fmt.F, r_fmt)
-        else:
-            return WideFix(self._data << -fmt.F, r_fmt)
-    
-    # Get the integer part
-    def int_part(self):
-        return self.floor()
-    
-    # Get the fractional part.
-    # Note: Result has implicit frac bits if I<0.
-    def frac_part(self):
-        fmt = self._fmt
-        r_fmt = FixFormat(False, min(fmt.I, 0), fmt.F)
-        # Drop the sign bit
-        val = self._data
-        if fmt.S == 1:
-            offset = 2**(fmt.F+fmt.I)
-            val = np.where(val < 0, val + offset, val)
-        # Retain fractional LSBs
-        val = val % 2**r_fmt.width
-        return WideFix(val, r_fmt)
-    
-    # Default string representations: Convert to float for consistency with "narrow" en_cl_fix_pkg.
-    # Note: To print raw internal integer data, use print(x.data).
-    def __repr__(self):
-        return (
-            "WideFix : " + repr(self.fmt) + "\n"
-            + "Note: Possible loss of precision in float printout.\n"
-            + repr(self.to_real(warn=False))
-        )
-    
-    def __str__(self):
-        return (
-            f"WideFix {self.fmt}\n"
-            f"Note: Possible loss of precision in float printout.\n"
-            f"{self.to_real(warn=False)}"
-        )
+        return mid.resize(r_fmt, rnd, sat)
     
     # "+" operator
     def __add__(self, other):
@@ -503,3 +461,19 @@ class WideFix:
     # len()
     def __len__(self):
         return len(self._data)
+
+    # Default string representations: Convert to float for consistency with "narrow" en_cl_fix_pkg.
+    # Note: To print raw internal integer data, use print(x._data).
+    def __repr__(self):
+        return (
+            "WideFix : " + repr(self.fmt) + "\n"
+            + "Note: Possible loss of precision in float printout.\n"
+            + repr(self.to_real(warn=False))
+        )
+    
+    def __str__(self):
+        return (
+            f"WideFix {self.fmt}\n"
+            f"Note: Possible loss of precision in float printout.\n"
+            f"{self.to_real(warn=False)}"
+        )

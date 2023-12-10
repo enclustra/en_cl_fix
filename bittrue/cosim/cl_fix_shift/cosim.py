@@ -78,7 +78,7 @@ def run():
                 
                 # Generate A data
                 a = get_data(a_fmt)
-                a_wide = WideFix.from_narrowfix(a, a_fmt)
+                a_wide = WideFix.from_narrowfix(NarrowFix(a, a_fmt))
                 
                 for shift in shift_values:
                     shiftFmt = FixFormat.ForShift(a_fmt, shift)

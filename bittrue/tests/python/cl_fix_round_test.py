@@ -107,7 +107,7 @@ for aS in aS_values:
                     r = cl_fix_round(a, a_fmt, r_fmt, rnd)
                     
                     # Repeat using WideFix (but still with narrow data)
-                    r_wide = WideFix.from_narrowfix(a, a_fmt).round(r_fmt, rnd).to_real()
+                    r_wide = WideFix.from_narrowfix(NarrowFix(a, a_fmt)).round(r_fmt, rnd).to_real()
                     
                     # Local checker function
                     expected = round_check(a, a_fmt, r_fmt, rnd)
