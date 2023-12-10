@@ -25,12 +25,12 @@ import numpy as np
 # Config
 ###################################################################################################
 
-# aFmt test points
+# a_fmt test points
 aS_values = [0,1]
 aI_values = np.arange(-6,1+6)
 aF_values = np.arange(-6,1+6)
 
-# bFmt test points
+# b_fmt test points
 bS_values = [0,1]
 bI_values = np.arange(-6,1+6)
 bF_values = np.arange(-6,1+6)
@@ -49,9 +49,9 @@ test_r_fmt = []
 test_rnd = []
 test_sat = []
 
-########
-# aFmt #
-########
+#########
+# a_fmt #
+#########
 for aS in aS_values:
     for aI in aI_values:
         for aF in aF_values:
@@ -59,14 +59,14 @@ for aS in aS_values:
             if aS+aI+aF < 1:
                 continue
             
-            aFmt = FixFormat(aS, aI, aF)
+            a_fmt = FixFormat(aS, aI, aF)
             
-            amin = cl_fix_min_value(aFmt)
-            amax = cl_fix_max_value(aFmt)
+            amin = cl_fix_min_value(a_fmt)
+            amax = cl_fix_max_value(a_fmt)
             
-            ########
-            # bFmt #
-            ########
+            #########
+            # b_fmt #
+            #########
             for bS in bS_values:
                 for bI in bI_values:
                     for bF in bF_values:
@@ -74,10 +74,10 @@ for aS in aS_values:
                         if bS+bI+bF < 1:
                             continue
                         
-                        bFmt = FixFormat(bS, bI, bF)
+                        b_fmt = FixFormat(bS, bI, bF)
                         
-                        bmin = cl_fix_min_value(bFmt)
-                        bmax = cl_fix_max_value(bFmt)
+                        bmin = cl_fix_min_value(b_fmt)
+                        bmax = cl_fix_max_value(b_fmt)
                         
                         ##############
                         # cl_fix_add #
@@ -91,21 +91,21 @@ for aS in aS_values:
                         assert rmin == np.amin([amin + bmin, amin + bmax, amax + bmin, amax + bmax])
                         
                         # Format to test
-                        rFmt = FixFormat.for_add(aFmt, bFmt)
+                        r_fmt = FixFormat.for_add(a_fmt, b_fmt)
                         
                         # Check int bits are sufficient
-                        assert rmax <= cl_fix_max_value(rFmt), "add: Max value exceeded" \
-                            + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
-                        assert rmin >= cl_fix_min_value(rFmt), "add: Min value exceeded" \
-                            + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                        assert rmax <= cl_fix_max_value(r_fmt), "add: Max value exceeded" \
+                            + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
+                        assert rmin >= cl_fix_min_value(r_fmt), "add: Min value exceeded" \
+                            + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
                         # Check int bits are necessary
-                        smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
+                        smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
                         assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "add: Format is excessively wide." \
-                            + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                            + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
-                        # The optimal number of frac bits is trivial: max(aFmt.F, bFmt.F)
-                        assert rFmt.F == max(aFmt.F, bFmt.F), "add: Unexpected number of frac bits"
+                        # The optimal number of frac bits is trivial: max(a_fmt.F, b_fmt.F)
+                        assert r_fmt.F == max(a_fmt.F, b_fmt.F), "add: Unexpected number of frac bits"
                         
                         ##############
                         # cl_fix_sub #
@@ -119,21 +119,21 @@ for aS in aS_values:
                         assert rmin == np.amin([amin - bmin, amin - bmax, amax - bmin, amax - bmax])
                         
                         # Format to test
-                        rFmt = FixFormat.for_sub(aFmt, bFmt)
+                        r_fmt = FixFormat.for_sub(a_fmt, b_fmt)
                         
                         # Check int bits are sufficient
-                        assert rmax <= cl_fix_max_value(rFmt), "sub: Max value exceeded" \
-                            + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
-                        assert rmin >= cl_fix_min_value(rFmt), "sub: Min value exceeded" \
-                            + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                        assert rmax <= cl_fix_max_value(r_fmt), "sub: Max value exceeded" \
+                            + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
+                        assert rmin >= cl_fix_min_value(r_fmt), "sub: Min value exceeded" \
+                            + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
                         # Check int bits are necessary
-                        smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
+                        smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
                         assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "sub: Format is excessively wide." \
-                            + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                            + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
-                        # The optimal number of frac bits is trivial: max(aFmt.F, bFmt.F)
-                        assert rFmt.F == max(aFmt.F, bFmt.F), "sub: Unexpected number of frac bits"
+                        # The optimal number of frac bits is trivial: max(a_fmt.F, b_fmt.F)
+                        assert r_fmt.F == max(a_fmt.F, b_fmt.F), "sub: Unexpected number of frac bits"
                         
                         #################
                         # cl_fix_addsub #
@@ -147,28 +147,28 @@ for aS in aS_values:
                         assert rmin == np.amin([amin + bmin, amin + bmax, amax + bmin, amax + bmax, amin - bmin, amin - bmax, amax - bmin, amax - bmax])
                         
                         # Format to test
-                        rFmt = FixFormat.for_addsub(aFmt, bFmt)
+                        r_fmt = FixFormat.for_addsub(a_fmt, b_fmt)
                         
                         # Check int bits are sufficient
-                        assert rmax <= cl_fix_max_value(rFmt), "addsub: Max value exceeded" \
-                            + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
-                        assert rmin >= cl_fix_min_value(rFmt), "addsub: Min value exceeded" \
-                            + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                        assert rmax <= cl_fix_max_value(r_fmt), "addsub: Max value exceeded" \
+                            + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
+                        assert rmin >= cl_fix_min_value(r_fmt), "addsub: Min value exceeded" \
+                            + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
                         # Check int bits are necessary
-                        smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
+                        smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
                         assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "addsub: Format is excessively wide." \
-                            + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                            + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
-                        # The optimal number of frac bits is trivial: max(aFmt.F, bFmt.F)
-                        assert rFmt.F == max(aFmt.F, bFmt.F), "addsub: Unexpected number of frac bits"
+                        # The optimal number of frac bits is trivial: max(a_fmt.F, b_fmt.F)
+                        assert r_fmt.F == max(a_fmt.F, b_fmt.F), "addsub: Unexpected number of frac bits"
                         
                         ###############
                         # cl_fix_mult #
                         ###############
                         
                         # Calculate the max result
-                        if aFmt.S == 1 and bFmt.S == 1:
+                        if a_fmt.S == 1 and b_fmt.S == 1:
                             rmax = amin * bmin  # -max*-max = +max
                         else:
                             rmax = amax * bmax
@@ -176,36 +176,36 @@ for aS in aS_values:
                         assert rmax == np.amax([amin * bmin, amin * bmax, amax * bmin, amax * bmax])
                         
                         # Calculate the min result
-                        if aFmt.S == 0 and bFmt.S == 0:
+                        if a_fmt.S == 0 and b_fmt.S == 0:
                             rmin = amin * bmin
-                        elif aFmt.S == 0 and bFmt.S == 1:
+                        elif a_fmt.S == 0 and b_fmt.S == 1:
                             rmin = amax * bmin
-                        elif aFmt.S == 1 and bFmt.S == 0:
+                        elif a_fmt.S == 1 and b_fmt.S == 0:
                             rmin = amin * bmax
-                        elif aFmt.S == 1 and bFmt.S == 1:
+                        elif a_fmt.S == 1 and b_fmt.S == 1:
                             rmin = min(amax * bmin, amin * bmax)
                         # Sanity check
                         assert rmin == np.amin([amin * bmin, amin * bmax, amax * bmin, amax * bmax])
                         
                         # Format to test
-                        rFmt = FixFormat.for_mult(aFmt, bFmt)
+                        r_fmt = FixFormat.for_mult(a_fmt, b_fmt)
                         
                         # Check int bits are sufficient
-                        assert rmax <= cl_fix_max_value(rFmt), "mult: Max value exceeded" \
-                            + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
-                        assert rmin >= cl_fix_min_value(rFmt), "mult: Min value exceeded" \
-                            + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                        assert rmax <= cl_fix_max_value(r_fmt), "mult: Max value exceeded" \
+                            + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
+                        assert rmin >= cl_fix_min_value(r_fmt), "mult: Min value exceeded" \
+                            + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
                         # Check int bits are necessary
-                        if rFmt.I + rFmt.F > 0:
-                            smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
+                        if r_fmt.I + r_fmt.F > 0:
+                            smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
                             assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "mult: Format is excessively wide." \
-                                + f" aFmt: {aFmt}, bFmt: {bFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                                + f" a_fmt: {a_fmt}, b_fmt: {b_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                         
-                        # The optimal number of frac bits is straightforward: aFmt.F + bFmt.F. For example,
-                        # if we take +/- 1 LSB in each representation: (+/- 2**-aFmt.F) * (+/- 2**-bFmt.F)
-                        # = +/- 2**-(aFmt.F + bFmt.F). No other inputs could need more frac bits.
-                        assert rFmt.F == aFmt.F + bFmt.F, "mult: Unexpected number of frac bits"
+                        # The optimal number of frac bits is straightforward: a_fmt.F + b_fmt.F. For example,
+                        # if we take +/- 1 LSB in each representation: (+/- 2**-a_fmt.F) * (+/- 2**-b_fmt.F)
+                        # = +/- 2**-(a_fmt.F + b_fmt.F). No other inputs could need more frac bits.
+                        assert r_fmt.F == a_fmt.F + b_fmt.F, "mult: Unexpected number of frac bits"
                     
             ##############
             # cl_fix_neg #
@@ -219,22 +219,22 @@ for aS in aS_values:
             assert rmin == np.amin([-amax, -amin])
             
             # Format to test
-            rFmt = FixFormat.for_neg(aFmt)
+            r_fmt = FixFormat.for_neg(a_fmt)
             
             # Check int bits are sufficient
-            assert rmax <= cl_fix_max_value(rFmt), "neg: Max value exceeded" \
-                + f" aFmt: {aFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
-            assert rmin >= cl_fix_min_value(rFmt), "neg: Min value exceeded" \
-                + f" aFmt: {aFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+            assert rmax <= cl_fix_max_value(r_fmt), "neg: Max value exceeded" \
+                + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
+            assert rmin >= cl_fix_min_value(r_fmt), "neg: Min value exceeded" \
+                + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
             
             # Check int bits are necessary
-            if rFmt.I + rFmt.F > 0:
-                smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
+            if r_fmt.I + r_fmt.F > 0:
+                smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
                 assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "neg: Format is excessively wide." \
-                    + f" aFmt: {aFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                    + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
             
-            # The optimal number of frac bits is trivial: aFmt.F
-            assert rFmt.F == aFmt.F, "neg: Unexpected number of frac bits"
+            # The optimal number of frac bits is trivial: a_fmt.F
+            assert r_fmt.F == a_fmt.F, "neg: Unexpected number of frac bits"
             
             ##############
             # cl_fix_abs #
@@ -248,21 +248,21 @@ for aS in aS_values:
             assert rmin == np.amin([amax, amin, -amax, -amin])
             
             # Format to test
-            rFmt = FixFormat.for_abs(aFmt)
+            r_fmt = FixFormat.for_abs(a_fmt)
             
             # Check int bits are sufficient
-            assert rmax <= cl_fix_max_value(rFmt), "abs: Max value exceeded" \
-                + f" aFmt: {aFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
-            assert rmin >= cl_fix_min_value(rFmt), "abs: Min value exceeded" \
-                + f" aFmt: {aFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+            assert rmax <= cl_fix_max_value(r_fmt), "abs: Max value exceeded" \
+                + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
+            assert rmin >= cl_fix_min_value(r_fmt), "abs: Min value exceeded" \
+                + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
             
             # Check int bits are necessary
-            smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
+            smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
             assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "abs: Format is excessively wide." \
-                + f" aFmt: {aFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
             
-            # The optimal number of frac bits is trivial: aFmt.F
-            assert rFmt.F == aFmt.F, "abs: Unexpected number of frac bits"
+            # The optimal number of frac bits is trivial: a_fmt.F
+            assert r_fmt.F == a_fmt.F, "abs: Unexpected number of frac bits"
             
             ################
             # cl_fix_shift #
@@ -282,20 +282,20 @@ for aS in aS_values:
                     assert rmin == np.amin([amax * 2.0**max_shift, amax * 2.0**min_shift, amin * 2.0**max_shift, amin * 2.0**min_shift])
                     
                     # Format to test
-                    rFmt = FixFormat.for_shift(aFmt, min_shift, max_shift)
+                    r_fmt = FixFormat.for_shift(a_fmt, min_shift, max_shift)
                     
                     # Check int bits are sufficient
-                    assert rmax <= cl_fix_max_value(rFmt), "shift: Max value exceeded" \
-                        + f" aFmt: {aFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
-                    assert rmin >= cl_fix_min_value(rFmt), "shift: Min value exceeded" \
-                        + f" aFmt: {aFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}"
+                    assert rmax <= cl_fix_max_value(r_fmt), "shift: Max value exceeded" \
+                        + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
+                    assert rmin >= cl_fix_min_value(r_fmt), "shift: Min value exceeded" \
+                        + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}"
                     
                     # Check int bits are necessary
-                    if rFmt.I + rFmt.F > 0:
-                        smallerFmt = FixFormat(rFmt.S, rFmt.I - 1, rFmt.F)
+                    if r_fmt.I + r_fmt.F > 0:
+                        smallerFmt = FixFormat(r_fmt.S, r_fmt.I - 1, r_fmt.F)
                         assert rmax > cl_fix_max_value(smallerFmt) or rmin < cl_fix_min_value(smallerFmt), "shift: Format is excessively wide." \
-                            + f" aFmt: {aFmt}, rFmt: {rFmt}, rmax: {rmax}, rmin: {rmin}, min_shift: {min_shift}, max_shift: {max_shift}"
+                            + f" a_fmt: {a_fmt}, r_fmt: {r_fmt}, rmax: {rmax}, rmin: {rmin}, min_shift: {min_shift}, max_shift: {max_shift}"
                     
-                    # The optimal number of frac bits is trivial: aFmt.F - min_shift
-                    assert rFmt.F == aFmt.F - min_shift, "shift: Unexpected number of frac bits"
+                    # The optimal number of frac bits is trivial: a_fmt.F - min_shift
+                    assert r_fmt.F == a_fmt.F - min_shift, "shift: Unexpected number of frac bits"
                     
