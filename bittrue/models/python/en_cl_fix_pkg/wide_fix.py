@@ -280,8 +280,8 @@ class WideFix:
         Returns a resized (rounded and saturated copy).
         """
         # Round
-        roundedFmt = FixFormat.for_round(self._fmt, r_fmt.F, rnd)
-        rounded = self.round(roundedFmt, rnd)
+        rounded_fmt = FixFormat.for_round(self._fmt, r_fmt.F, rnd)
+        rounded = self.round(rounded_fmt, rnd)
         
         # Saturate
         result = rounded.saturate(r_fmt, sat)
