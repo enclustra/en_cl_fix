@@ -56,7 +56,7 @@ class FixFormat:
     
     
     @staticmethod
-    def for_add(aFmt, bFmt):
+    def for_add(a_fmt, b_fmt):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of an
         addition, a + b.
@@ -64,50 +64,50 @@ class FixFormat:
         This is a conservative calculation (it assumes that a and b may take any values). If the
         values of a and/or b are constrained, then a narrower format may be feasible.
         """
-        assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
+        assert a_fmt.width > 0 and b_fmt.width > 0, "Data widths must be positive"
         # We must consider both extremes:
         
         # rmax = amax+bmax
-        #      = (2**aFmt.I - 2**-aFmt.F) + (2**bFmt.I - 2**-bFmt.F)
-        # If aFmt.I >= bFmt.I, then we get 1 bit of growth if:
-        #           -2**-aFmt.F + 2**bFmt.I - 2**-bFmt.F >= 0
-        # If bFmt.I >= aFmt.I, then we get 1 bit of growth if:
-        #           -2**-bFmt.F + 2**aFmt.I - 2**-aFmt.F >= 0
-        # Note that the aFmt.I == bFmt.I case is covered by either condition.
-        # We define maxFmt as the format with most int bits, and minFmt as the other. (As noted
-        # above, it doesn't matter which we treat as max/min when aFmt.I == bFmt.I). This gives a
+        #      = (2**a_fmt.I - 2**-a_fmt.F) + (2**b_fmt.I - 2**-b_fmt.F)
+        # If a_fmt.I >= b_fmt.I, then we get 1 bit of growth if:
+        #           -2**-a_fmt.F + 2**b_fmt.I - 2**-b_fmt.F >= 0
+        # If b_fmt.I >= a_fmt.I, then we get 1 bit of growth if:
+        #           -2**-b_fmt.F + 2**a_fmt.I - 2**-a_fmt.F >= 0
+        # Note that the a_fmt.I == b_fmt.I case is covered by either condition.
+        # We define max_fmt as the format with most int bits, and min_fmt as the other. (As noted
+        # above, it doesn't matter which we treat as max/min when a_fmt.I == b_fmt.I). This gives a
         # general expression for when bit-growth happens:
-        #           -2**-maxFmt.F + 2**minFmt.I - 2**-minFmt.F >= 0
+        #           -2**-max_fmt.F + 2**min_fmt.I - 2**-min_fmt.F >= 0
         # If we rearrange the expression into pure integer arithmetic, we get:
-        #      2**(minFmt.F+minFmt.I+maxFmt.F) >= 2**minFmt.F + 2**maxFmt.F
+        #      2**(min_fmt.F+min_fmt.I+max_fmt.F) >= 2**min_fmt.F + 2**max_fmt.F
         # Equality is only possible if the RHS is a power of 2, so we can remove the 2**n by
         # splitting this into two simple cases:
-        #      (1) If minFmt.F == maxFmt.F = F:
-        #          F+minFmt.I+F >= F+1
-        #          minFmt.I+F >= 1
-        #          minFmt.I+F > 0
+        #      (1) If min_fmt.F == max_fmt.F = F:
+        #          F+min_fmt.I+F >= F+1
+        #          min_fmt.I+F >= 1
+        #          min_fmt.I+F > 0
         #      (2) Else:
-        #          minFmt.F+minFmt.I+maxFmt.F > max(minFmt.F, maxFmt.F)
-        #          minFmt.I+maxFmt.F > max(minFmt.F, maxFmt.F) - minFmt.F
+        #          min_fmt.F+min_fmt.I+max_fmt.F > max(min_fmt.F, max_fmt.F)
+        #          min_fmt.I+max_fmt.F > max(min_fmt.F, max_fmt.F) - min_fmt.F
         # Clearly, the expression for (2) also covers (1). We finally simplify the expression by
         # noting that in general x+y-max(x,y) = min(x,y):
-        #          minFmt.I + min(minFmt.F, maxFmt.F) > 0
-        #          min(aFmt.I, bFmt.I) + min(aFmt.F, bFmt.F) > 0
+        #          min_fmt.I + min(min_fmt.F, max_fmt.F) > 0
+        #          min(a_fmt.I, b_fmt.I) + min(a_fmt.F, b_fmt.F) > 0
         # There is probably a more direct way to derive this simple expression.
-        rmax_growth = 1 if min(aFmt.I, bFmt.I) + min(aFmt.F, bFmt.F) > 0 else 0
+        rmax_growth = 1 if min(a_fmt.I, b_fmt.I) + min(a_fmt.F, b_fmt.F) > 0 else 0
         
         # rmin = amin+bmin
-        #     If aFmt.S = 0 and bFmt.S = 0: 0 + 0
-        #     If aFmt.S = 0 and bFmt.S = 1: 0 + -2**bFmt.I
-        #     If aFmt.S = 1 and bFmt.S = 0: -2**aFmt.I + 0
-        #     If aFmt.S = 1 and bFmt.S = 1: -2**aFmt.I + -2**bFmt.I
-        rmin_growth = 1 if aFmt.S == 1 and bFmt.S == 1 else 0
+        #     If a_fmt.S = 0 and b_fmt.S = 0: 0 + 0
+        #     If a_fmt.S = 0 and b_fmt.S = 1: 0 + -2**b_fmt.I
+        #     If a_fmt.S = 1 and b_fmt.S = 0: -2**a_fmt.I + 0
+        #     If a_fmt.S = 1 and b_fmt.S = 1: -2**a_fmt.I + -2**b_fmt.I
+        rmin_growth = 1 if a_fmt.S == 1 and b_fmt.S == 1 else 0
         
-        return FixFormat(max(aFmt.S, bFmt.S), max(aFmt.I, bFmt.I) + max(rmin_growth, rmax_growth), max(aFmt.F, bFmt.F))
+        return FixFormat(max(a_fmt.S, b_fmt.S), max(a_fmt.I, b_fmt.I) + max(rmin_growth, rmax_growth), max(a_fmt.F, b_fmt.F))
     
     
     @staticmethod
-    def for_sub(aFmt, bFmt):
+    def for_sub(a_fmt, b_fmt):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of a
         subtraction, a - b.
@@ -115,61 +115,61 @@ class FixFormat:
         This is a conservative calculation (it assumes that a and b may take any values). If the
         values of a and/or b are constrained, then a narrower format may be feasible.
         """
-        assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
+        assert a_fmt.width > 0 and b_fmt.width > 0, "Data widths must be positive"
         # We must consider both extremes:
         
         # rmax = amax-bmin
-        #     If bFmt.S = 0: rmax = (2**aFmt.I - 2**-aFmt.F) - 0
-        #     If bFmt.S = 1: rmax = (2**aFmt.I - 2**-aFmt.F) + 2**bFmt.I
-        # If bFmt.S = 0, then rmaxFmt = aFmt.
-        # If bFmt.S = 1 and aFmt.I >= bFmt.I, then we get 1 bit of growth if:
-        #                -2**-aFmt.F + 2**bFmt.I >= 0
-        #                              2**bFmt.I >= 2**-aFmt.F
-        # If bFmt.S = 1 and bFmt.I >= aFmt.I, then we get 1 bit of growth if:
-        #                -2**-aFmt.F + 2**aFmt.I >= 0
-        #                              2**aFmt.I >= 2**-aFmt.F
-        if bFmt.S == 0:
-            rmaxI = aFmt.I
+        #     If b_fmt.S = 0: rmax = (2**a_fmt.I - 2**-a_fmt.F) - 0
+        #     If b_fmt.S = 1: rmax = (2**a_fmt.I - 2**-a_fmt.F) + 2**b_fmt.I
+        # If b_fmt.S = 0, then rmax_fmt = a_fmt.
+        # If b_fmt.S = 1 and a_fmt.I >= b_fmt.I, then we get 1 bit of growth if:
+        #                -2**-a_fmt.F + 2**b_fmt.I >= 0
+        #                              2**b_fmt.I >= 2**-a_fmt.F
+        # If b_fmt.S = 1 and b_fmt.I >= a_fmt.I, then we get 1 bit of growth if:
+        #                -2**-a_fmt.F + 2**a_fmt.I >= 0
+        #                              2**a_fmt.I >= 2**-a_fmt.F
+        if b_fmt.S == 0:
+            rmaxI = a_fmt.I
         else:
-            rmax_growth = bFmt.S if min(aFmt.I, bFmt.I) >= -aFmt.F else 0
-            rmaxI = max(aFmt.I, bFmt.I) + rmax_growth
+            rmax_growth = b_fmt.S if min(a_fmt.I, b_fmt.I) >= -a_fmt.F else 0
+            rmaxI = max(a_fmt.I, b_fmt.I) + rmax_growth
         
         # rmin = amin-bmax
-        #     If aFmt.S = 0: rmin = 0 - (2**bFmt.I - 2**-bFmt.F)
-        #     If aFmt.S = 1: rmin = -2**aFmt.I - (2**bFmt.I - 2**-bFmt.F)
-        # If aFmt.S = 0 and bFmt.I = -bFmt.F, then rFmt.S=0 with no requirement on rFmt.I.
-        # If aFmt.S = 0 and bFmt.I = -bFmt.F+1, then we have a special case (power of 2) such that
-        # rmin = -2**-bFmt.F, so rFmt.S=1 and rFmt.I = -bFmt.F.
-        # If aFmt.S = 0 and (all other cases), then rFmt.S=1 and rFmt.I=bFmt.I.
-        # If aFmt.S = 1 and aFmt.I >= bFmt.I, then we get 1 bit of growth if:
-        #                       2**bFmt.I - 2**-bFmt.F > 0
-        # If aFmt.S = 1 and bFmt.I >= aFmt.I, then we get 1 bit of growth if:
-        #                       2**aFmt.I - 2**-bFmt.F > 0
-        if aFmt.S == 0:
-            if bFmt.width == 1 and bFmt.S == 1:
+        #     If a_fmt.S = 0: rmin = 0 - (2**b_fmt.I - 2**-b_fmt.F)
+        #     If a_fmt.S = 1: rmin = -2**a_fmt.I - (2**b_fmt.I - 2**-b_fmt.F)
+        # If a_fmt.S = 0 and b_fmt.I = -b_fmt.F, then r_fmt.S=0 with no requirement on r_fmt.I.
+        # If a_fmt.S = 0 and b_fmt.I = -b_fmt.F+1, then we have a special case (power of 2) such that
+        # rmin = -2**-b_fmt.F, so r_fmt.S=1 and r_fmt.I = -b_fmt.F.
+        # If a_fmt.S = 0 and (all other cases), then r_fmt.S=1 and r_fmt.I=b_fmt.I.
+        # If a_fmt.S = 1 and a_fmt.I >= b_fmt.I, then we get 1 bit of growth if:
+        #                       2**b_fmt.I - 2**-b_fmt.F > 0
+        # If a_fmt.S = 1 and b_fmt.I >= a_fmt.I, then we get 1 bit of growth if:
+        #                       2**a_fmt.I - 2**-b_fmt.F > 0
+        if a_fmt.S == 0:
+            if b_fmt.width == 1 and b_fmt.S == 1:
                 # Special case: a is unsigned and b is 1-bit signed:
                 S = 0
                 I = rmaxI
-            elif bFmt.I == -bFmt.F+1:
+            elif b_fmt.I == -b_fmt.F+1:
                 # Special case: a is unsigned and rmin is a power of 2
                 S = 1
-                I = max(rmaxI, -bFmt.F)
+                I = max(rmaxI, -b_fmt.F)
             else:
                 # Normal case for unsigned a
                 S = 1
-                I = max(rmaxI, bFmt.I)
+                I = max(rmaxI, b_fmt.I)
         else:
             # Signed a
             S = 1
-            rmin_growth = aFmt.S if min(aFmt.I, bFmt.I) > -bFmt.F else 0
-            rminI = max(aFmt.I, bFmt.I) + rmin_growth
+            rmin_growth = a_fmt.S if min(a_fmt.I, b_fmt.I) > -b_fmt.F else 0
+            rminI = max(a_fmt.I, b_fmt.I) + rmin_growth
             I = max(rmaxI, rminI)
         
-        return FixFormat(S, I, max(aFmt.F, bFmt.F))
+        return FixFormat(S, I, max(a_fmt.F, b_fmt.F))
     
     
     @staticmethod
-    def for_addsub(aFmt, bFmt):
+    def for_addsub(a_fmt, b_fmt):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of an
         addition/subtraction, a +/- b.
@@ -177,14 +177,14 @@ class FixFormat:
         This is a conservative calculation (it assumes that a and b may take any values). If the
         values of a and/or b are constrained, then a narrower format may be feasible.
         """
-        assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
-        addFmt = FixFormat.for_add(aFmt, bFmt)
-        subFmt = FixFormat.for_sub(aFmt, bFmt)
-        return FixFormat.union(addFmt, subFmt)
+        assert a_fmt.width > 0 and b_fmt.width > 0, "Data widths must be positive"
+        add_fmt = FixFormat.for_add(a_fmt, b_fmt)
+        sub_fmt = FixFormat.for_sub(a_fmt, b_fmt)
+        return FixFormat.union(add_fmt, sub_fmt)
     
     
     @staticmethod
-    def for_mult(aFmt, bFmt):
+    def for_mult(a_fmt, b_fmt):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of a
         multiplication, a * b.
@@ -192,70 +192,70 @@ class FixFormat:
         This is a conservative calculation (it assumes that a and b may take any values). If the
         values of a and/or b are constrained, then a narrower format may be feasible.
         """
-        assert aFmt.width > 0 and bFmt.width > 0, "Data widths must be positive"
+        assert a_fmt.width > 0 and b_fmt.width > 0, "Data widths must be positive"
         # We must consider both extremes:
         
         # rmax:
-        # If aFmt.S == 1 and bFmt.S == 1, then:
+        # If a_fmt.S == 1 and b_fmt.S == 1, then:
         #     rmax = amin * bmin
-        #          = -2**aFmt.I * -2**bFmt.I = 2**(aFmt.I + bFmt.I)
-        #          ==> aFmt.I + bFmt.I + 1 int bits.
+        #          = -2**a_fmt.I * -2**b_fmt.I = 2**(a_fmt.I + b_fmt.I)
+        #          ==> a_fmt.I + b_fmt.I + 1 int bits.
         # Else:
         #     rmax = amax * bmax
-        #          = (2**aFmt.I - 2**-aFmt.F) * (2**bFmt.I - 2**-bFmt.F)
-        #          = 2**(aFmt.I + bFmt.I) - 2**(aFmt.I - bFmt.F) - 2**(bFmt.I - aFmt.F) + 2**(-aFmt.F - bFmt.F)
-        #     This will typically need aFmt.I + bFmt.I int bits, but -1 bit if:
-        #          2**(aFmt.I + bFmt.I) - 2**(aFmt.I - bFmt.F) - 2**(bFmt.I - aFmt.F) + 2**(-aFmt.F - bFmt.F) < 2**(aFmt.I + bFmt.I - 1)
-        #     If we define x=aFmt.I+aFmt.F and y=bFmt.I+bFmt.F, then we can rearrange this to:
+        #          = (2**a_fmt.I - 2**-a_fmt.F) * (2**b_fmt.I - 2**-b_fmt.F)
+        #          = 2**(a_fmt.I + b_fmt.I) - 2**(a_fmt.I - b_fmt.F) - 2**(b_fmt.I - a_fmt.F) + 2**(-a_fmt.F - b_fmt.F)
+        #     This will typically need a_fmt.I + b_fmt.I int bits, but -1 bit if:
+        #          2**(a_fmt.I + b_fmt.I) - 2**(a_fmt.I - b_fmt.F) - 2**(b_fmt.I - a_fmt.F) + 2**(-a_fmt.F - b_fmt.F) < 2**(a_fmt.I + b_fmt.I - 1)
+        #     If we define x=a_fmt.I+a_fmt.F and y=b_fmt.I+b_fmt.F, then we can rearrange this to:
         #          2**(x+y-1) + 1 < 2**x + 2**y
         #     Further rearrangement leads to:
         #          (2**x - 2)(2**y - 2) < 2
         #     Note that x>=0 and y>=0 because we do not support I+F<0. So, it is fairly easy to see
         #     the inequality is true iff x<=1 or y<=1 (and this is trivial to confirm numerically).
-        if aFmt.S == 1 and bFmt.S == 1:
-            rmaxI = aFmt.I + bFmt.I + 1
-        elif aFmt.I+aFmt.F <= 1 or bFmt.I+bFmt.F <= 1:
-            rmaxI = aFmt.I + bFmt.I - 1
+        if a_fmt.S == 1 and b_fmt.S == 1:
+            rmaxI = a_fmt.I + b_fmt.I + 1
+        elif a_fmt.I+a_fmt.F <= 1 or b_fmt.I+b_fmt.F <= 1:
+            rmaxI = a_fmt.I + b_fmt.I - 1
         else:
-            rmaxI = aFmt.I + bFmt.I
+            rmaxI = a_fmt.I + b_fmt.I
         
         # rmin:
-        # If aFmt.S == 0 and bFmt.S == 0, then:
+        # If a_fmt.S == 0 and b_fmt.S == 0, then:
         #     rmin = amin * bmin = 0
         #     ==> No requirement.
-        # If aFmt.S == 0 and bFmt.S == 1, then:
-        #     rmin = amax * bmin = (2**aFmt.I - 2**-aFmt.F) * -2**bFmt.I
-        #                        = -amax * 2**bFmt.I
-        #     ==> Same as FixFormat.for_neg(aFmt).I + bFmt.I
-        # If aFmt.S == 1 and bFmt.S == 0, then:
+        # If a_fmt.S == 0 and b_fmt.S == 1, then:
+        #     rmin = amax * bmin = (2**a_fmt.I - 2**-a_fmt.F) * -2**b_fmt.I
+        #                        = -amax * 2**b_fmt.I
+        #     ==> Same as FixFormat.for_neg(a_fmt).I + b_fmt.I
+        # If a_fmt.S == 1 and b_fmt.S == 0, then:
         #     rmin = amin * bmax
-        #     ==> Same as FixFormat.for_neg(bFmt).I + aFmt.I
-        # If aFmt.S == 1 and bFmt.S == 1, then:
+        #     ==> Same as FixFormat.for_neg(b_fmt).I + a_fmt.I
+        # If a_fmt.S == 1 and b_fmt.S == 1, then:
         #     rmin = min(amax * bmin, amin * bmax)
         #     ==> Never exceeds rmaxI ==> Ignore.
         
-        # The requirement can exceed rmaxI only if aFmt.S != bFmt.S and we don't run into the same
+        # The requirement can exceed rmaxI only if a_fmt.S != b_fmt.S and we don't run into the same
         # special case as FixFormat.for_neg() (i.e. the unsigned value being 1-bit).
-        if aFmt.S == 0 and bFmt.S == 1:
-            I = max(rmaxI, FixFormat.for_neg(aFmt).I + bFmt.I)
-        elif aFmt.S == 1 and bFmt.S == 0:
-            I = max(rmaxI, aFmt.I + FixFormat.for_neg(bFmt).I)
+        if a_fmt.S == 0 and b_fmt.S == 1:
+            I = max(rmaxI, FixFormat.for_neg(a_fmt).I + b_fmt.I)
+        elif a_fmt.S == 1 and b_fmt.S == 0:
+            I = max(rmaxI, a_fmt.I + FixFormat.for_neg(b_fmt).I)
         else:
             I = rmaxI
         
         # Sign bit
-        if aFmt.width == 1 and aFmt.S == 1 and bFmt.width == 1 and bFmt.S == 1:
+        if a_fmt.width == 1 and a_fmt.S == 1 and b_fmt.width == 1 and b_fmt.S == 1:
             # Special case: 1-bit signed * 1-bit signed is unsigned
             S = 0
         else:
             # Normal: If either input is signed, then output is signed
-            S = max(aFmt.S, bFmt.S)
+            S = max(a_fmt.S, b_fmt.S)
         
-        return FixFormat(S, I, aFmt.F+bFmt.F)
+        return FixFormat(S, I, a_fmt.F+b_fmt.F)
     
     
     @staticmethod
-    def for_neg(aFmt):
+    def for_neg(a_fmt):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of a
         negation, -a.
@@ -263,15 +263,15 @@ class FixFormat:
         This is a conservative calculation (it assumes that a may take any values). If the values
         of a are constrained, then a narrower format may be feasible.
         """
-        assert aFmt.width > 0, "Data width must be positive"
+        assert a_fmt.width > 0, "Data width must be positive"
         # 1-bit unsigned inputs are special (neg is 1-bit signed)
-        if aFmt.S == 0 and aFmt.width == 1:
-            return FixFormat(1, aFmt.I+aFmt.S-1, aFmt.F)
-        return FixFormat(1, aFmt.I+aFmt.S, aFmt.F)
+        if a_fmt.S == 0 and a_fmt.width == 1:
+            return FixFormat(1, a_fmt.I+a_fmt.S-1, a_fmt.F)
+        return FixFormat(1, a_fmt.I+a_fmt.S, a_fmt.F)
     
     
     @staticmethod
-    def for_abs(aFmt):
+    def for_abs(a_fmt):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of an
         absolute value, abs(a).
@@ -279,13 +279,13 @@ class FixFormat:
         This is a conservative calculation (it assumes that a may take any values). If the values
         of a are constrained, then a narrower format may be feasible.
         """
-        assert aFmt.width > 0, "Data width must be positive"
-        negFmt = FixFormat.for_neg(aFmt)
-        return FixFormat.union(aFmt, negFmt)
+        assert a_fmt.width > 0, "Data width must be positive"
+        neg_fmt = FixFormat.for_neg(a_fmt)
+        return FixFormat.union(a_fmt, neg_fmt)
     
     
     @staticmethod
-    def for_shift(aFmt, minShift, maxShift=None):
+    def for_shift(a_fmt, minShift, maxShift=None):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of a
         left shift, a << n.
@@ -293,15 +293,15 @@ class FixFormat:
         This is a conservative calculation (it assumes that a may take any values). If the values
         of a are constrained, then a narrower format may be feasible.
         """
-        assert aFmt.width > 0, "Data width must be positive"
+        assert a_fmt.width > 0, "Data width must be positive"
         if maxShift is None:
             maxShift = minShift
         assert minShift <= maxShift, f"minShift ({minShift}) must be <= maxShift ({maxShift})"
-        return FixFormat(aFmt.S, aFmt.I + maxShift, aFmt.F - minShift)
+        return FixFormat(a_fmt.S, a_fmt.I + maxShift, a_fmt.F - minShift)
     
     # Format for result of rounding
     @staticmethod
-    def for_round(aFmt, rFracBits : int, rnd : FixRound):
+    def for_round(a_fmt, rFracBits : int, rnd : FixRound):
         """
         Returns the minimal FixFormat that is guaranteed to exactly represent the result of
         fixed-point rounding (for a specific rounding mode).
@@ -309,42 +309,42 @@ class FixFormat:
         This is a conservative calculation (it assumes that a may take any values). If the values
         of a are constrained, then a narrower format may be feasible.
         """
-        assert aFmt.width > 0, "Data width must be positive"
-        if rFracBits >= aFmt.F:
+        assert a_fmt.width > 0, "Data width must be positive"
+        if rFracBits >= a_fmt.F:
             # If fractional bits are not being reduced, then nothing happens to int bits.
-            I = aFmt.I
+            I = a_fmt.I
         elif rnd == FixRound.Trunc_s:
             # Crude truncation has no effect on int bits.
-            I = aFmt.I
+            I = a_fmt.I
         else:
             # All other rounding modes can overflow into +1 int bit.
-            I = aFmt.I + 1
+            I = a_fmt.I + 1
         
         # Force result to be at least 1 bit wide
-        if aFmt.S + I + rFracBits < 1:
-            I = -aFmt.S - rFracBits + 1
+        if a_fmt.S + I + rFracBits < 1:
+            I = -a_fmt.S - rFracBits + 1
         
-        return FixFormat(aFmt.S, I, rFracBits)
+        return FixFormat(a_fmt.S, I, rFracBits)
     
     
     @staticmethod
-    def union(aFmt, bFmt=None):
+    def union(a_fmt, b_fmt=None):
         """
         Returns the minimal FixFormat that can exactly represent ALL of the input formats.
         
         Note: The input formats can be either 2 FixFormats, or 1 collection of FixFormats.
         """
-        if bFmt is None:
-            Fmts = aFmt
+        if b_fmt is None:
+            fmts = a_fmt
         else:
-            Fmts = (aFmt, bFmt)
+            fmts = (a_fmt, b_fmt)
         
-        rFmt = shallow_copy(Fmts[0])
-        for i in range(1, len(Fmts)):
-            rFmt.S = max(rFmt.S, Fmts[i].S)
-            rFmt.I = max(rFmt.I, Fmts[i].I)
-            rFmt.F = max(rFmt.F, Fmts[i].F)
-        return rFmt
+        r_fmt = shallow_copy(fmts[0])
+        for i in range(1, len(fmts)):
+            r_fmt.S = max(r_fmt.S, fmts[i].S)
+            r_fmt.I = max(r_fmt.I, fmts[i].I)
+            r_fmt.F = max(r_fmt.F, fmts[i].F)
+        return r_fmt
     
     
     def __repr__(self):
