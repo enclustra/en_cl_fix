@@ -465,14 +465,14 @@ class WideFix:
     # Note: To print raw internal integer data, use print(x._data).
     def __repr__(self):
         return (
-            "WideFix : " + repr(self.fmt) + "\n"
+            "WideFix: " + repr(self.fmt) + "\n"
             + "Note: Possible loss of precision in float printout.\n"
             + repr(self.to_real(warn=False))
         )
     
     def __str__(self):
         return (
-            f"WideFix {self.fmt}\n"
+            f"WideFix: {self.fmt}\n"
             f"Note: Possible loss of precision in float printout.\n"
             f"{self.to_real(warn=False)}"
         )

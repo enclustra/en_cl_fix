@@ -367,12 +367,12 @@ class NarrowFix:
     
     def __repr__(self):
         return (
-            "narrow_fix : " + repr(self._fmt) + "\n"
+            "NarrowFix: " + repr(self._fmt) + "\n"
             + repr(self._data)
         )
     
     def __str__(self):
         return (
-            f"narrow_fix {self._fmt}\n"
+            f"NarrowFix: {self._fmt}\n"
             f"{self._data}"
         )
