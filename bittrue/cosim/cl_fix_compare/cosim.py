@@ -45,9 +45,9 @@ def run():
 
     test_count = 0
 
-    test_aFmt = []
-    test_bFmt = []
-    test_rFmt = []
+    test_a_fmt = []
+    test_b_fmt = []
+    test_r_fmt = []
     test_rnd = []
     test_sat = []
 
@@ -135,17 +135,17 @@ def run():
                                        fmt="%i", header=f"r_geq[{r_geq.size}]")
                             
                             # Save test parameters into lists
-                            test_aFmt.append(a_fmt)
-                            test_bFmt.append(b_fmt)
+                            test_a_fmt.append(a_fmt)
+                            test_b_fmt.append(b_fmt)
                             
                             test_count += 1
 
     # Save formats
     a_fmt_names = ["a_fmt" + str(i) for i in range(test_count)]
-    cl_fix_write_formats(test_aFmt, a_fmt_names, join(DATA_DIR, f"a_fmt.txt"))
+    cl_fix_write_formats(test_a_fmt, a_fmt_names, join(DATA_DIR, f"a_fmt.txt"))
 
     b_fmt_names = ["b_fmt" + str(i) for i in range(test_count)]
-    cl_fix_write_formats(test_bFmt, b_fmt_names, join(DATA_DIR, f"b_fmt.txt"))
+    cl_fix_write_formats(test_b_fmt, b_fmt_names, join(DATA_DIR, f"b_fmt.txt"))
 
 ###################################################################################################
 # Support execution as a script

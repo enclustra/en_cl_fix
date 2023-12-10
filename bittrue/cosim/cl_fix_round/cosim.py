@@ -43,8 +43,8 @@ def run():
 
     test_count = 0
 
-    test_aFmt = []
-    test_rFmt = []
+    test_a_fmt = []
+    test_r_fmt = []
     test_rnd = []
 
     #########
@@ -91,8 +91,8 @@ def run():
                                    fmt="%i", header=f"r[{r.size}]")
                         
                         # Save test parameters into lists
-                        test_aFmt.append(a_fmt)
-                        test_rFmt.append(r_fmt)
+                        test_a_fmt.append(a_fmt)
+                        test_r_fmt.append(r_fmt)
                         test_rnd.append(rnd.value)
                         
                         test_count += 1
@@ -101,10 +101,10 @@ def run():
 
     # Save formats
     a_fmt_names = ["a_fmt" + str(i) for i in range(test_count)]
-    cl_fix_write_formats(test_aFmt, a_fmt_names, join(DATA_DIR, f"a_fmt.txt"))
+    cl_fix_write_formats(test_a_fmt, a_fmt_names, join(DATA_DIR, f"a_fmt.txt"))
 
     r_fmt_names = ["r_fmt" + str(i) for i in range(test_count)]
-    cl_fix_write_formats(test_rFmt, r_fmt_names, join(DATA_DIR, f"r_fmt.txt"))
+    cl_fix_write_formats(test_r_fmt, r_fmt_names, join(DATA_DIR, f"r_fmt.txt"))
 
     # Save rounding and saturation modes
     np.savetxt(join(DATA_DIR, f"rnd.txt"), test_rnd, fmt="%i", header=f"Rounding modes")

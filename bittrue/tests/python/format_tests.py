@@ -43,9 +43,9 @@ shift_range_values = np.arange(5)
 # Run
 ###################################################################################################
 
-test_aFmt = []
-test_bFmt = []
-test_rFmt = []
+test_a_fmt = []
+test_b_fmt = []
+test_r_fmt = []
 test_rnd = []
 test_sat = []
 
