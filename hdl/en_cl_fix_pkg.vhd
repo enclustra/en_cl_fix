@@ -120,7 +120,8 @@ package en_cl_fix_pkg is
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
         result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s
+        round       : FixRound_t := Trunc_s;
+        fmt_check   : boolean := true
     ) return std_logic_vector;
     
     function cl_fix_saturate(
@@ -873,7 +874,8 @@ package body en_cl_fix_pkg is
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
         result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s
+        round       : FixRound_t := Trunc_s;
+        fmt_check   : boolean := true
     ) return std_logic_vector is
         -- Force downto 0
         constant a_c            : std_logic_vector(a'length-1 downto 0) := a;
@@ -896,8 +898,10 @@ package body en_cl_fix_pkg is
         variable mid_v          : unsigned(cl_fix_width(mid_fmt_c)-1 downto 0) := (others => '0');
         variable result_v       : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
-        assert result_fmt = cl_fix_round_fmt(a_fmt, result_fmt.F, round)
-            report "cl_fix_round: Invalid result format. Use cl_fix_round_fmt()." severity Failure;
+        if fmt_check then
+            assert result_fmt = cl_fix_round_fmt(a_fmt, result_fmt.F, round)
+                report "cl_fix_round: Invalid result format. Use cl_fix_round_fmt()." severity Failure;
+        end if;
         
         -- Write the input value into mid_v with correct binary point alignment.
         mid_v := unsigned(convert(a_c, a_fmt, mid_fmt_c));
