@@ -85,6 +85,11 @@ class WideFix:
         Converts from NarrowFix to WideFix, without quantization or bounds checks.
         """
         int_data = np.floor((a._data*2.0**a._fmt.F).astype(object))
+        
+        # Numpy behavior is not clearly defined. Sometimes we get np.float64.
+        if isinstance(int_data, np.float64):
+            int_data = int(int_data)
+        
         return WideFix(int_data, a._fmt, copy=False)
     
     @staticmethod
