@@ -66,8 +66,14 @@ class WideFix:
                 warnings.warn(f"from_real: Number {amin_float} exceeds minimum for format {r_fmt}", Warning)
         
         # Quantize. Always use half-up rounding.
-        x = (a*(2.0**r_fmt.F)+0.5).astype('object')
-        x = np.floor(x)
+        x = a*(2.0**r_fmt.F) + 0.5
+        
+        # Try to force arbitrary-precision int representation
+        if hasattr(x, 'astype'):
+            x = x.astype('object')
+            x = np.floor(x)
+        else:
+            x = int(x)
         
         # Saturate
         if (saturate == FixSaturate.Sat_s) or (saturate == FixSaturate.SatWarn_s):
