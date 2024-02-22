@@ -25,7 +25,9 @@ See [Changelog](Changelog.md).
     - *numpy*
     - *vunit-hdl*
 
-## Fixed-Point Representation
+## Fixed-Point Number Representation
+
+It is recommended to watch Enclustra's [Fixed-Point Python Co-simulation](https://www.youtube.com/watch?v=DajbzQurjqI) webinar before working with *en_cl_fix*. It covers important background information on fixed-point number representation.
 
 ### Format
 
@@ -129,3 +131,10 @@ If warnings are enabled, then the HDL simulator or software environment will iss
 | Warn_s          | No        | Yes   |
 | Sat_s           | Yes       | No    |
 | SatWarn_s       | Yes       | Yes   |
+
+## Running Tests
+
+- Python tests can be found in bittrue/tests/python/.
+- MATLAB tests can be found in bittrue/tests/matlab/.
+- VHDL testbenches can be found in tb/.
+    - **Important**: These testbenches require the Enclustra testbench library, *en_tb*. As of February 2024, this library has not yet been open-sourced, so the VHDL testbenches cannot be run. We are working to resolve this issue.
