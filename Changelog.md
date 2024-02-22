@@ -1,3 +1,14 @@
+## 2.0.0
+* Features
+  * Major refactor of all VHDL code, to improve consistency, reduce clutter and improve verification.
+  * Major refactor of all MATLAB code, which now just calls the Python functions.
+  * Major refactor of all Python code. It now uses two separate classes to encapsulate "narrow" and "wide" number support.
+  * Moved to a VUnit-based verification flow.
+  * Changed FixFormat_t.Signed from boolean to integer to simplify usage. This is now consistent with psi_fix.
+  * Changed FixFormat_t from (Signed, IntBits, FracBits) to (S, I, F) for brevity. This is now consistent with psi_fix.
+* Bugfixes
+  * Fixed cl_fix_add / cl_fix_sub bug that sometimes prevented correct inference of AMD-Xilinx DSP slice pre-adders / post-adders.
+
 ## 1.3.0
 * Features
   * Added simple format calculation functions in VHDL to mirror the Python implementation
