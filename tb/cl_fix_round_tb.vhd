@@ -33,7 +33,7 @@ architecture rtl of cl_fix_round_tb is
     constant RFmt_c             : FixFormatArray_t := cl_fix_read_format_file(DataPath_c & "r_fmt.txt");
     
     -- Rounding modes
-    constant Rnd_c              : integer_vector := read_file(DataPath_c & "rnd.txt", 32);
+    constant Rnd_c              : integer_vector := read_file(DataPath_c & "rnd.txt");
     
     constant TestCount_c        : positive := AFmt_c'length;
     

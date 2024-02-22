@@ -33,7 +33,7 @@ architecture rtl of cl_fix_from_real_tb is
     constant RFmt_c             : FixFormatArray_t := cl_fix_read_format_file(DataPath_c & "r_fmt.txt");
     
     -- Saturation modes
-    constant Sat_c              : integer_vector := read_file(DataPath_c & "sat.txt", 32);
+    constant Sat_c              : integer_vector := read_file(DataPath_c & "sat.txt");
     
     constant TestCount_c        : positive := AFmt_c'length;
     
