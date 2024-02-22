@@ -49,7 +49,6 @@ py.importlib.import_module('en_cl_fix_pkg');
 
 % Add MATLAB sources to MATLAB path
 addpath(fullfile(root, '..', '..', 'models', 'matlab'));
-addpath(fullfile(root, '..', '..', 'models', 'matlab', 'helpers'));
 
 % -------------------------------------------------------------------------------------------------
 % Example Setup
