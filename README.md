@@ -11,7 +11,7 @@ This library supports arbitrary precision, but software executes faster for bit-
 ## License
 This library is free and open-source.
 
-It is published under the [PSI HDL Library License](License.txt), which is [LGPL](LGPL2_1.txt) plus some additional exceptions to clarify the LGPL terms in the context of firmware development.
+It is published under the [MIT License](https://opensource.org/license/mit), which allows commercial use.
 
 ## Maintainers
 This library is maintained by [Enclustra GmbH](https://www.enclustra.com/en).

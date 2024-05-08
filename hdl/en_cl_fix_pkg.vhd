@@ -1,11 +1,25 @@
 ---------------------------------------------------------------------------------------------------
--- Copyright (c) 2022 Enclustra GmbH, Switzerland (info@enclustra.com)
+-- Copyright (c) 2024 Enclustra GmbH, Switzerland (info@enclustra.com)
+-- 
+-- Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+-- and associated documentation files (the "Software"), to deal in the Software without
+-- restriction, including without limitation the rights to use, copy, modify, merge, publish,
+-- distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+-- Software is furnished to do so, subject to the following conditions:
+-- 
+-- The above copyright notice and this permission notice shall be included in all copies or
+-- substantial portions of the Software.
+-- 
+-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+-- BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+-- NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+-- DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+-- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ---------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------
 -- Libraries
 ---------------------------------------------------------------------------------------------------
-
 library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
@@ -17,13 +31,11 @@ library work;
 ---------------------------------------------------------------------------------------------------
 -- Package Header
 ---------------------------------------------------------------------------------------------------
-
 package en_cl_fix_pkg is
 
     -----------------------------------------------------------------------------------------------
     -- Types
     -----------------------------------------------------------------------------------------------
-    
     type FixFormat_t is record
         S   : natural range 0 to 1;  -- Sign bit.
         I   : integer;               -- Integer bits.
@@ -56,7 +68,6 @@ package en_cl_fix_pkg is
     -----------------------------------------------------------------------------------------------
     -- Format Functions
     -----------------------------------------------------------------------------------------------
-    
     function cl_fix_width(fmt : FixFormat_t) return natural;
     
     function cl_fix_max_value(fmt : FixFormat_t) return std_logic_vector;
@@ -85,7 +96,6 @@ package en_cl_fix_pkg is
     -----------------------------------------------------------------------------------------------
     -- String Conversions
     -----------------------------------------------------------------------------------------------
-    
     function to_string(a : std_logic_vector; a_fmt : FixFormat_t) return string;
     
     function to_string(fmt : FixFormat_t) return string;
@@ -103,7 +113,6 @@ package en_cl_fix_pkg is
     -----------------------------------------------------------------------------------------------
     -- Type Conversions
     -----------------------------------------------------------------------------------------------
-    
     function cl_fix_from_real(a : real; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector;
     
     function cl_fix_to_real(a : std_logic_vector; a_fmt : FixFormat_t) return real;
@@ -115,7 +124,6 @@ package en_cl_fix_pkg is
     -----------------------------------------------------------------------------------------------
     -- Rounding and Saturation
     -----------------------------------------------------------------------------------------------
-    
     function cl_fix_round(
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
@@ -149,7 +157,6 @@ package en_cl_fix_pkg is
     -----------------------------------------------------------------------------------------------
     -- Math Functions
     -----------------------------------------------------------------------------------------------
-    
     function cl_fix_abs(
         a           : std_logic_vector;
         a_fmt       : FixFormat_t;
@@ -231,13 +238,11 @@ end package;
 ---------------------------------------------------------------------------------------------------
 -- Package Body
 ---------------------------------------------------------------------------------------------------
-
 package body en_cl_fix_pkg is
     
     -----------------------------------------------------------------------------------------------
     -- Internal Functions
     -----------------------------------------------------------------------------------------------
-    
     function max_real(fmt : FixFormat_t) return real is
     begin
         return 2.0**fmt.I - 2.0**(-fmt.F);
@@ -330,7 +335,6 @@ package body en_cl_fix_pkg is
     -----------------------------------------------------------------------------------------------
     -- Public Functions
     -----------------------------------------------------------------------------------------------
-    
     function cl_fix_width(fmt : FixFormat_t) return natural is
     begin
         return fmt.S + fmt.I + fmt.F;
