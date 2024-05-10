@@ -73,9 +73,19 @@ Therefore, the total bit-width is simply `S`+`I`+`F`.
 
 The contributions of the integer bits and fractional bits in a fixed-point binary number depend on their position relative to the binary point (`I` bits left, `F` bits right). This is the same concept as for an ordinary decimal number (with a decimal point), except with powers of 2 instead of powers of 10. For signed numbers, the (two's complement) sign bit carries a weight of -2<sup>`I`</sup>.
 
-<img src="./doc/images/BitWeights.png" alt="BitWeights" style="zoom: 67%;" />
+In summary:
 
-Some examples are given below:
+![BitWeights](./doc/images/BitWeights.svg)
+
+**Example**: Interpret `1111110011100011` in fixed-point format `[0, 11, 5]`.
+
+The contributions are:
+
+![Example](./doc/images/Example.svg)
+
+Therefore, the value is 1024 + 512 + 256 + 128 + 64 + 32 + 4 + 2 + 1 + 1/16 + 1/32 = **2023.09375**.
+
+Some more examples are given below:
 
 | Fixed-Point Format |       Range       | Bit Pattern | Example (in Decimal) | Example (in Binary) |
 | :----------------: | :---------------: | :---------: | :------------------: | :-----------------: |
