@@ -1,12 +1,24 @@
 ## General Information
 
-*en_cl_fix* is a multi-language fixed-point math library for FPGA and ASIC development.
+*en_cl_fix* is a free, open-source, multi-language fixed-point math library for FPGA and ASIC development.
 
-It provides fixed-point functionality in both HDL (currently VHDL) and software languages (currently Python and MATLAB). This allows fixed-point algorithms to be designed, modelled and evaluated in software, before committing to the HDL implementation. Similarly, HDL implementations can be easily verified in simulation and/or hardware by comparing the simulation/hardware output with the bit-true software model's output.
+It provides low-level fixed-point functionality in both HDL and software languages. This includes basic arithmetic (addition, multiplication, etc) and number format conversions (with rounding and saturation). Some high-level usage examples can be found, for example, in the [psi_fix](https://github.com/paulscherrerinstitute/psi_fix) library, which internally uses *en\_cl\_fix* for its fixed-point arithmetic.
 
-This library provides only low-level fixed-point functionality such as basic arithmetic (addition, multiplication, etc) and number format conversions (with rounding and saturation).
+This library supports arbitrary precision, but typically executes faster for bit-widths ≤ 53 bits.
 
-This library supports arbitrary precision, but software executes faster for bit-widths ≤ 53 bits.
+### Supported Languages
+
+The currently supported langauges are:
+
+- VHDL<sup>\*</sup>
+- Python
+- MATLAB
+
+<sup>\*</sup>All RTL code is VHDL-93 compliant (for maximum compatibility with synthesis toolchains). Testbenches are VHDL-2008 compliant.
+
+SystemVerilog support is under active development in 2024. However, weak toolchain support for SystemVerilog is proving to be a significant barrier.
+
+C++ support 
 
 ## License
 This library is free and open-source.
@@ -15,6 +27,8 @@ It is published under the [MIT License](https://opensource.org/license/mit), whi
 
 ## Maintainers
 This library is maintained by [Enclustra GmbH](https://www.enclustra.com/en).
+
+We actively use this library in our own FPGA projects, and have done for more than a decade (as of 2024).
 
 ## Changelog
 See [Changelog](Changelog.md).
