@@ -49,9 +49,9 @@ See [Changelog](Changelog.md).
 
 ### Getting Started
 
-It is highly recommended to watch Enclustra's [Fixed-Point Python Co-simulation](https://www.youtube.com/watch?v=DajbzQurjqI) webinar before working with *en\_cl\_fix*:
+It is highly recommended to watch Enclustra's [Fixed-Point Python Co-simulation](https://www.youtube.com/watch?v=DajbzQurjqI&t=346) webinar before working with *en\_cl\_fix*:
 
-[![Webinar: Fixed-Point Python Co-simulation](./doc/images/Webinar.png)](https://www.youtube.com/watch?v=DajbzQurjqI)
+[![Webinar: Fixed-Point Python Co-simulation](./doc/images/Webinar.png)](https://www.youtube.com/watch?v=DajbzQurjqI&t=346)
 
 It covers important background information on fixed-point number representation.
 
