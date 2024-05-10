@@ -28,8 +28,12 @@ library vunit_lib;
     context vunit_lib.vunit_context;
     context vunit_lib.vc_context;
 
+library en_tb;
+    context en_tb.fileio_context;
+
 library work;
-    context work.en_tb_fix_fileio_context;
+    use work.en_cl_fix_pkg.all;
+    use work.fix_fileio_pkg.all;
 
 ---------------------------------------------------------------------------------------------------
 -- Entity

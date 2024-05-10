@@ -27,8 +27,9 @@ library ieee;
 library vunit_lib;
     context vunit_lib.vunit_context;
     context vunit_lib.vc_context;
-    
-use work.en_cl_fix_pkg.all;
+
+library work;
+    use work.en_cl_fix_pkg.all;
 
 ---------------------------------------------------------------------------------------------------
 -- Entity
