@@ -32,8 +32,8 @@ library std;
 library ieee;
     use ieee.numeric_bit.all;
 
-library en_tb;
-    use en_tb.base_pkg.all;
+library work;
+    use work.base_pkg.all;
 
 ---------------------------------------------------------------------------------------------------
 -- Package

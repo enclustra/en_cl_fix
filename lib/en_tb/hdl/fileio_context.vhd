@@ -17,6 +17,19 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ---------------------------------------------------------------------------------------------------
 
+---------------------------------------------------------------------------------------------------
+-- Important:
+--
+-- It is RECOMMENDED (but not REQUIRED) to compile en_tb into a VHDL library named "en_tb".
+--
+-- When the VHDL library name "en_tb" is used, this VHDL-2008 context can be used. This allows all
+-- the required en_tb packages (and only the required ones) to be included via a single use clause.
+--
+-- In (rare) cases where the "en_tb" name cannot be used, it is recommended to make local copies of
+-- this file, with the library name "en_tb" (below) updated to the correct name. An alternative is
+-- to just avoid using the context (and instead have multiple use clauses to include the required
+-- packages individually).
+---------------------------------------------------------------------------------------------------
 context fileio_context is
     library en_tb;
     use en_tb.base_pkg.all;

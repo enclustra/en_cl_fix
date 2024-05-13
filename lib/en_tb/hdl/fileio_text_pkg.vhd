@@ -97,9 +97,9 @@ library ieee;
     use ieee.numeric_bit.all;
     use ieee.numeric_std.all;
 
-library en_tb;
-    use en_tb.base_pkg.all;
-    use en_tb.fileio_text_private_pkg.all;
+library work;
+    use work.base_pkg.all;
+    use work.fileio_text_private_pkg.all;
 
 ---------------------------------------------------------------------------------------------------
 -- Package
@@ -111,7 +111,7 @@ package fileio_text_pkg is
     -----------
     
     -- (ascii_bin, ascii_dec, ascii_hex)
-    alias text_data_mode_t is en_tb.fileio_text_private_pkg.text_data_mode_t;
+    alias text_data_mode_t is work.fileio_text_private_pkg.text_data_mode_t;
     
     ----------------------------
     -- File Utility Functions --
