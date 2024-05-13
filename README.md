@@ -60,7 +60,7 @@ Tested with MATLAB R2023b, and others.
 
 ### VHDL Simulator Dependencies
 
-All VHDL simulators supported by [VUnit](https://vunit.github.io/) should work.
+All modern VHDL simulators supported by [VUnit](https://vunit.github.io/) should work.
 
 Tested with: GHDL 4.1.0, Modelsim ASE 2020.1, Modelsim AE 2020.1, Modelsim ME 2022.2, Modelsim PE 2024.1, Questa FE 2023.4, and others.
 
