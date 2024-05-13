@@ -474,14 +474,19 @@ def cl_fix_write_formats(fmts, names, filename : str):
 
 def cl_fix_zeros(shape, fmt : FixFormat):
     """
-    Generates fixed-point zeros.
+    Generates fixed-point zeros. The shape of the returned array is "shape".
+    
+    Example: cl_fix_zeros((3,2), fmt) returns a 3x2 array.
     """
     return cl_fix_from_real(np.zeros(shape), fmt)
 
 
 def cl_fix_random(shape, fmt : FixFormat):
     """
-    Generates fixed-point random data, uniformly distributed across the representable range.
+    Generates fixed-point random data, uniformly distributed across the representable range. The
+    shape of the returned array is "shape".
+    
+    Example: cl_fix_random((3,2), fmt) returns a 3x2 array.
     """
     # Generate random data values distributed across the whole dynamic range of fmt.
     fmt_min = cl_fix_min_value(fmt)
