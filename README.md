@@ -41,9 +41,28 @@ See [Changelog](Changelog.md).
 
 ## Dependencies
 
-- Python
-    - *numpy*
-    - *vunit-hdl*
+### Python Dependencies
+
+- Python 3 (tested with >= 3.10)
+- Python packages
+    - *numpy* (tested with >= 1.24.3)
+    - *vunit-hdl* (tested with >= 4.7.0)
+
+The required Python packages can be installed as follows:
+
+```
+python -m pip install -r requirements.txt
+```
+
+### MATLAB Dependencies
+
+Tested with MATLAB R2023b, and others.
+
+### VHDL Simulator Dependencies
+
+All modern VHDL simulators supported by [VUnit](https://vunit.github.io/) should work.
+
+Tested with: GHDL 4.1.0, Modelsim ASE 2020.1, Modelsim AE 2020.1, Modelsim ME 2022.2, Modelsim PE 2024.1, Questa FE 2023.4, and others.
 
 ## Fixed-Point Number Representation
 
@@ -170,7 +189,13 @@ If warnings are enabled, then the HDL simulator or software environment will iss
 
 ## Running Tests
 
-- Python tests can be found in bittrue/tests/python/.
-- MATLAB tests can be found in bittrue/tests/matlab/.
-- VHDL testbenches can be found in tb/.
-    - **Important**: These testbenches require the Enclustra testbench library, *en_tb*. As of February 2024, this library has not yet been open-sourced, so the VHDL testbenches cannot be run. We are working to resolve this issue.
+- Python tests can be found in ./bittrue/tests/python/.
+    - Example: `python cl_fix_round_test.py`
+- MATLAB tests can be found in ./bittrue/tests/matlab/.
+- VHDL testbenches can be found in ./tb/ and are executed from the ./sim/ directory. Any modern simulator supported by [VUnit](https://vunit.github.io/) (see [Dependencies](#dependencies)) should work. Some examples:
+    - GHDL example: `python run.py --simulator=ghdl --simulator-path='C:/msys64/mingw64/bin'`
+    - Modelsim ASE example: `python run.py --simulator=modelsim --simulator-path='C:/intelFPGA/20.1/modelsim_ase/win32aloem'`
+    - Modelsim AE example: `python run.py --simulator=modelsim --simulator-path='C:/intelFPGA/20.1/modelsim_ae/win32aloem'`
+    - Modelsim ME example: `python run.py --simulator=modelsim --simulator-path='C:/Microchip/Libero_SoC_v2022.2/ModelSimPro/win32acoem'`
+    - Modelsim PE example: `python run.py --simulator=modelsim --simulator-path='C:/modeltech_2024.1/win32pe'`
+    - Questa FE example: `python run.py --simulator=modelsim --simulator-path='C:/intelFPGA_pro/24.1/questa_fe/win64'`
