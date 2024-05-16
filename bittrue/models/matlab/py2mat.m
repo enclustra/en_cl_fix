@@ -1,14 +1,17 @@
 % Convert a native Python variable to an equivalent native MATLAB variable.
 
-% {{{ code/matlab_py/py2mat.m   v 1.2  2022-09-16
+% {{{ code/matlab_py/py2mat.m   v 1.3  2023-09-15
 % This code accompanies the book _Python for MATLAB Development:
-% Extend MATLAB with 300,000+ Modules from the Python Package Index_ 
+% Extend MATLAB with 300,000+ Modules from the Python Package Index_
 % ISBN 978-1-4842-7222-0 | ISBN 978-1-4842-7223-7 (eBook)
 % DOI 10.1007/978-1-4842-7223-7
 % https://github.com/Apress/python-for-matlab-development
-% 
-% Copyright © 2022 Albert Danial
-% 
+%
+% Copyright © 2022-2023 Albert Danial
+%
+% Contributions by:
+%   - https://github.com/hcommin (performance enhancements)
+%
 % MIT License:
 % Permission is hereby granted, free of charge, to any person obtaining a copy
 % of this software and associated documentation files (the "Software"), to deal
@@ -16,10 +19,10 @@
 % to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 % copies of the Software, and to permit persons to whom the Software is
 % furnished to do so, subject to the following conditions:
-% 
+%
 % The above copyright notice and this permission notice shall be included in
 % all copies or substantial portions of the Software.
-% 
+%
 % THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 % IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 % FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
@@ -30,6 +33,10 @@
 % }}}
 function [x_mat] = py2mat(x_py)
   switch class(x_py)
+      % MATLAB types
+      case {'logical', 'double', 'datetime'}
+        x_mat = x_py;
+      
       % Python dictionaries
       case 'py.dict'
       try
@@ -160,10 +167,6 @@ function [x_mat] = py2mat(x_py)
     case 'py.int'
       x_mat = x_py.int64;
 
-    % Python floats (float64) -- same as matlab double
-    case 'double'
-      x_mat = x_py;
-
     case 'py.datetime.datetime'
       x_mat = datetime(int64(x_py.year),  ...
                        int64(x_py.month), ...
@@ -171,10 +174,7 @@ function [x_mat] = py2mat(x_py)
                        int64(x_py.hour),  ...
                        int64(x_py.minute),...
                        int64(x_py.second),...
-                       int64(x_py.microsecond));
-
-    case 'logical'
-      x_mat = logical(x_py);
+                       double(x_py.microsecond)/1000.0);
 
     case 'py.bytes'
       x_mat = uint8(x_py);
@@ -191,7 +191,7 @@ function [x_mat] = py2mat(x_py)
     otherwise
       % return the original item?  nothing?
       fprintf('py2mat: type "%s" not recognized\n', ...
-              string(x_py.dtype.name));
+              string(class(x_py)));
       x_mat = [];
   end
 end
