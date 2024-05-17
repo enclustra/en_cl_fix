@@ -23,11 +23,23 @@ function r = cl_fix_to_integer(a, a_fmt)
     % DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
     % FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     % ---------------------------------------------------------------------------------------------
-
+    
+    % Inconsitency in the MATLAB<->Python interface sometimes causes shape mismatches for vectors.
+    % Workaround: handle vectors as special cases;
+    is_column = iscolumn(a);
+    is_row = isrow(a);
+    
     a = wide.mat2py(a, a_fmt);
     r = py.en_cl_fix_pkg.cl_fix_to_integer(a, a_fmt);
     
     % The returned values are integers. We can handle them as fixed-point, with 0 frac bits.
     r_fmt = cl_fix_format(a_fmt.S, a_fmt.I+a_fmt.F, 0);
     r = wide.py2mat(r, r_fmt);
+    
+    % Handle vectors
+    if is_column
+        r = r(:);
+    elseif is_row
+        r = reshape(r, 1, []);
+    end
 end
