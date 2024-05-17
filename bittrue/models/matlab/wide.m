@@ -112,7 +112,7 @@ classdef wide
             
             % Concatenate 64-bit integers
             n_ints = size(x, ndim+1);
-            x = fi(x, 0, n_ints*64, 0);
+            x = fi(x, 0, w, 0);
             idx = repmat({':'}, ndim+1, 1);  % Ugly indexing trick to slice n-D array.
             idx{end} = 1;  % Select the first slice (64 LSBs).
             y = x(idx{:});
@@ -120,9 +120,6 @@ classdef wide
                 idx{end} = k;  % Select the kth slice (64 bits).
                 y = bitor(pow2(x(idx{:}), (k-1)*64), y);
             end
-            
-            % Truncate width from N*64 to w (unsigned integer)
-            y = fi(y, 0, w, 0);
             
             % Reinterpret fixed-point format
             y = reinterpretcast(y, numerictype(s,w,f));
@@ -149,10 +146,11 @@ classdef wide
             y = zeros(shape, 'uint64');
             idx = repmat({':'}, ndim+1, 1);  % Ugly indexing trick to slice n-D array.
             mask = fi(intmax('uint64'), x.numerictype);  % 2^64 - 1.
+            x.RoundingMethod = 'Floor';
             for k = 1:n_ints
                 idx{end} = k;  % Write the kth slice (64 bits).
                 y(idx{:}) = uint64(bitand(x, mask));
-                x = bitsrl(x, 64);  % x >>= 64.
+                x = pow2(x, -64);  % x >>= 64.
             end
             
             % Convert uint64s to wide (arbitrary-precision) fixed-point data
