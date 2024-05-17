@@ -116,13 +116,16 @@ classdef wide
             idx = repmat({':'}, ndim+1, 1);  % Ugly indexing trick to slice n-D array.
             idx{end} = 1;  % Select the first slice (64 LSBs).
             y = x(idx{:});
+            y.SumMode = 'KeepLSB';
+            y.SumWordLength = w;
             for k = 2:n_ints
                 idx{end} = k;  % Select the kth slice (64 bits).
-                y = bitor(pow2(x(idx{:}), (k-1)*64), y);
+                y = y + pow2(x(idx{:}), (k-1)*64);
             end
             
             % Reinterpret fixed-point format
             y = reinterpretcast(y, numerictype(s,w,f));
+            y.SumMode = 'FullPrecision';
         end
         
         function y = fi2py(x)
@@ -145,11 +148,10 @@ classdef wide
             shape = [size(x), n_ints];  % Create new dimension for stacking uint64s.
             y = zeros(shape, 'uint64');
             idx = repmat({':'}, ndim+1, 1);  % Ugly indexing trick to slice n-D array.
-            mask = fi(intmax('uint64'), x.numerictype);  % 2^64 - 1.
             x.RoundingMethod = 'Floor';
             for k = 1:n_ints
                 idx{end} = k;  % Write the kth slice (64 bits).
-                y(idx{:}) = uint64(bitand(x, mask));
+                y(idx{:}) = uint64(quantize(x, numerictype(0, 64, 0)));
                 x = pow2(x, -64);  % x >>= 64.
             end
             
