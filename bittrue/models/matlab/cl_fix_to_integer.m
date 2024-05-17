@@ -24,6 +24,10 @@ function r = cl_fix_to_integer(a, a_fmt)
     % FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     % ---------------------------------------------------------------------------------------------
 
+    a = wide.mat2py(a, a_fmt);
     r = py.en_cl_fix_pkg.cl_fix_to_integer(a, a_fmt);
-    r = py2mat(r);
+    
+    % The returned values are integers. We can handle them as fixed-point, with 0 frac bits.
+    r_fmt = cl_fix_format(a_fmt.S, a_fmt.I+a_fmt.F, 0);
+    r = wide.py2mat(r, r_fmt);
 end

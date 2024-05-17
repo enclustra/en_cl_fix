@@ -23,7 +23,13 @@ function r = cl_fix_in_range(varargin)
     % DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
     % FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     % ---------------------------------------------------------------------------------------------
-
+    
+    % a = mat2py(a, a_fmt)
+    varargin{1} = wide.mat2py(varargin{1}, varargin{2});
+    
+    % r = cl_fix_in_range(a, a_fmt, r_fmt, [round])
     r = py.en_cl_fix_pkg.cl_fix_in_range(varargin{:});
+
+    % The result is boolean, so use py2mat() directly - not wide.py2mat().
     r = py2mat(r);
 end

@@ -4,7 +4,8 @@
 % This script demonstrates basic execution of en_cl_fix functions in MATLAB, using MATLAB's native
 % Python support.
 %
-% This script covers "narrow" (<= 53 bits) fixed-point numbers.
+% This script covers "wide" (arbitrary-precision) fixed-point numbers. This requires MATLAB's
+% Fixed-Point Designer toolbox.
 % -------------------------------------------------------------------------------------------------
 
 %--------------------------------------------------------------------------------------------------
@@ -75,8 +76,8 @@ addpath(fullfile(root, '..', '..', 'models', 'matlab'));
 cl_fix_constants;
 
 % Specify some input data formats.
-a_fmt = cl_fix_format(1, 0, 15);
-b_fmt = cl_fix_format(0, 2, 6);
+a_fmt = cl_fix_format(1, 50, 65);
+b_fmt = cl_fix_format(0, 52, 56);
 
 % Check string conversion functions
 disp(append('a_fmt = ', cl_fix_format_to_string(a_fmt)));
@@ -128,47 +129,47 @@ shift_result = cl_fix_shift(a, a_fmt, shift_size, shift_fmt);
 % Arithmetic Result Checking
 % -------------------------------------------------------------------------------------------------
 
-% All data formats in this script fit inside double-precision floats. This means we don't need to
+% None of the data formats in this script fit inside double-precision floats. This means we need to
 % handle arbitrary precision data.
-assert(~cl_fix_is_wide(a_fmt), 'Unexpected wide a_fmt.');
-assert(~cl_fix_is_wide(b_fmt), 'Unexpected wide b_fmt.');
+assert(cl_fix_is_wide(a_fmt), 'Unexpected narrow a_fmt.');
+assert(cl_fix_is_wide(b_fmt), 'Unexpected narrow b_fmt.');
 
 % Note: All of the example results are guaranteed to be represented without loss. So, we can just
 % check against ordinary double-precision arithmetic.
 
 % Addition
-assert(~cl_fix_is_wide(add_fmt), 'Unexpected wide add_fmt.');
+assert(cl_fix_is_wide(add_fmt), 'Unexpected narrow add_fmt.');
 add_expected = a + b;
 assert(isequal(add_result, add_expected), 'Error in add');
 
 % Subtraction
-assert(~cl_fix_is_wide(sub_fmt), 'Unexpected wide sub_fmt.');
+assert(cl_fix_is_wide(sub_fmt), 'Unexpected narrow sub_fmt.');
 sub_expected = a - b;
 assert(isequal(sub_result, sub_expected), 'Error in sub');
 
 % Add-sub
-assert(~cl_fix_is_wide(addsub_fmt), 'Unexpected wide addsub_fmt.');
+assert(cl_fix_is_wide(addsub_fmt), 'Unexpected narrow addsub_fmt.');
 addsub_expected = sub_expected;
 addsub_expected(addsub) = add_expected(addsub);
 assert(isequal(addsub_result, addsub_expected), 'Error in addsub');
 
 % Multiplication
-assert(~cl_fix_is_wide(mult_fmt), 'Unexpected wide mult_fmt.');
+assert(cl_fix_is_wide(mult_fmt), 'Unexpected narrow mult_fmt.');
 mult_expected = a .* b;
 assert(isequal(mult_result, mult_expected), 'Error in mult');
 
 % Absolute value
-assert(~cl_fix_is_wide(abs_fmt), 'Unexpected wide abs_fmt.');
+assert(cl_fix_is_wide(abs_fmt), 'Unexpected narrow abs_fmt.');
 abs_expected = abs(a);
 assert(isequal(abs_result, abs_expected), 'Error in abs');
 
 % Negation
-assert(~cl_fix_is_wide(neg_fmt), 'Unexpected wide neg_fmt.');
+assert(cl_fix_is_wide(neg_fmt), 'Unexpected narrow neg_fmt.');
 neg_expected = -a;
 assert(isequal(neg_result, neg_expected), 'Error in neg');
 
 % Bit-shifting
-assert(~cl_fix_is_wide(shift_fmt), 'Unexpected wide shift_fmt.');
+assert(cl_fix_is_wide(shift_fmt), 'Unexpected narrow shift_fmt.');
 shift_expected = a * 2^shift_size;
 assert(isequal(shift_result, shift_expected), 'Error in shift');
 
@@ -202,8 +203,10 @@ a_check = cl_fix_from_integer(a_int, a_fmt);
 assert(isequal(a_check, a), 'Unexpected values after integer conversions.');
 
 % Conversion from float
-a_check = cl_fix_from_real(a, a_fmt, Sat.SatWarn_s);
-assert(isequal(a_check, a), 'Unexpected values after float conversions');
+narrow_fmt = cl_fix_format(a_fmt.S, a_fmt.I, 53 - a_fmt.S - a_fmt.I);
+narrow_data = cl_fix_random(data_shape, narrow_fmt);
+a_check = cl_fix_from_real(narrow_data, a_fmt, Sat.SatWarn_s);
+assert(isequal(a_check, narrow_data), 'Unexpected values after float conversions');
 
 % Max and min values
 a_max = cl_fix_max_value(a_fmt);

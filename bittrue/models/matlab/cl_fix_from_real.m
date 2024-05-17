@@ -23,7 +23,10 @@ function r = cl_fix_from_real(a, r_fmt, saturate)
     % DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
     % FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     % ---------------------------------------------------------------------------------------------
-
+    
+    % The input must be narrow, so use mat2py() directly - not wide.mat2py().
+    a = mat2py(a);
+    
     r = py.en_cl_fix_pkg.cl_fix_from_real(a, r_fmt, saturate);
-    r = py2mat(r);
+    r = wide.py2mat(r, r_fmt);
 end

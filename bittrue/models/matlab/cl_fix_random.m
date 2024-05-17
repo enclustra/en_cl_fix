@@ -25,5 +25,5 @@ function r = cl_fix_random(shape, fmt)
     % ---------------------------------------------------------------------------------------------
 
     r = py.en_cl_fix_pkg.cl_fix_random(int32(shape), fmt);
-    r = py2mat(r);
+    r = wide.py2mat(r, fmt);
 end

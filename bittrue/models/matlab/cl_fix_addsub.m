@@ -23,7 +23,16 @@ function r = cl_fix_addsub(varargin)
     % DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
     % FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     % ---------------------------------------------------------------------------------------------
-
+    
+    % a = mat2py(a, a_fmt)
+    varargin{1} = wide.mat2py(varargin{1}, varargin{2});
+    
+    % b = mat2py(b, b_fmt)
+    varargin{3} = wide.mat2py(varargin{3}, varargin{4});
+    
+    % r = cl_fix_addsub(a, a_fmt, b, b_fmt, add, r_fmt, [round], [saturate])
     r = py.en_cl_fix_pkg.cl_fix_addsub(varargin{:});
-    r = py2mat(r);
+    
+    % r = py2mat(r, r_fmt)
+    r = wide.py2mat(r, varargin{6});
 end

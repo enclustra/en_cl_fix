@@ -23,7 +23,13 @@ function r = cl_fix_round(varargin)
     % DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
     % FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     % ---------------------------------------------------------------------------------------------
-
+    
+    % a = mat2py(a, a_fmt)
+    varargin{1} = wide.mat2py(varargin{1}, varargin{2});
+    
+    % r = cl_fix_round(a, a_fmt, r_fmt, [round])
     r = py.en_cl_fix_pkg.cl_fix_round(varargin{:});
-    r = py2mat(r);
+    
+    % r = py2mat(r, r_fmt)
+    r = wide.py2mat(r, varargin{3});
 end
