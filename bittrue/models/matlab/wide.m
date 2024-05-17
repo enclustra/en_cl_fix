@@ -13,6 +13,11 @@ classdef wide
     % =============================================================================================
     methods (Static = true)
         function y = py2mat(x, x_fmt)
+            % ------------------------------------------------------------------------------
+            % function y = py2mat(x, x_fmt)
+            % ------------------------------------------------------------------------------
+            % Converts Python data types to MATLAB types, with wide fixed-point support.
+            % ------------------------------------------------------------------------------
             if cl_fix_is_wide(x_fmt)
                 % Wide fixed-point conversion from Python to MATLAB fi()
                 y = wide.py2fi(x, x_fmt);
@@ -23,6 +28,11 @@ classdef wide
         end
         
         function y = mat2py(x, x_fmt)
+            % ------------------------------------------------------------------------------
+            % function y = mat2py(x, x_fmt)
+            % ------------------------------------------------------------------------------
+            % Converts MATLAB data types to Python types, with wide fixed-point support.
+            % ------------------------------------------------------------------------------
             if cl_fix_is_wide(x_fmt)
                 % Wide fixed-point conversion from MATLAB fi() to Python
                 y = wide.fi2py(x);
@@ -33,6 +43,11 @@ classdef wide
         end
         
         function [s,w,f,i] = fmt2swf(fmt)
+            % ------------------------------------------------------------------------------
+            % function [s,w,f,i] = fmt2swf(fmt)
+            % ------------------------------------------------------------------------------
+            % Converts en_cl_fix FixFormat [s,i,f] to MATLAB fi() [s,w,f] parameterization.
+            % ------------------------------------------------------------------------------
             s = double(fmt.S);
             w = double(cl_fix_width(fmt));
             f = double(fmt.F);
@@ -40,6 +55,11 @@ classdef wide
         end
         
         function [s,w,f,i] = fi2swf(x)
+            % ------------------------------------------------------------------------------
+            % function [s,w,f,i] = fi2swf(x)
+            % ------------------------------------------------------------------------------
+            % Extracts [s,w,f] parameterization from MATLAB fi() object.
+            % ------------------------------------------------------------------------------
             s = issigned(x);
             w = x.WordLength;
             f = x.FractionLength;
@@ -47,10 +67,20 @@ classdef wide
         end
         
         function fmt = swf2fmt(s, w, f)
+            % ------------------------------------------------------------------------------
+            % function fmt = swf2fmt(s, w, f)
+            % ------------------------------------------------------------------------------
+            % Converts MATLAB fi() [s,w,f] parameterization to en_cl_fix FixFormat [s,i,f].
+            % ------------------------------------------------------------------------------
             fmt = cl_fix_format(s, w-f-s, f);
         end
         
         function fmt = fi2fmt(x)
+            % ------------------------------------------------------------------------------
+            % function fmt = fi2fmt(x)
+            % ------------------------------------------------------------------------------
+            % Extracts en_cl_fix FixFormat [s,i,f] from MATLAB fi() object.
+            % ------------------------------------------------------------------------------
             [s, w, f] = wide.fi2swf(x);
             fmt = wide.swf2fmt(s, w, f);
         end
@@ -99,6 +129,11 @@ classdef wide
         end
         
         function y = fi2py(x)
+            % ------------------------------------------------------------------------------
+            % function y = fi2py(x)
+            % ------------------------------------------------------------------------------
+            % Converts MATLAB fi() to "wide" (arbitrary-precision) fixed-point Python data.
+            % ------------------------------------------------------------------------------
             fmt = wide.fi2fmt(x);
             w = cl_fix_width(fmt);
             
