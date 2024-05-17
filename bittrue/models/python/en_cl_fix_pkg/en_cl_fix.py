@@ -142,7 +142,7 @@ def cl_fix_from_real(a, r_fmt : FixFormat, saturate : FixSaturate = FixSaturate.
         return NarrowFix.from_real(a, r_fmt, saturate)._data
 
 
-def cl_fix_from_integer(a, a_fmt : FixFormat):
+def cl_fix_from_integer(a, r_fmt : FixFormat):
     """
     Converts from unnormalized integer data to fixed-point.
     
@@ -150,10 +150,10 @@ def cl_fix_from_integer(a, a_fmt : FixFormat):
     """
     a = _clean_input(a)
     
-    if cl_fix_is_wide(a_fmt):
+    if cl_fix_is_wide(r_fmt):
         return a
     else:
-        return NarrowFix.from_integer(a, a_fmt)._data
+        return NarrowFix.from_integer(a, r_fmt)._data
 
 
 def cl_fix_to_integer(a, a_fmt : FixFormat):
