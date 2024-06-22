@@ -1,3 +1,8 @@
+## 2.1.0
+* Features
+  * Added testbench file I/O support (integrating lib/en_tb).
+  * Added arbitrary-precision number support in MATLAB.
+
 ## 2.0.0
 * Features
   * Major refactor of all VHDL code, to improve consistency, reduce clutter and improve verification.
