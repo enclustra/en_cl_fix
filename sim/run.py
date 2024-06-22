@@ -32,21 +32,20 @@ def create_test_suite(vu, args):
     vu.add_osvvm()
     vu.add_verification_components()
     vu.add_random()
-
-    # Create library
-    lib = vu.add_library("lib_en_cl_fix")
     
-    # Add EN_TB files
-    lib.add_source_files(join(root, "../../en_tb/hdl/en_tb_base_pkg.vhd"), vhdl_standard=vhdl_standard_tb)
-    lib.add_source_files(join(root, "../../en_tb/hdl/en_tb_fileio*.vhd"), vhdl_standard=vhdl_standard_tb)
-    lib.add_source_files(join(root, "../../en_tb/hdl/en_tb_fix_fileio*.vhd"), vhdl_standard=vhdl_standard_tb)
+    # Add en_tb library
+    en_tb = vu.add_library("en_tb")
+    en_tb.add_source_files(join(root, "../lib/en_tb/hdl/*.vhd"), vhdl_standard=vhdl_standard_tb)
     
+    # Create testbench library
+    lib = vu.add_library("lib")
     # Add RTL files
     lib.add_source_files(join(root, "../hdl/*.vhd"), vhdl_standard=vhdl_standard_rtl)
-    
+    # Add en_cl_fix extensions to en_tb
+    lib.add_source_files(join(root, "../tb/util/*.vhd"), vhdl_standard=vhdl_standard_tb)
     # Add testbench files
     lib.add_source_files(join(root, "../tb/*.vhd"), vhdl_standard=vhdl_standard_tb)
-
+    
     ###############################################################################################
     # Add testbench run configurations
     ###############################################################################################

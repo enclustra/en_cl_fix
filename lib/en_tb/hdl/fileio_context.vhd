@@ -18,19 +18,20 @@
 ---------------------------------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------------------------------
--- README:
+-- Important:
 --
--- Copy-paste this file into your project's tb/ directory and rename "lib" to the correct name.
--- 
--- This is necessary in any cases where there are shared dependencies between a library and the
--- main project compilation lib because:
---   - Libraries specified in contexts must have known fixed names (not work.).
---   - Compiling a dependency into two libraries creates clashes (e.g. type mismatches between the
---     same type defined in the same package, but compiled into different libraries).
+-- It is RECOMMENDED (but not REQUIRED) to compile en_tb into a VHDL library named "en_tb".
+--
+-- When the VHDL library name "en_tb" is used, this VHDL-2008 context can be used. This allows all
+-- the required en_tb packages (and only the required ones) to be included via a single use clause.
+--
+-- In (rare) cases where the "en_tb" name cannot be used, it is recommended to make local copies of
+-- this file, with the library name "en_tb" (below) updated to the correct name. An alternative is
+-- to just avoid using the context (and instead have multiple use clauses to include the required
+-- packages individually).
 ---------------------------------------------------------------------------------------------------
-
-context en_tb_fileio_context is
-  library lib_en_cl_fix;
-  use lib_en_cl_fix.en_tb_base_pkg.all;
-  use lib_en_cl_fix.en_tb_fileio_text_pkg.all;
+context fileio_context is
+    library en_tb;
+    use en_tb.base_pkg.all;
+    use en_tb.fileio_text_pkg.all;
 end context;

@@ -23,7 +23,22 @@ function r = cl_fix_from_real(a, r_fmt, saturate)
     % DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
     % FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     % ---------------------------------------------------------------------------------------------
-
+    
+    % Inconsitency in the MATLAB<->Python interface sometimes causes shape mismatches for vectors.
+    % Workaround: handle vectors as special cases;
+    is_column = iscolumn(a);
+    is_row = isrow(a);
+    
+    % The input must be narrow, so use mat2py() directly - not wide.mat2py().
+    a = mat2py(a);
+    
     r = py.en_cl_fix_pkg.cl_fix_from_real(a, r_fmt, saturate);
-    r = py2mat(r);
+    r = wide.py2mat(r, r_fmt);
+    
+    % Handle vectors
+    if is_column
+        r = r(:);
+    elseif is_row
+        r = reshape(r, 1, []);
+    end
 end

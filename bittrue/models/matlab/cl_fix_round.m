@@ -23,7 +23,25 @@ function r = cl_fix_round(varargin)
     % DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
     % FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     % ---------------------------------------------------------------------------------------------
-
+    
+    % Inconsitency in the MATLAB<->Python interface sometimes causes shape mismatches for vectors.
+    % Workaround: handle vectors as special cases;
+    is_column = iscolumn(varargin{1});
+    is_row = isrow(varargin{1});
+    
+    % a = mat2py(a, a_fmt)
+    varargin{1} = wide.mat2py(varargin{1}, varargin{2});
+    
+    % r = cl_fix_round(a, a_fmt, r_fmt, [round])
     r = py.en_cl_fix_pkg.cl_fix_round(varargin{:});
-    r = py2mat(r);
+    
+    % r = py2mat(r, r_fmt)
+    r = wide.py2mat(r, varargin{3});
+    
+    % Handle vectors
+    if is_column
+        r = r(:);
+    elseif is_row
+        r = reshape(r, 1, []);
+    end
 end

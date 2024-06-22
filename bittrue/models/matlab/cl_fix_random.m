@@ -25,5 +25,11 @@ function r = cl_fix_random(shape, fmt)
     % ---------------------------------------------------------------------------------------------
 
     r = py.en_cl_fix_pkg.cl_fix_random(int32(shape), fmt);
-    r = py2mat(r);
+    r = wide.py2mat(r, fmt);
+    
+    % Inconsitency in the MATLAB<->Python interface sometimes causes shape mismatches for vectors.
+    % Workaround: Arbitrarily (but consistently) force scalar "shape" to column vector.
+    if isscalar(shape)
+        r = r(:);
+    end
 end

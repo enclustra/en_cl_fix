@@ -1,5 +1,20 @@
 ###################################################################################################
-# Copyright (c) 2023 Enclustra GmbH, Switzerland (info@enclustra.com)
+# Copyright (c) 2024 Enclustra GmbH, Switzerland (info@enclustra.com)
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+# and associated documentation files (the "Software"), to deal in the Software without
+# restriction, including without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all copies or
+# substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+# BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ###################################################################################################
 
 ###################################################################################################
@@ -127,7 +142,7 @@ def cl_fix_from_real(a, r_fmt : FixFormat, saturate : FixSaturate = FixSaturate.
         return NarrowFix.from_real(a, r_fmt, saturate)._data
 
 
-def cl_fix_from_integer(a, a_fmt : FixFormat):
+def cl_fix_from_integer(a, r_fmt : FixFormat):
     """
     Converts from unnormalized integer data to fixed-point.
     
@@ -135,10 +150,10 @@ def cl_fix_from_integer(a, a_fmt : FixFormat):
     """
     a = _clean_input(a)
     
-    if cl_fix_is_wide(a_fmt):
+    if cl_fix_is_wide(r_fmt):
         return a
     else:
-        return NarrowFix.from_integer(a, a_fmt)._data
+        return NarrowFix.from_integer(a, r_fmt)._data
 
 
 def cl_fix_to_integer(a, a_fmt : FixFormat):
@@ -459,14 +474,19 @@ def cl_fix_write_formats(fmts, names, filename : str):
 
 def cl_fix_zeros(shape, fmt : FixFormat):
     """
-    Generates fixed-point zeros.
+    Generates fixed-point zeros. The shape of the returned array is "shape".
+    
+    Example: cl_fix_zeros((3,2), fmt) returns a 3x2 array.
     """
     return cl_fix_from_real(np.zeros(shape), fmt)
 
 
 def cl_fix_random(shape, fmt : FixFormat):
     """
-    Generates fixed-point random data, uniformly distributed across the representable range.
+    Generates fixed-point random data, uniformly distributed across the representable range. The
+    shape of the returned array is "shape".
+    
+    Example: cl_fix_random((3,2), fmt) returns a 3x2 array.
     """
     # Generate random data values distributed across the whole dynamic range of fmt.
     fmt_min = cl_fix_min_value(fmt)
