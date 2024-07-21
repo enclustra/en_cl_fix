@@ -154,6 +154,7 @@ package en_cl_fix_pkg is
         round       : FixRound_t := Trunc_s
     ) return boolean;
     
+    -- Recommended pipeline stages for cl_fix_round
     function cl_fix_recommended_pipelining(
         a_fmt       : FixFormat_t;
         result_fmt  : FixFormat_t;
@@ -161,12 +162,14 @@ package en_cl_fix_pkg is
         fmt_check   : boolean := true
     ) return natural;
     
+    -- Recommended pipeline stages for cl_fix_saturate
     function cl_fix_recommended_pipelining(
         a_fmt       : FixFormat_t;
         result_fmt  : FixFormat_t;
         saturate    : FixSaturate_t := Warn_s
     ) return natural;
     
+    -- Recommended pipeline stages for cl_fix_resize
     function cl_fix_recommended_pipelining(
         a_fmt       : FixFormat_t;
         result_fmt  : FixFormat_t;
@@ -1075,8 +1078,9 @@ package body en_cl_fix_pkg is
                 report "cl_fix_recommended_pipelining: Unhandled saturation mode."
                 severity Failure;
         end if;
-        -- (2) If neither the number of sign bits nor integer bits is being decreased.
-        if result_fmt.S >= a_fmt.S and result_fmt.I >= a_fmt.I then
+        -- (2) If the number of integer bits is not being decreased, and the number of sign bits is
+        --     not being changed.
+        if result_fmt.I >= a_fmt.I and result_fmt.S = a_fmt.S then
             return 0;
         end if;
         return 1;
