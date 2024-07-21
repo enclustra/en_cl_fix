@@ -1,0 +1,104 @@
+---------------------------------------------------------------------------------------------------
+-- Copyright (c) 2024 Enclustra GmbH, Switzerland (info@enclustra.com)
+--
+-- Permission is hereby granted, free of charge, to any person obtaining a copy of
+-- this hardware, software, firmware, and associated documentation files (the
+-- "Product"), to deal in the Product without restriction, including without
+-- limitation the rights to use, copy, modify, merge, publish, distribute,
+-- sublicense, and/or sell copies of the Product, and to permit persons to whom the
+-- Product is furnished to do so, subject to the following conditions:
+--
+-- The above copyright notice and this permission notice shall be included in all
+-- copies or substantial portions of the Product.
+--
+-- THE PRODUCT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+-- INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+-- PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+-- HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+-- OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+-- PRODUCT OR THE USE OR OTHER DEALINGS IN THE PRODUCT.
+---------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------
+-- Description:
+--
+-- This block implements pipelined saturation.
+--
+-- If force_reg_g = true, then a pipeline register is always inserted. This is the best choice when
+-- latency needs to be constant, regardless of all other generics. Latency = 1.
+--
+-- If force_reg_g = false, then a pipeline register is only inserted when required. This is usually
+-- the best choice when it is acceptable for latency to change when other generics are changed.
+-- Latency = cl_fix_recommended_pipelining(in_fmt_g, out_fmt_g, saturate_g).
+---------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------
+-- Libraries
+---------------------------------------------------------------------------------------------------
+library ieee;
+    use ieee.std_logic_1164.all;
+
+library work;
+    use work.en_cl_fix_pkg.all;
+
+---------------------------------------------------------------------------------------------------
+-- Entity
+---------------------------------------------------------------------------------------------------
+entity en_cl_fix_saturate is
+    generic(
+        in_fmt_g    : FixFormat_t;
+        out_fmt_g   : FixFormat_t;
+        saturate_g  : FixSaturate_t;
+        force_reg_g : boolean          -- See comments above. If unsure, set to true.
+    );
+    port(
+        ------------------------------------------
+        -- Clock and Reset
+        ------------------------------------------
+        clk         : in  std_logic;
+        rst         : in  std_logic;
+        ------------------------------------------
+        -- Input
+        ------------------------------------------
+        in_valid    : in  std_logic;
+        in_data     : in  std_logic_vector(cl_fix_width(in_fmt_g)-1 downto 0);
+        ------------------------------------------
+        -- Output
+        ------------------------------------------
+        out_valid   : out std_logic;
+        out_data    : out std_logic_vector(cl_fix_width(out_fmt_g)-1 downto 0)
+    );
+end en_cl_fix_saturate;
+
+---------------------------------------------------------------------------------------------------
+-- Architecture
+---------------------------------------------------------------------------------------------------
+architecture rtl of en_cl_fix_saturate is
+    
+    constant recommended_c  : natural := cl_fix_recommended_pipelining(in_fmt_g, out_fmt_g, saturate_g);
+    constant use_reg_c      : boolean := force_reg_g or (recommended_c > 0);
+    
+    signal result           : std_logic_vector(cl_fix_width(out_fmt_g)-1 downto 0);
+    
+begin
+    -- Calculate result
+    result <= cl_fix_saturate(in_data, in_fmt_g, out_fmt_g, saturate_g);
+    
+    -- With pipeline register
+    g_register : if use_reg_c generate
+        process(clk)
+        begin
+            if rising_edge(clk) then
+                out_valid <= in_valid and not rst;
+                out_data <= result;
+            end if;
+        end process;
+    end generate;
+    
+    -- Without pipeline register
+    g_no_register : if not use_reg_c generate
+        out_valid <= in_valid;
+        out_data <= result;
+    end generate;
+    
+end rtl;

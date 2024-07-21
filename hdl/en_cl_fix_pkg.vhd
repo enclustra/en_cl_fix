@@ -154,6 +154,26 @@ package en_cl_fix_pkg is
         round       : FixRound_t := Trunc_s
     ) return boolean;
     
+    function cl_fix_recommended_pipelining(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        fmt_check   : boolean := true
+    ) return natural;
+    
+    function cl_fix_recommended_pipelining(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        saturate    : FixSaturate_t := Warn_s
+    ) return natural;
+    
+    function cl_fix_recommended_pipelining(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return natural;
+    
     -----------------------------------------------------------------------------------------------
     -- Math Functions
     -----------------------------------------------------------------------------------------------
@@ -902,6 +922,7 @@ package body en_cl_fix_pkg is
         variable mid_v          : unsigned(cl_fix_width(mid_fmt_c)-1 downto 0) := (others => '0');
         variable result_v       : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
+        -- Allow the designer to ignore the worst-case result format (with caution).
         if fmt_check then
             assert result_fmt = cl_fix_round_fmt(a_fmt, result_fmt.F, round)
                 report "cl_fix_round: Invalid result format. Use cl_fix_round_fmt()." severity Failure;
@@ -1002,6 +1023,75 @@ package body en_cl_fix_pkg is
     begin
         return cl_fix_compare(">=", Rounded_c, rndFmt_c, cl_fix_min_value(result_fmt), result_fmt) and
                cl_fix_compare("<=", Rounded_c, rndFmt_c, cl_fix_max_value(result_fmt), result_fmt);
+    end;
+    
+    function cl_fix_recommended_pipelining(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        fmt_check   : boolean := true
+    ) return natural is
+    begin
+        -- Allow the designer to ignore the worst-case result format (with caution).
+        if fmt_check then
+            assert result_fmt = cl_fix_round_fmt(a_fmt, result_fmt.F, round)
+                report "cl_fix_recommended_pipelining: Invalid result format. Use cl_fix_round_fmt()." severity Failure;
+        end if;
+        
+        -- Registering is not needed if zero logic is used. This happens in two cases:
+        -- (1) During truncation.
+        if round = Trunc_s then
+            return 0;
+        else
+            -- If a new rounding mode is defined, then appropriate behavior must be implemented.
+            assert round = NonSymPos_s or round = NonSymNeg_s or round = SymInf_s or round = SymZero_s or round = ConvEven_s or round = ConvOdd_s
+                report "cl_fix_recommended_pipelining: Unhandled rounding mode."
+                severity Failure;
+        end if;
+        -- (2) If the number of fractional bits isn't being decreased.
+        if result_fmt.F >= a_fmt.F then
+            return 0;
+        end if;
+        return 1;
+    end;
+    
+    function cl_fix_recommended_pipelining(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        saturate    : FixSaturate_t := Warn_s
+    ) return natural is
+    begin
+        assert result_fmt.F = a_fmt.F
+            report "cl_fix_recommended_pipelining: Number of frac bits cannot change during saturation."
+            severity Failure;
+        
+        -- Registering is not needed if zero logic is used. This happens in two cases:
+        -- (1) During wrapping.
+        if saturate = None_s or saturate = Warn_s then
+            return 0;
+        else
+            -- If a new saturation mode is defined, then appropriate behavior must be implemented.
+            assert saturate = Sat_s or saturate = SatWarn_s
+                report "cl_fix_recommended_pipelining: Unhandled saturation mode."
+                severity Failure;
+        end if;
+        -- (2) If neither the number of sign bits nor integer bits is being decreased.
+        if result_fmt.S >= a_fmt.S and result_fmt.I >= a_fmt.I then
+            return 0;
+        end if;
+        return 1;
+    end;
+    
+    function cl_fix_recommended_pipelining(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t := Trunc_s;
+        saturate    : FixSaturate_t := Warn_s
+    ) return natural is
+        constant round_fmt_c    : FixFormat_t := cl_fix_round_fmt(a_fmt, result_fmt.F, round);
+    begin
+        return cl_fix_recommended_pipelining(a_fmt, round_fmt_c, round)
+             + cl_fix_recommended_pipelining(round_fmt_c, result_fmt, saturate);
     end;
     
     function cl_fix_abs(
