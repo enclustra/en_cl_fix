@@ -158,7 +158,7 @@ package en_cl_fix_pkg is
     function cl_fix_recommended_pipelining(
         a_fmt       : FixFormat_t;
         result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
+        round       : FixRound_t;
         fmt_check   : boolean := true
     ) return natural;
     
@@ -166,15 +166,15 @@ package en_cl_fix_pkg is
     function cl_fix_recommended_pipelining(
         a_fmt       : FixFormat_t;
         result_fmt  : FixFormat_t;
-        saturate    : FixSaturate_t := Warn_s
+        saturate    : FixSaturate_t
     ) return natural;
     
     -- Recommended pipeline stages for cl_fix_resize
     function cl_fix_recommended_pipelining(
         a_fmt       : FixFormat_t;
         result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
+        round       : FixRound_t;
+        saturate    : FixSaturate_t
     ) return natural;
     
     -----------------------------------------------------------------------------------------------
@@ -1031,7 +1031,7 @@ package body en_cl_fix_pkg is
     function cl_fix_recommended_pipelining(
         a_fmt       : FixFormat_t;
         result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
+        round       : FixRound_t;
         fmt_check   : boolean := true
     ) return natural is
     begin
@@ -1061,7 +1061,7 @@ package body en_cl_fix_pkg is
     function cl_fix_recommended_pipelining(
         a_fmt       : FixFormat_t;
         result_fmt  : FixFormat_t;
-        saturate    : FixSaturate_t := Warn_s
+        saturate    : FixSaturate_t
     ) return natural is
     begin
         assert result_fmt.F = a_fmt.F
@@ -1089,8 +1089,8 @@ package body en_cl_fix_pkg is
     function cl_fix_recommended_pipelining(
         a_fmt       : FixFormat_t;
         result_fmt  : FixFormat_t;
-        round       : FixRound_t := Trunc_s;
-        saturate    : FixSaturate_t := Warn_s
+        round       : FixRound_t;
+        saturate    : FixSaturate_t
     ) return natural is
         constant round_fmt_c    : FixFormat_t := cl_fix_round_fmt(a_fmt, result_fmt.F, round);
     begin
