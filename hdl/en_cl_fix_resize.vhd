@@ -46,11 +46,12 @@ library work;
 ---------------------------------------------------------------------------------------------------
 entity en_cl_fix_resize is
     generic(
-        in_fmt_g    : FixFormat_t;
-        out_fmt_g   : FixFormat_t;
-        round_g     : FixRound_t;
-        saturate_g  : FixSaturate_t;
-        force_reg_g : boolean          -- See comments above. If unsure, set to true.
+        in_fmt_g        : FixFormat_t;
+        out_fmt_g       : FixFormat_t;
+        round_g         : FixRound_t;
+        saturate_g      : FixSaturate_t;
+        force_reg_g     : boolean;      -- See comments above. If unsure, set to true.
+        meta_width_g    : natural := 0  -- Sideband metadata width. Default: unused.
     );
     port(
         ------------------------------------------
@@ -62,11 +63,13 @@ entity en_cl_fix_resize is
         -- Input
         ------------------------------------------
         in_valid    : in  std_logic;
+        in_meta     : in  std_logic_vector(meta_width_g-1 downto 0) := (others => 'X');
         in_data     : in  std_logic_vector(cl_fix_width(in_fmt_g)-1 downto 0);
         ------------------------------------------
         -- Output
         ------------------------------------------
         out_valid   : out std_logic;
+        out_meta    : out std_logic_vector(meta_width_g-1 downto 0);
         out_data    : out std_logic_vector(cl_fix_width(out_fmt_g)-1 downto 0)
     );
 end en_cl_fix_resize;
@@ -79,6 +82,7 @@ architecture rtl of en_cl_fix_resize is
     constant round_fmt_c    : FixFormat_t := cl_fix_round_fmt(in_fmt_g, out_fmt_g.F, round_g);
     
     signal round_valid      : std_logic;
+    signal round_meta       : std_logic_vector(meta_width_g-1 downto 0);
     signal round_data       : std_logic_vector(cl_fix_width(round_fmt_c)-1 downto 0);
     
 begin
@@ -88,10 +92,11 @@ begin
     -----------
     i_round : entity work.en_cl_fix_round
     generic map(
-        in_fmt_g    => in_fmt_g,
-        out_fmt_g   => round_fmt_c,
-        round_g     => round_g,
-        force_reg_g => force_reg_g
+        in_fmt_g        => in_fmt_g,
+        out_fmt_g       => round_fmt_c,
+        round_g         => round_g,
+        force_reg_g     => force_reg_g,
+        meta_width_g    => meta_width_g
     )
     port map(
         -- Clock and Reset
@@ -99,9 +104,11 @@ begin
         rst         => rst,
         -- Input
         in_valid    => in_valid,
+        in_meta     => in_meta,
         in_data     => in_data,
         -- Output
         out_valid   => round_valid,
+        out_meta    => round_meta,
         out_data    => round_data
     );
     
@@ -110,10 +117,11 @@ begin
     --------------
     i_saturate : entity work.en_cl_fix_saturate
     generic map(
-        in_fmt_g    => round_fmt_c,
-        out_fmt_g   => out_fmt_g,
-        saturate_g  => saturate_g,
-        force_reg_g => force_reg_g
+        in_fmt_g        => round_fmt_c,
+        out_fmt_g       => out_fmt_g,
+        saturate_g      => saturate_g,
+        force_reg_g     => force_reg_g,
+        meta_width_g    => meta_width_g
     )
     port map(
         -- Clock and Reset
@@ -121,9 +129,11 @@ begin
         rst         => rst,
         -- Input
         in_valid    => round_valid,
+        in_meta     => round_meta,
         in_data     => round_data,
         -- Output
         out_valid   => out_valid,
+        out_meta    => out_meta,
         out_data    => out_data
     );
     

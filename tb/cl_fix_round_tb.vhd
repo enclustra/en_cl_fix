@@ -24,6 +24,9 @@ library ieee;
     use ieee.std_logic_1164.all;
     use ieee.numeric_std.all;
 
+library osvvm;
+    use osvvm.RandomPkg.all;
+
 library vunit_lib;
     context vunit_lib.vunit_context;
     context vunit_lib.vc_context;
@@ -40,7 +43,8 @@ library work;
 ---------------------------------------------------------------------------------------------------
 entity cl_fix_round_tb is
     generic(
-        runner_cfg      : string
+        runner_cfg      : string;
+        meta_width_g    : natural
     );
 end cl_fix_round_tb;
 
@@ -97,22 +101,28 @@ begin
     -- Test Cases
     -----------------------------------------------------------------------------------------------
     g_test_case : for i in 0 to test_count_c-1 generate
+        constant RandSeed_c : string := "Metadata seed " & to_string(i);
         constant Amin       : integer := cl_fix_to_integer(cl_fix_min_value(a_fmt_c(i)), a_fmt_c(i));
         constant Amax       : integer := cl_fix_to_integer(cl_fix_max_value(a_fmt_c(i)), a_fmt_c(i));
         
         signal rst          : std_logic;
         
         signal in_valid     : std_logic;
+        signal in_meta      : std_logic_vector(meta_width_g-1 downto 0);
         signal in_data      : std_logic_vector(cl_fix_width(a_fmt_c(i))-1 downto 0);
         
         signal out_valid    : std_logic;
+        signal out_meta     : std_logic_vector(meta_width_g-1 downto 0);
         signal out_data     : std_logic_vector(cl_fix_width(r_fmt_c(i))-1 downto 0);
     begin
         -----------
         -- Input --
         -----------
         p_input : process
+            variable Random_v   : RandomPType;
         begin
+            Random_v.InitSeed(RandSeed_c);
+            
             -- Reset
             rst <= '1';
             in_valid <= '0';
@@ -123,12 +133,14 @@ begin
             -- We repeat the same pattern here.
             for a in Amin to Amax loop
                 in_valid <= '1';
+                in_meta <= Random_v.RandSlv(meta_width_g);
                 in_data <= cl_fix_from_integer(a, a_fmt_c(i));
                 wait until rising_edge(clk);
             end loop;
             
             -- Idle
             in_valid <= '0';
+            in_meta <= (others => 'X');
             in_data <= (others => 'X');
             wait;
         end process;
@@ -138,10 +150,11 @@ begin
         ---------
         i_uut : entity work.en_cl_fix_round
         generic map(
-            in_fmt_g    => a_fmt_c(i),
-            out_fmt_g   => r_fmt_c(i),
-            round_g     => FixRound_t'val(rnd_c(i)),
-            force_reg_g => (i mod 2 = 0)  -- Toggle between test cases.
+            in_fmt_g        => a_fmt_c(i),
+            out_fmt_g       => r_fmt_c(i),
+            round_g         => FixRound_t'val(rnd_c(i)),
+            force_reg_g     => (i mod 2 = 0),  -- Toggle between test cases.
+            meta_width_g    => meta_width_g
         )
         port map(
             -- Clock and Reset
@@ -149,9 +162,11 @@ begin
             rst         => rst,
             -- Input
             in_valid    => in_valid,
+            in_meta     => in_meta,
             in_data     => in_data,
             -- Output
             out_valid   => out_valid,
+            out_meta    => out_meta,
             out_data    => out_data
         );
         
@@ -161,11 +176,17 @@ begin
         p_check : process
             constant Expected_c : SlvArray_t := cl_fix_read_file(DataPath_c & "test" & to_string(i) & "_output.txt", r_fmt_c(i));
             variable Idx_v      : natural := 0;
+            variable Random_v   : RandomPType;
         begin
+            Random_v.InitSeed(RandSeed_c);
+            
             for a in Amin to Amax loop
                 wait until out_valid = '1' and rising_edge(Clk);
                 
-                -- Check against cosim
+                -- Check metadata
+                check_equal(out_meta, Random_v.RandSlv(meta_width_g), "Metadata mismatch");
+                
+                -- Check data against cosim
                 if out_data /= Expected_c(Idx_v) then
                     print(
                         "Error in test case " & to_string(i) & " while rounding " & str(a, a_fmt_c(i)) & " " & to_string(a_fmt_c(i))

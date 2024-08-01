@@ -46,11 +46,12 @@ library work;
 ---------------------------------------------------------------------------------------------------
 entity en_cl_fix_round is
     generic(
-        in_fmt_g    : FixFormat_t;
-        out_fmt_g   : FixFormat_t;
-        round_g     : FixRound_t;
-        force_reg_g : boolean;         -- See comments above. If unsure, set to true.
-        fmt_check_g : boolean := true  -- See cl_fix_round.
+        in_fmt_g        : FixFormat_t;
+        out_fmt_g       : FixFormat_t;
+        round_g         : FixRound_t;
+        force_reg_g     : boolean;         -- See comments above. If unsure, set to true.
+        meta_width_g    : natural := 0;    -- Sideband metadata width. Default: unused.
+        fmt_check_g     : boolean := true  -- See cl_fix_round.
     );
     port(
         ------------------------------------------
@@ -62,11 +63,13 @@ entity en_cl_fix_round is
         -- Input
         ------------------------------------------
         in_valid    : in  std_logic;
+        in_meta     : in  std_logic_vector(meta_width_g-1 downto 0) := (others => 'X');
         in_data     : in  std_logic_vector(cl_fix_width(in_fmt_g)-1 downto 0);
         ------------------------------------------
         -- Output
         ------------------------------------------
         out_valid   : out std_logic;
+        out_meta    : out std_logic_vector(meta_width_g-1 downto 0);
         out_data    : out std_logic_vector(cl_fix_width(out_fmt_g)-1 downto 0)
     );
 end en_cl_fix_round;
@@ -91,6 +94,7 @@ begin
         begin
             if rising_edge(clk) then
                 out_valid <= in_valid and not rst;
+                out_meta <= in_meta;
                 out_data <= result;
             end if;
         end process;
@@ -99,6 +103,7 @@ begin
     -- Without pipeline register
     g_no_register : if not use_reg_c generate
         out_valid <= in_valid;
+        out_meta <= in_meta;
         out_data <= result;
     end generate;
     
