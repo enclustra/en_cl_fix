@@ -34,8 +34,8 @@ package en_cl_fix_private_pkg is
     function to01(x : std_logic_vector) return std_logic_vector;
     function toInteger(bool : boolean) return integer;
     
-    function max(a, b : integer) return integer;
-    function min(a, b : integer) return integer;
+    function maximum(a, b : integer) return integer;
+    function minimum(a, b : integer) return integer;
     
     function toLower(s : string) return string;
     function string_find_next_match(Str : string; Char : character; StartIdx : natural) return integer;
@@ -93,7 +93,7 @@ package body en_cl_fix_private_pkg is
         end if;
     end;
     
-    function max(a, b : integer) return integer is
+    function maximum(a, b : integer) return integer is
     begin
         if a >= b then
             return a;
@@ -102,7 +102,7 @@ package body en_cl_fix_private_pkg is
         end if;
     end;
     
-    function min(a, b : integer) return integer is
+    function minimum(a, b : integer) return integer is
     begin
         if a <= b then
             return a;
