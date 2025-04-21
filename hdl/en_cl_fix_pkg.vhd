@@ -775,6 +775,7 @@ package body en_cl_fix_pkg is
         constant ChunkCount_c   : positive := (cl_fix_width(result_fmt) + ChunkSize_c - 1)/ChunkSize_c;
         variable ASat_v         : real;
         variable Chunk_v        : std_logic_vector(ChunkSize_c-1 downto 0);
+        variable ChunkInt_v     : integer;
         variable Result_v       : std_logic_vector(ChunkSize_c*ChunkCount_c-1 downto 0);
     begin
         -- Saturation is mandatory in this function (because wrapping has not been implemented)
@@ -797,7 +798,12 @@ package body en_cl_fix_pkg is
         -- Convert to fixed-point in chunks (required for formats that don't fit into integer)
         for i in 0 to ChunkCount_c-1 loop
             -- Note: Due to a Xilinx Vivado bug, we must explicitly call the math_real mod operator
-            Chunk_v := std_logic_vector(to_unsigned(integer(ieee.math_real."mod"(ASat_v, 2.0**ChunkSize_c)), ChunkSize_c));
+            ChunkInt_v := integer(ieee.math_real."mod"(ASat_v, 2.0**ChunkSize_c));
+            if ChunkInt_v > 0 then
+                Chunk_v := std_logic_vector(to_unsigned(ChunkInt_v, ChunkSize_c));
+            else
+                Chunk_v := std_logic_vector(to_signed(ChunkInt_v, ChunkSize_c));
+            end if;
             Result_v((i+1)*ChunkSize_c-1 downto i*ChunkSize_c) := Chunk_v;
             ASat_v := floor(ASat_v/2.0**ChunkSize_c);
         end loop;
