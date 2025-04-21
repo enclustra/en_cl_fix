@@ -323,14 +323,11 @@ package body en_cl_fix_pkg is
     function union(aFmt, bFmt : FixFormat_t) return FixFormat_t is
     begin
         return (
-            S => max(aFmt.S, bFmt.S),
-            I => max(aFmt.I, bFmt.I),
-            F => max(aFmt.F, bFmt.F)
+            S => maximum(aFmt.S, bFmt.S),
+            I => maximum(aFmt.I, bFmt.I),
+            F => maximum(aFmt.F, bFmt.F)
         );
     end function;
-    
-    -- Avoid collision between min() function and minutes unit in VHDL std library.
-    alias min is work.en_cl_fix_private_pkg.min[integer, integer return integer];
     
     -----------------------------------------------------------------------------------------------
     -- Public Functions
@@ -392,7 +389,7 @@ package body en_cl_fix_pkg is
         --          minFmt.I + min(minFmt.F, maxFmt.F) > 0
         --          min(aFmt.I, bFmt.I) + min(aFmt.F, bFmt.F) > 0
         -- There is probably a more direct way to derive this simple expression.
-        constant rmax_growth_c  : natural := choose(min(a_fmt.I, b_fmt.I) + min(a_fmt.F, b_fmt.F) > 0, 1, 0);
+        constant rmax_growth_c  : natural := choose(minimum(a_fmt.I, b_fmt.I) + minimum(a_fmt.F, b_fmt.F) > 0, 1, 0);
         
         -- rmin = amin+bmin
         --     If aFmt.S = 0 and bFmt.S = 0: 0 + 0
@@ -402,9 +399,9 @@ package body en_cl_fix_pkg is
         constant rmin_growth_c  : natural := choose(a_fmt.S = 1 and b_fmt.S = 1, 1, 0);
     begin
         return (
-            max(a_fmt.S, b_fmt.S),
-            max(a_fmt.I, b_fmt.I) + max(rmin_growth_c, rmax_growth_c),
-            max(a_fmt.F, b_fmt.F)
+            maximum(a_fmt.S, b_fmt.S),
+            maximum(a_fmt.I, b_fmt.I) + maximum(rmin_growth_c, rmax_growth_c),
+            maximum(a_fmt.F, b_fmt.F)
         );
     end;
     
@@ -430,8 +427,8 @@ package body en_cl_fix_pkg is
         if b_fmt.S = 0 then
             rmaxI_v := a_fmt.I;
         else
-            growth_v := choose(min(a_fmt.I, b_fmt.I) >= -a_fmt.F, b_fmt.S, 0);
-            rmaxI_v := max(a_fmt.I, b_fmt.I) + growth_v;
+            growth_v := choose(minimum(a_fmt.I, b_fmt.I) >= -a_fmt.F, b_fmt.S, 0);
+            rmaxI_v := maximum(a_fmt.I, b_fmt.I) + growth_v;
         end if;
         
         -- rmin = amin-bmax
@@ -453,21 +450,21 @@ package body en_cl_fix_pkg is
             elsif b_fmt.I = -b_fmt.F+1 then
                 -- Special case: a is unsigned and rmin is a power of 2
                 S_v := 1;
-                I_v := max(rmaxI_v, -b_fmt.F);
+                I_v := maximum(rmaxI_v, -b_fmt.F);
             else
                 -- Normal case for unsigned a
                 S_v := 1;
-                I_v := max(rmaxI_v, b_fmt.I);
+                I_v := maximum(rmaxI_v, b_fmt.I);
             end if;
         else
             -- Signed a
             S_v := 1;
-            growth_v := choose(min(a_fmt.I, b_fmt.I) > -b_fmt.F, a_fmt.S, 0);
-            rminI_v := max(a_fmt.I, b_fmt.I) + growth_v;
-            I_v := max(rmaxI_v, rminI_v);
+            growth_v := choose(minimum(a_fmt.I, b_fmt.I) > -b_fmt.F, a_fmt.S, 0);
+            rminI_v := maximum(a_fmt.I, b_fmt.I) + growth_v;
+            I_v := maximum(rmaxI_v, rminI_v);
         end if;
         
-        return (S_v, I_v, max(a_fmt.F, b_fmt.F));
+        return (S_v, I_v, maximum(a_fmt.F, b_fmt.F));
     end;
     
     function cl_fix_addsub_fmt(a_fmt : FixFormat_t; b_fmt : FixFormat_t) return FixFormat_t is
@@ -530,9 +527,9 @@ package body en_cl_fix_pkg is
         -- The requirement can exceed rmaxI only if aFmt.S != bFmt.S and we don't run into the same
         -- special case as FixFormat.ForNeg() (i.e. the unsigned value being 1-bit).
         if a_fmt.S = 0 and b_fmt.S = 1 then
-            I_v := max(rmaxI_v, a_neg_fmt_c.I + b_fmt.I);
+            I_v := maximum(rmaxI_v, a_neg_fmt_c.I + b_fmt.I);
         elsif a_fmt.S = 1 and b_fmt.S = 0 then
-            I_v := max(rmaxI_v, a_fmt.I + b_neg_fmt_c.I);
+            I_v := maximum(rmaxI_v, a_fmt.I + b_neg_fmt_c.I);
         else
             I_v := rmaxI_v;
         end if;
@@ -543,7 +540,7 @@ package body en_cl_fix_pkg is
             S_v := 0;
         else
             -- Normal: If either input is signed, then output is signed
-            S_v := max(a_fmt.S, b_fmt.S);
+            S_v := maximum(a_fmt.S, b_fmt.S);
         end if;
         
         return (S_v, I_v, a_fmt.F+b_fmt.F);
@@ -898,7 +895,7 @@ package body en_cl_fix_pkg is
         constant mid_fmt_c      : FixFormat_t := (
             result_fmt.S,
             result_fmt.I,
-            max(result_fmt.F+1, a_fmt.F)
+            maximum(result_fmt.F+1, a_fmt.F)
         );
         constant in_offset_c    : natural := mid_fmt_c.F - a_fmt.F;
         constant out_offset_c   : natural := mid_fmt_c.F - result_fmt.F;
