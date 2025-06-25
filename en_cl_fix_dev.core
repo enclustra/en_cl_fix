@@ -1,6 +1,6 @@
 CAPI=2:
 
-name : open-logic:open-logic-dev:en_cl_fix:2.2.0
+name : open-logic:open-logic-dev:en_cl_fix:2.2.1
 description : local files (release plus WIP);  see https://github.com/enclustra/en_cl_fix/blob/main/README.md
 
 filesets:
