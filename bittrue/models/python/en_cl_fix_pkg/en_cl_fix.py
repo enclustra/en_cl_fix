@@ -151,7 +151,7 @@ def cl_fix_from_integer(a, r_fmt : FixFormat):
     a = _clean_input(a)
     
     if cl_fix_is_wide(r_fmt):
-        return a
+        return WideFix(a, r_fmt)
     else:
         return NarrowFix.from_integer(a, r_fmt)._data
 
@@ -165,7 +165,7 @@ def cl_fix_to_integer(a, a_fmt : FixFormat):
     a = _clean_input(a)
     
     if cl_fix_is_wide(a_fmt):
-        return a
+        return a.data
     else:
         return NarrowFix(a, a_fmt, copy=False).to_integer()
 
