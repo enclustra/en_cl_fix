@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
--- Copyright (c) 2024 Enclustra GmbH, Switzerland (info@enclustra.com)
+-- Copyright (c) 2025 Enclustra GmbH, Switzerland (info@enclustra.com)
 -- 
 -- Permission is hereby granted, free of charge, to any person obtaining a copy of this software
 -- and associated documentation files (the "Software"), to deal in the Software without
@@ -63,6 +63,13 @@ package en_cl_fix_pkg is
         Warn_s,         -- No saturation, only warning.
         Sat_s,          -- Only saturation, no warning.
         SatWarn_s       -- Saturation and warning.
+    );
+    
+    type RegisterMode_t is
+    (
+        Auto_s,         -- Inserts the recommended registering. See cl_fix_recommended_pipelining.
+        Yes_s,          -- Inserts all registering. Can be useful for consistent latency.
+        No_s            -- Inserts no registering. Use with caution (poor timing performance).
     );
     
     -----------------------------------------------------------------------------------------------
@@ -153,6 +160,29 @@ package en_cl_fix_pkg is
         result_fmt  : FixFormat_t;
         round       : FixRound_t := Trunc_s
     ) return boolean;
+    
+    -- Recommended pipeline stages for cl_fix_round
+    function cl_fix_recommended_pipelining(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t;
+        fmt_check   : boolean := true
+    ) return natural;
+    
+    -- Recommended pipeline stages for cl_fix_saturate
+    function cl_fix_recommended_pipelining(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        saturate    : FixSaturate_t
+    ) return natural;
+    
+    -- Recommended pipeline stages for cl_fix_resize
+    function cl_fix_recommended_pipelining(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t;
+        saturate    : FixSaturate_t
+    ) return natural;
     
     -----------------------------------------------------------------------------------------------
     -- Math Functions
@@ -899,6 +929,7 @@ package body en_cl_fix_pkg is
         variable mid_v          : unsigned(cl_fix_width(mid_fmt_c)-1 downto 0) := (others => '0');
         variable result_v       : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
+        -- Allow the designer to ignore the worst-case result format (with caution).
         if fmt_check then
             assert result_fmt = cl_fix_round_fmt(a_fmt, result_fmt.F, round)
                 report "cl_fix_round: Invalid result format. Use cl_fix_round_fmt()." severity Failure;
@@ -999,6 +1030,76 @@ package body en_cl_fix_pkg is
     begin
         return cl_fix_compare(">=", Rounded_c, rndFmt_c, cl_fix_min_value(result_fmt), result_fmt) and
                cl_fix_compare("<=", Rounded_c, rndFmt_c, cl_fix_max_value(result_fmt), result_fmt);
+    end;
+    
+    function cl_fix_recommended_pipelining(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t;
+        fmt_check   : boolean := true
+    ) return natural is
+    begin
+        -- Allow the designer to ignore the worst-case result format (with caution).
+        if fmt_check then
+            assert result_fmt = cl_fix_round_fmt(a_fmt, result_fmt.F, round)
+                report "cl_fix_recommended_pipelining: Invalid result format. Use cl_fix_round_fmt()." severity Failure;
+        end if;
+        
+        -- Registering is not needed if zero logic is used. This happens in two cases:
+        -- (1) During truncation.
+        if round = Trunc_s then
+            return 0;
+        else
+            -- If a new rounding mode is defined, then appropriate behavior must be implemented.
+            assert round = NonSymPos_s or round = NonSymNeg_s or round = SymInf_s or round = SymZero_s or round = ConvEven_s or round = ConvOdd_s
+                report "cl_fix_recommended_pipelining: Unhandled rounding mode."
+                severity Failure;
+        end if;
+        -- (2) If the number of fractional bits isn't being decreased.
+        if result_fmt.F >= a_fmt.F then
+            return 0;
+        end if;
+        return 1;
+    end;
+    
+    function cl_fix_recommended_pipelining(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        saturate    : FixSaturate_t
+    ) return natural is
+    begin
+        assert result_fmt.F = a_fmt.F
+            report "cl_fix_recommended_pipelining: Number of frac bits cannot change during saturation."
+            severity Failure;
+        
+        -- Registering is not needed if zero logic is used. This happens in two cases:
+        -- (1) During wrapping.
+        if saturate = None_s or saturate = Warn_s then
+            return 0;
+        else
+            -- If a new saturation mode is defined, then appropriate behavior must be implemented.
+            assert saturate = Sat_s or saturate = SatWarn_s
+                report "cl_fix_recommended_pipelining: Unhandled saturation mode."
+                severity Failure;
+        end if;
+        -- (2) If the number of integer bits is not being decreased, and the number of sign bits is
+        --     not being changed.
+        if result_fmt.I >= a_fmt.I and result_fmt.S = a_fmt.S then
+            return 0;
+        end if;
+        return 1;
+    end;
+    
+    function cl_fix_recommended_pipelining(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t;
+        saturate    : FixSaturate_t
+    ) return natural is
+        constant round_fmt_c    : FixFormat_t := cl_fix_round_fmt(a_fmt, result_fmt.F, round);
+    begin
+        return cl_fix_recommended_pipelining(a_fmt, round_fmt_c, round)
+             + cl_fix_recommended_pipelining(round_fmt_c, result_fmt, saturate);
     end;
     
     function cl_fix_abs(

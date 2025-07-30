@@ -66,7 +66,7 @@ def create_test_suite(vu, args):
     cl_fix_add_tb = lib.test_bench("cl_fix_add_tb")
     
     for test in cl_fix_add_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_add_cosim.run)
     
@@ -77,7 +77,7 @@ def create_test_suite(vu, args):
     cl_fix_sub_tb = lib.test_bench("cl_fix_sub_tb")
     
     for test in cl_fix_sub_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_sub_cosim.run)
     
@@ -88,7 +88,7 @@ def create_test_suite(vu, args):
     cl_fix_addsub_tb = lib.test_bench("cl_fix_addsub_tb")
     
     for test in cl_fix_addsub_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_addsub_cosim.run)
     
@@ -99,7 +99,7 @@ def create_test_suite(vu, args):
     cl_fix_mult_tb = lib.test_bench("cl_fix_mult_tb")
     
     for test in cl_fix_mult_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_mult_cosim.run)
     
@@ -110,7 +110,7 @@ def create_test_suite(vu, args):
     cl_fix_neg_tb = lib.test_bench("cl_fix_neg_tb")
     
     for test in cl_fix_neg_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_neg_cosim.run)
     
@@ -121,7 +121,7 @@ def create_test_suite(vu, args):
     cl_fix_abs_tb = lib.test_bench("cl_fix_abs_tb")
     
     for test in cl_fix_abs_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_abs_cosim.run)
     
@@ -132,7 +132,7 @@ def create_test_suite(vu, args):
     cl_fix_shift_tb = lib.test_bench("cl_fix_shift_tb")
     
     for test in cl_fix_shift_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_shift_cosim.run)
     
@@ -143,7 +143,7 @@ def create_test_suite(vu, args):
     cl_fix_compare_tb = lib.test_bench("cl_fix_compare_tb")
     
     for test in cl_fix_compare_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_compare_cosim.run)
     
@@ -153,9 +153,12 @@ def create_test_suite(vu, args):
     cl_fix_round_cosim = cosim("cl_fix_round")
     cl_fix_round_tb = lib.test_bench("cl_fix_round_tb")
     
-    for test in cl_fix_round_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
-                        generics=dict(),
+    test = cl_fix_round_tb.get_tests("test")[0]
+    for meta_width in [0, 8]:
+        name = f"MetaWidth={meta_width}"
+        generics = dict(meta_width_g=meta_width)
+        test.add_config(name=name,
+                        generics=generics,
                         pre_config=cl_fix_round_cosim.run)
     
     ###################
@@ -164,10 +167,27 @@ def create_test_suite(vu, args):
     cl_fix_saturate_cosim = cosim("cl_fix_saturate")
     cl_fix_saturate_tb = lib.test_bench("cl_fix_saturate_tb")
     
-    for test in cl_fix_saturate_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
-                        generics=dict(),
+    test = cl_fix_saturate_tb.get_tests("test")[0]
+    for meta_width in [0, 8]:
+        name = f"MetaWidth={meta_width}"
+        generics = dict(meta_width_g=meta_width)
+        test.add_config(name=name,
+                        generics=generics,
                         pre_config=cl_fix_saturate_cosim.run)
+    
+    #################
+    # cl_fix_resize #
+    #################
+    cl_fix_resize_cosim = cosim("cl_fix_resize")
+    cl_fix_resize_tb = lib.test_bench("cl_fix_resize_tb")
+    
+    test = cl_fix_resize_tb.get_tests("test")[0]
+    for meta_width in [0, 8]:
+        name = f"MetaWidth={meta_width}"
+        generics = dict(meta_width_g=meta_width)
+        test.add_config(name=name,
+                        generics=generics,
+                        pre_config=cl_fix_resize_cosim.run)
     
     ####################
     # cl_fix_from_real #
@@ -176,7 +196,7 @@ def create_test_suite(vu, args):
     cl_fix_from_real_tb = lib.test_bench("cl_fix_from_real_tb")
     
     for test in cl_fix_from_real_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_from_real_cosim.run)
     
@@ -185,7 +205,7 @@ def create_test_suite(vu, args):
     ###############################################################################################
 
     # Set compile and simulation options
-    lib.set_compile_option("modelsim.vcom_flags", ["+cover=sbceft", "-check_synthesis", "-suppress", "143,14408"])
+    lib.set_compile_option("modelsim.vcom_flags", ["+cover=sbceft", "-suppress", "143,14408"])
     lib.set_compile_option("modelsim.vlog_flags", ["+cover=sbceft"])
     lib.set_sim_option("modelsim.vsim_flags", ["-t 1ps", "-voptargs=+acc"])
     lib.set_sim_option("disable_ieee_warnings", True)
