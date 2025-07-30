@@ -1,3 +1,7 @@
+## 2.1.1
+* Bugfixes
+  * Rename min (and max) to work around name conflict issue seen only in Quartus.
+
 ## 2.1.0
 * Features
   * Added testbench file I/O support (integrating lib/en_tb).
