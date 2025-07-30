@@ -1,6 +1,10 @@
+## 2.2.0
+* Features
+  * Added round, saturate and resize VHDL components.
+
 ## 2.1.1
 * Bugfixes
-  * Rename min (and max) to work around name conflict issue seen only in Quartus.
+  * Renamed min (and max) to work around name conflict issue seen only in Quartus.
 
 ## 2.1.0
 * Features
