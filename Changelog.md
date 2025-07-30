@@ -1,3 +1,7 @@
+## 2.2.1
+* Bugfixes
+  * Added workaround for Efinity and Gowin EDA bugs in ieee.math_real."mod".
+
 ## 2.2.0
 * Features
   * Added round, saturate and resize VHDL components.
