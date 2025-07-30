@@ -798,6 +798,13 @@ package body en_cl_fix_pkg is
     end;
     
     function cl_fix_from_real(a : real; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector is
+        -- Several toolchains have bugs in ieee.math_real."mod" (Vivado, Efinity, Gowin EDA).
+        -- Therefore, this local function is used as a workaround.
+        function real_mod(a, b : real) return real is
+        begin
+            return a - b * floor(a/b);
+        end function;
+        
         constant ChunkSize_c    : positive := 30;
         constant ChunkCount_c   : positive := (cl_fix_width(result_fmt) + ChunkSize_c - 1)/ChunkSize_c;
         variable ASat_v         : real;
@@ -823,8 +830,7 @@ package body en_cl_fix_pkg is
         
         -- Convert to fixed-point in chunks (required for formats that don't fit into integer)
         for i in 0 to ChunkCount_c-1 loop
-            -- Note: Due to a Xilinx Vivado bug, we must explicitly call the math_real mod operator
-            Chunk_v := std_logic_vector(to_unsigned(integer(ieee.math_real."mod"(ASat_v, 2.0**ChunkSize_c)), ChunkSize_c));
+            Chunk_v := std_logic_vector(to_unsigned(integer(real_mod(ASat_v, 2.0**ChunkSize_c)), ChunkSize_c));
             Result_v((i+1)*ChunkSize_c-1 downto i*ChunkSize_c) := Chunk_v;
             ASat_v := floor(ASat_v/2.0**ChunkSize_c);
         end loop;
