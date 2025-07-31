@@ -22,19 +22,16 @@ from os.path import join, dirname, abspath
 from os import environ, system, getcwd, chdir
 
 # Import VUnit
-try:
-    import sys
-    sys.path.append(join(abspath(dirname(__file__)), "../../vunit"))
-    import VUnitCLI, VUnit
-except ImportError as e:
-    from vunit import VUnitCLI, VUnit
+import sys
+sys.path.insert(1, abspath(dirname(__file__)) + "/../../lib/FW/VHDL/vunit")
+from vunit import VUnitCLI, VUnit
 
 # Add custom command line arguments
 cli = VUnitCLI()
 cli.parser.add_argument(
         "--simulator",
         default=environ["EN_SIM_NAME"] if "EN_SIM_NAME" in environ else None,
-        help="Define simulator to be used: name (allowed values: modelsim, questa or ghdl)",
+        help="Define simulator to be used: name (allowed values: modelsim, questa, nvc or ghdl)",
     )
 cli.parser.add_argument(
         "-s",
@@ -55,11 +52,6 @@ cli.parser.add_argument(
         help="Enables simulation coverage",
     )
 cli.parser.add_argument(
-    "--vivado-dir",
-    default=environ["EN_VIVADO_BIN"] if "EN_VIVADO_BIN" in environ else None,
-    help="Path to the Vivado install folder",
-    )
-cli.parser.add_argument(
         "--disable-cosim",
         action="store_true",
         default=False,
@@ -71,7 +63,7 @@ args = cli.parse_args()
 
 # Check arguments
 if args.simulator == None:
-    raise Exception("\n\nERROR: please use --simulator <name> to define the simulator. Allowed values: modelsim or ghdl. E.g: python run.py --simulator modelsim\n")
+    raise Exception("\n\nERROR: please use --simulator <name> to define the simulator. Allowed values: modelsim, questa, nvc or ghdl. E.g: python run.py --simulator modelsim\n")
 if args.simulator_path == None:
     raise Exception("\n\nERROR: please use --simulator-path <path> to define the simulator path. E.g.: python run.py --simulator-path E:/modeltech_pe_2020.1/win32pe\n")
 
@@ -84,27 +76,33 @@ else:
     environ["VUNIT_SIMULATOR"] = args.simulator
 environ["VUNIT_MODELSIM_PATH"] = args.simulator_path
 environ["VUNIT_GHDL_PATH"] = args.simulator_path
+environ["VUNIT_NVC_PATH"] = args.simulator_path
 
 # Set VHDL standard according to the simulators
 if args.simulator == 'modelsim' or args.simulator == 'questa':
     vhdl_standard_rtl = "93"
     vhdl_standard_tb  = "2008"
-elif args.simulator == 'ghdl':
+elif args.simulator == 'ghdl' or args.simulator == 'nvc':
     vhdl_standard_rtl = "2008"
     vhdl_standard_tb  = "2008"
 else:
-    raise Exception("\n\nERROR: please use --simulator <name> to define the simulator. Allowed values: modelsim, questa or ghdl. E.g: python run.py --simulator modelsim\n")
+    raise Exception("\n\nERROR: please use --simulator <name> to define the simulator. Allowed values: modelsim, questa, nvc or ghdl. E.g: python run.py --simulator modelsim\n")
 
 # Callback function which is called after running tests (merge coverage data)
 def post_run(results):
     if args.coverage:
-        root = dirname(__file__)
-        coverage_data = join(root, "coverage/coverage_data.ucdb")
-        coverage_do = join(root, "coverage/coverage.do")
-        cwd = getcwd()
-        chdir(root)
-        results.merge_coverage(file_name=coverage_data)
-        print("generating coverage report file...")
-        system('%s/vsim -c -viewcov %s -do %s' % (environ["VUNIT_MODELSIM_PATH"], coverage_data, coverage_do))
-        print("done creating coverage report file.")
-        chdir(cwd)
+        if args.simulator in ['questa', 'modelsim']:
+            root = dirname(__file__)
+            coverage_data = join(root, 'coverage/coverage_data.ucdb')
+            coverage_do = join(root, 'coverage/coverage.do')
+            cwd = getcwd()
+            chdir(root)
+            results.merge_coverage(file_name=coverage_data)
+            print('generating coverage report file...')
+            system('%s/vsim -c -viewcov %s -do %s' % (environ['VUNIT_MODELSIM_PATH'], coverage_data, coverage_do))
+            print('done creating coverage report file.')
+            chdir(cwd)
+        elif args.simulator == 'nvc':
+            print("----------------------------------------------------------")
+            print("Warning: Coverage support with 'nvc' is not yet supported.")
+            print("----------------------------------------------------------")
