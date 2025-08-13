@@ -1,0 +1,32 @@
+Coverage Report Summary Data by DU
+
+=================================================================================
+=== Design Unit: lib.en_tb_base_pkg
+=================================================================================
+    Enabled Coverage              Bins      Hits    Misses  Coverage
+    ----------------              ----      ----    ------  --------
+    Assertions                       1         1         0   100.00%
+    Statements                     454        20       434     4.40%
+
+=================================================================================
+=== Design Unit: lib.en_tb_fileio_binary_pkg
+=================================================================================
+    Enabled Coverage              Bins      Hits    Misses  Coverage
+    ----------------              ----      ----    ------  --------
+    Branches                         4         0         4     0.00%
+    Statements                      72         0        72     0.00%
+
+=================================================================================
+=== Design Unit: lib.en_tb_fileio_text_pkg
+=================================================================================
+    Enabled Coverage              Bins      Hits    Misses  Coverage
+    ----------------              ----      ----    ------  --------
+    Assertions                       2         2         0   100.00%
+    Branches                        64        10        54    15.62%
+    Statements                     192        54       138    28.12%
+
+
+TOTAL ASSERTION COVERAGE: 100.00%  ASSERTIONS: 3
+
+Total Coverage By Design Unit (filtered view): 41.67%
+

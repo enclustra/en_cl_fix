@@ -84,6 +84,8 @@ def create_test_suite(vu, args):
     lib.set_compile_option("ghdl.a_flags", ["-frelaxed"])
     lib.set_sim_option("ghdl.elab_flags", ["-frelaxed"])
     lib.set_sim_option("ghdl.sim_flags", ["--max-stack-alloc=0"])
+    if args.simulator == 'questa' and args.gui == False:
+        lib.set_sim_option("modelsim.three_step_flow", True)
     lib.set_sim_option("disable_ieee_warnings", True)
     if args.coverage:
         lib.set_sim_option("enable_coverage", True)

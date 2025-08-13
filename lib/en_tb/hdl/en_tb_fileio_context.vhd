@@ -30,8 +30,8 @@
 -- to just avoid using the context (and instead have multiple use clauses to include the required
 -- packages individually).
 ---------------------------------------------------------------------------------------------------
-context fileio_context is
+context en_tb_fileio_context is
     library en_tb;
-    use en_tb.base_pkg.all;
-    use en_tb.fileio_text_pkg.all;
+    use en_tb.en_tb_base_pkg.all;
+    use en_tb.en_tb_fileio_text_pkg.all;
 end context;

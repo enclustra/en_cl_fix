@@ -98,20 +98,20 @@ library ieee;
     use ieee.numeric_std.all;
 
 library work;
-    use work.base_pkg.all;
-    use work.fileio_text_private_pkg.all;
+    use work.en_tb_base_pkg.all;
+    use work.en_tb_fileio_text_private_pkg.all;
 
 ---------------------------------------------------------------------------------------------------
 -- Package
 ---------------------------------------------------------------------------------------------------
-package fileio_text_pkg is
+package en_tb_fileio_text_pkg is
     
     -----------
     -- Types --
     -----------
     
     -- (ascii_bin, ascii_dec, ascii_hex)
-    alias text_data_mode_t is work.fileio_text_private_pkg.text_data_mode_t;
+    alias text_data_mode_t is work.en_tb_fileio_text_private_pkg.text_data_mode_t;
     
     ----------------------------
     -- File Utility Functions --
@@ -563,7 +563,7 @@ end package;
 ---------------------------------------------------------------------------------------------------
 -- Package Body
 ---------------------------------------------------------------------------------------------------
-package body fileio_text_pkg is
+package body en_tb_fileio_text_pkg is
     
     -----------------------------------------------------------------------------------------------
     -- File Utility Functions
@@ -619,11 +619,17 @@ package body fileio_text_pkg is
         -- Skip any metadata lines
         skip_lines(f, skip);
         
-        -- Just read the first data line of the file
-        readline(f, L);
-        file_close(f);
+        if not endfile(f) then
+            -- Just read the first data line of the file
+            readline(f, L);
+            file_close(f);
+            return get_ascii_columns(get_string, mode);
+        else
+            -- File is empty
+            file_close(f);
+            return 0;
+        end if;
         
-        return get_ascii_columns(get_string, mode);
     end function;
     
     -----------------------------------------------------------------------------------------------
@@ -1044,8 +1050,8 @@ package body fileio_text_pkg is
         constant mode       : in  text_data_mode_t := ascii_dec;
         constant skip       : in  natural := 1
     ) return SignedBitArray_t is
-        constant n_rows_c   : positive := get_file_size_lines(filename) - skip;
-        constant n_cols_c   : positive := get_file_size_columns(filename, skip, mode);
+        constant n_rows_c   : natural  := get_file_size_lines(filename) - skip;
+        constant n_cols_c   : natural  := get_file_size_columns(filename, skip, mode);
         
         file f              : text;
         variable line_v     : line;
@@ -1084,8 +1090,8 @@ package body fileio_text_pkg is
         constant mode       : in  text_data_mode_t := ascii_dec;
         constant skip       : in  natural := 1
     ) return UnsignedBitArray_t is
-        constant n_rows_c   : positive := get_file_size_lines(filename) - skip;
-        constant n_cols_c   : positive := get_file_size_columns(filename, skip, mode);
+        constant n_rows_c   : natural  := get_file_size_lines(filename) - skip;
+        constant n_cols_c   : natural  := get_file_size_columns(filename, skip, mode);
         
         file f              : text;
         variable line_v     : line;
@@ -1124,8 +1130,8 @@ package body fileio_text_pkg is
         constant mode       : in  text_data_mode_t := ascii_dec;
         constant skip       : in  natural := 1
     ) return SignedArray_t is
-        constant n_rows_c   : positive := get_file_size_lines(filename) - skip;
-        constant n_cols_c   : positive := get_file_size_columns(filename, skip, mode);
+        constant n_rows_c   : natural  := get_file_size_lines(filename) - skip;
+        constant n_cols_c   : natural  := get_file_size_columns(filename, skip, mode);
         
         file f              : text;
         variable line_v     : line;
@@ -1164,8 +1170,8 @@ package body fileio_text_pkg is
         constant mode       : in  text_data_mode_t := ascii_dec;
         constant skip       : in  natural := 1
     ) return UnsignedArray_t is
-        constant n_rows_c   : positive := get_file_size_lines(filename) - skip;
-        constant n_cols_c   : positive := get_file_size_columns(filename, skip, mode);
+        constant n_rows_c   : natural  := get_file_size_lines(filename) - skip;
+        constant n_cols_c   : natural  := get_file_size_columns(filename, skip, mode);
         
         file f              : text;
         variable line_v     : line;
@@ -1203,8 +1209,8 @@ package body fileio_text_pkg is
         constant mode       : in  text_data_mode_t := ascii_dec;
         constant skip       : in  natural := 1
     ) return integer_vector is
-        constant n_rows_c   : positive := get_file_size_lines(filename) - skip;
-        constant n_cols_c   : positive := get_file_size_columns(filename, skip, mode);
+        constant n_rows_c   : natural  := get_file_size_lines(filename) - skip;
+        constant n_cols_c   : natural  := get_file_size_columns(filename, skip, mode);
         
         file f              : text;
         variable line_v     : line;
@@ -1245,8 +1251,8 @@ package body fileio_text_pkg is
         constant mode       : in  text_data_mode_t := ascii_dec;
         constant skip       : in  natural := 1
     ) return BitVectorArray_t is
-        constant n_rows_c   : positive := get_file_size_lines(filename) - skip;
-        constant n_cols_c   : positive := get_file_size_columns(filename, skip, mode);
+        constant n_rows_c   : natural  := get_file_size_lines(filename) - skip;
+        constant n_cols_c   : natural  := get_file_size_columns(filename, skip, mode);
         
         file f              : text;
         variable line_v     : line;
@@ -1286,8 +1292,8 @@ package body fileio_text_pkg is
         constant mode       : in  text_data_mode_t := ascii_dec;
         constant skip       : in  natural := 1
     ) return SlvArray_t is
-        constant n_rows_c   : positive := get_file_size_lines(filename) - skip;
-        constant n_cols_c   : positive := get_file_size_columns(filename, skip, mode);
+        constant n_rows_c   : natural  := get_file_size_lines(filename) - skip;
+        constant n_cols_c   : natural  := get_file_size_columns(filename, skip, mode);
         
         file f              : text;
         variable line_v     : line;
