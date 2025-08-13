@@ -33,12 +33,12 @@ library ieee;
     use ieee.numeric_bit.all;
 
 library work;
-    use work.base_pkg.all;
+    use work.en_tb_base_pkg.all;
 
 ---------------------------------------------------------------------------------------------------
 -- Package
 ---------------------------------------------------------------------------------------------------
-package fileio_text_private_pkg is
+package en_tb_fileio_text_private_pkg is
     
     -- File data storage modes (more can be added)
     type text_data_mode_t is (ascii_bin, ascii_dec, ascii_hex);
@@ -87,7 +87,7 @@ end package;
 ---------------------------------------------------------------------------------------------------
 -- Package Body
 ---------------------------------------------------------------------------------------------------
-package body fileio_text_private_pkg is
+package body en_tb_fileio_text_private_pkg is
     
     -----------------------------------------------------------------------------------------------
     -- Private Functions
