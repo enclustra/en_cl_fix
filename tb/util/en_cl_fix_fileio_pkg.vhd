@@ -22,7 +22,7 @@
 --
 -- File I/O support for en_cl_fix.
 --
--- This package provides wrappers around en_tb.fileio_text_pkg for en_cl_fix.
+-- This package provides wrappers around en_tb.en_tb_fileio_text_pkg for en_cl_fix.
 --
 -- A short summary is provided for quick reference:
 --
@@ -99,8 +99,8 @@ library ieee;
     use ieee.std_logic_1164.all;
 
 library en_tb;
-    use en_tb.base_pkg.all;
-    use en_tb.fileio_text_pkg.all;
+    use en_tb.en_tb.base_pkg.all;
+    use en_tb.en_tb.fileio_text_pkg.all;
 
 library work;
     use work.en_cl_fix_pkg.all;
@@ -108,7 +108,7 @@ library work;
 ---------------------------------------------------------------------------------------------------
 -- Package
 ---------------------------------------------------------------------------------------------------
-package fix_fileio_pkg is
+package en_cl_fix_fileio_pkg is
     
     -----------------------------------------------------------------------------------------------
     -- Read Access
@@ -226,7 +226,7 @@ end package;
 ---------------------------------------------------------------------------------------------------
 -- Package Body
 ---------------------------------------------------------------------------------------------------
-package body fix_fileio_pkg is
+package body en_cl_fix_fileio_pkg is
     
     -----------------------------------------------------------------------------------------------
     -- Private Functions
@@ -331,7 +331,7 @@ package body fix_fileio_pkg is
         constant Filename   : in string;
         constant SkipLines  : in natural := 1
     ) return FixFormatArray_t is
-        constant FormatCount_c  : positive := get_file_size_lines(Filename) - SkipLines;
+        constant FormatCount_c  : natural := get_file_size_lines(Filename) - SkipLines;
         file     F              : text;
         variable Line_v         : line;
         variable Formats_v      : FixFormatArray_t(0 to FormatCount_c-1);
