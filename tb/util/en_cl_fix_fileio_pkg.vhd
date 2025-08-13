@@ -99,8 +99,8 @@ library ieee;
     use ieee.std_logic_1164.all;
 
 library en_tb;
-    use en_tb.en_tb.base_pkg.all;
-    use en_tb.en_tb.fileio_text_pkg.all;
+    use en_tb.en_tb_base_pkg.all;
+    use en_tb.en_tb_fileio_text_pkg.all;
 
 library work;
     use work.en_cl_fix_pkg.all;
