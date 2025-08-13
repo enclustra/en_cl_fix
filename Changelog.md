@@ -1,3 +1,9 @@
+## 2.3.0
+* Features
+  * Added support for NVC simulator.
+  * Added support for Questa 3-step flow.
+  * Added width checks to VHDL to ensure data width matches format (#33).
+
 ## 2.2.1
 * Bugfixes
   * Added workaround for Efinity and Gowin EDA bugs in ieee.math_real."mod".

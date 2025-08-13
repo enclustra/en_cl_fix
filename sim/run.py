@@ -204,10 +204,25 @@ def create_test_suite(vu, args):
     # Set compile and simulation options
     ###############################################################################################
 
-    # Set compile and simulation options
-    lib.set_compile_option("modelsim.vcom_flags", ["+cover=sbceft", "-suppress", "143,14408"])
+    # Set compile and simulation options for GHDL
+    vu.add_compile_option("ghdl.a_flags", ["--warn-no-hide"])
+    lib.set_compile_option("ghdl.a_flags", ["-frelaxed", "--warn-no-hide", "--warn-no-specs"])
+    lib.set_sim_option("ghdl.elab_flags", ["-frelaxed"])
+    lib.set_sim_option("ghdl.sim_flags", ["--max-stack-alloc=0"])
+
+    # Set compile and simulation options for NVC
+    vu.add_compile_option("nvc.a_flags", ["--relaxed", "--check-synthesis"])
+    lib.set_sim_option("nvc.global_flags", ["-M 8192m"])
+    lib.set_sim_option("nvc.heap_size", "8192m")
+
+    # Set compile and simulation options for Modelsim and Questa
+    lib.set_compile_option("modelsim.vcom_flags", ["+cover=sbceft", "-check_synthesis", "-coverdeglitch", "0", "-suppress", "143"])
     lib.set_compile_option("modelsim.vlog_flags", ["+cover=sbceft"])
     lib.set_sim_option("modelsim.vsim_flags", ["-t 1ps", "-voptargs=+acc"])
+    if args.simulator == 'questa' and args.gui == False:
+        lib.set_sim_option("modelsim.three_step_flow", True)
+
+    # Set compile and simulation options for all simulators
     lib.set_sim_option("disable_ieee_warnings", True)
     if args.coverage:
         lib.set_sim_option("enable_coverage", True)
@@ -215,6 +230,8 @@ def create_test_suite(vu, args):
     # Add waveform automatically when running in GUI mode.
     for tb in lib.get_test_benches():
         tb.set_sim_option("modelsim.init_file.gui", join(root, "scripts/" + tb.name + "_wave.do"))
+        tb.set_sim_option("ghdl.viewer_script.gui", join(root, "scripts/" + tb.name + "_wave.cmd"))
+        tb.set_sim_option("nvc.viewer_script.gui", join(root, "scripts/" + tb.name + "_wave.cmd"))
 
 if __name__ == '__main__':
 

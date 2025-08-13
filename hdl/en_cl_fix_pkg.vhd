@@ -328,7 +328,7 @@ package body en_cl_fix_pkg is
     
     function convert(a : std_logic_vector; aFmt, rFmt : FixFormat_t) return std_logic_vector is
         -- Force downto 0
-        constant a_c    : std_logic_vector(a'length-1 downto 0) := a;
+        constant a_c    : std_logic_vector(cl_fix_width(aFmt)-1 downto 0) := a;
         
         -- This function converts from aFmt to rFmt without any rounding or saturation:
         --     - It does *not* support rFmt.F < aFmt.F (offset_c is type natural). To reduce frac
@@ -915,7 +915,7 @@ package body en_cl_fix_pkg is
         fmt_check   : boolean := true
     ) return std_logic_vector is
         -- Force downto 0
-        constant a_c            : std_logic_vector(a'length-1 downto 0) := a;
+        constant a_c            : std_logic_vector(cl_fix_width(a_fmt)-1 downto 0) := a;
         
         -- The result format takes care of potential integer growth due to the rounding mode.
         -- In the intermediate calculation, we need to +/- up to 2.0**-(result_fmt.F+1) in order to
@@ -1221,8 +1221,8 @@ package body en_cl_fix_pkg is
         saturate    : FixSaturate_t := Warn_s
     ) return std_logic_vector is
         -- Force downto 0
-        constant a_c            : std_logic_vector(a'length-1 downto 0) := a;
-        constant b_c            : std_logic_vector(b'length-1 downto 0) := b;
+        constant a_c            : std_logic_vector(cl_fix_width(a_fmt)-1 downto 0) := a;
+        constant b_c            : std_logic_vector(cl_fix_width(b_fmt)-1 downto 0) := b;
         
         -- VHDL doesn't define a * operator for mixed signed*unsigned or unsigned*signed.
         -- Just inside cl_fix_mult, it is safe to define them for local use.
@@ -1314,7 +1314,7 @@ package body en_cl_fix_pkg is
     
     function cl_fix_sign(a : std_logic_vector; aFmt : FixFormat_t) return std_logic is
         -- Force downto 0
-        constant a_c    : std_logic_vector(a'length-1 downto 0) := a;
+        constant a_c    : std_logic_vector(cl_fix_width(aFmt)-1 downto 0) := a;
     begin
         if aFmt.S = 0 or cl_fix_width(aFmt) = 0 then
             return '0';
