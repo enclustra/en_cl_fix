@@ -215,8 +215,8 @@ def create_test_suite(vu, args):
 
     # Set compile and simulation options for NVC
     vu.add_compile_option("nvc.a_flags", ["--relaxed", "--check-synthesis"])
-    lib.set_sim_option("nvc.global_flags", ["-M 8192m"])
-    lib.set_sim_option("nvc.heap_size", "8192m")
+    lib.set_sim_option("nvc.global_flags", ["-M 256m"])  # Increase for large designs.
+    lib.set_sim_option("nvc.heap_size", "64m")           # Increase for large data allocations.
 
     # Set compile and simulation options for Modelsim and Questa
     lib.set_compile_option("modelsim.vcom_flags", ["+cover=sbceft", "-check_synthesis", "-coverdeglitch", "0", "-suppress", "143"])
