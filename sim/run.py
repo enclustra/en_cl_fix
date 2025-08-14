@@ -34,8 +34,11 @@ def create_test_suite(vu, args):
     vu.add_random()
     
     # Add en_tb library
-    en_tb = vu.add_library("en_tb")
-    en_tb.add_source_files(join(root, "../lib/en_tb/hdl/*.vhd"), vhdl_standard=vhdl_standard_tb)
+    try:
+        en_tb = vu.add_library("en_tb")
+        en_tb.add_source_files(join(root, "../lib/en_tb/hdl/*.vhd"), vhdl_standard=vhdl_standard_tb)
+    except ValueError:
+        print("en_tb already created, skip it...")
     
     # Create testbench library
     lib = vu.add_library("lib")

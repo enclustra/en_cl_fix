@@ -1,5 +1,5 @@
 ###################################################################################################
-# Copyright (c) 2024 Enclustra GmbH, Switzerland (info@enclustra.com)
+# Copyright (c) 2025 Enclustra GmbH, Switzerland (info@enclustra.com)
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software
 # and associated documentation files (the "Software"), to deal in the Software without
@@ -18,9 +18,9 @@
 ###################################################################################################
 
 #--------------------------------------------------------------------------------------------------
-#-  Description:
-#-
-#-  VUnit run script.
+# Description:
+#
+# VUnit run script.
 #--------------------------------------------------------------------------------------------------
 
 # Import Python modules
@@ -28,7 +28,7 @@ from os.path import join, dirname, abspath, realpath
 import sys
 
 import common
-from common import VUnit, VUnitCLI
+from common import VUnit, VUnitCLI, vhdl_standard_tb
 from cosim_runner import CosimRunner
 
 def create_test_suite(vu, args):
@@ -40,12 +40,15 @@ def create_test_suite(vu, args):
     vu.add_random()
     
     # Add en_tb library
-    en_tb = vu.add_library("en_tb")
-    en_tb.add_source_files(join(ROOT, "../hdl/*.vhd"), vhdl_standard=common.vhdl_standard_tb)
+    try:
+        en_tb = vu.add_library("en_tb")
+        en_tb.add_source_files(join(ROOT, "../hdl/*.vhd"), vhdl_standard=vhdl_standard_tb)
+    except ValueError:
+        print("en_tb already created, skip it...")
     
     # Add testbench library
     lib = vu.add_library("lib")
-    lib.add_source_files(join(ROOT, "../tb/*.vhd"), vhdl_standard=common.vhdl_standard_tb)
+    lib.add_source_files(join(ROOT, "../tb/*.vhd"), vhdl_standard=vhdl_standard_tb)
     
     ###############################################################################################
     # Cosim Runner
