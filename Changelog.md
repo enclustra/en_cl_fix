@@ -1,3 +1,21 @@
+## 2.3.0
+* Features
+  * Added support for NVC simulator.
+  * Added support for Questa 3-step flow.
+  * Added width checks to VHDL to ensure data width matches format (#33).
+
+## 2.2.1
+* Bugfixes
+  * Added workaround for Efinity and Gowin EDA bugs in ieee.math_real."mod".
+
+## 2.2.0
+* Features
+  * Added round, saturate and resize VHDL components.
+
+## 2.1.1
+* Bugfixes
+  * Renamed min (and max) to work around name conflict issue seen only in Quartus.
+
 ## 2.1.0
 * Features
   * Added testbench file I/O support (integrating lib/en_tb).

@@ -1,2 +1,2 @@
-numpy==1.24.3
-vunit-hdl==4.7.0
+numpy==2.3.2
+vunit-hdl==5.0.0.dev6

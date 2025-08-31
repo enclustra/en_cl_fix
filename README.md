@@ -16,9 +16,9 @@ The currently supported langauges are:
 
 <sup>\*</sup>All RTL code is VHDL-93 compliant (for maximum compatibility with synthesis toolchains). Testbenches are VHDL-2008 compliant.
 
-SystemVerilog support is under active development in 2024. However, weak toolchain support for SystemVerilog is proving to be a significant barrier.
-
 C++ support will be added if sufficient demand arises. An experimental partial implementation (based on [GMP](https://gmplib.org/)) gave good results.
+
+SystemVerilog support was investigated in 2024. However, weak toolchain support for SystemVerilog is proving to be a significant barrier.
 
 ### Usage Examples
 
@@ -46,7 +46,7 @@ See [Changelog](Changelog.md).
 - Python 3 (tested with >= 3.10)
 - Python packages
     - *numpy* (tested with >= 1.24.3)
-    - *vunit-hdl* (tested with >= 4.7.0)
+    - *vunit-hdl* (tested with >= 5.0.0.dev6)
 
 The required Python packages can be installed as follows:
 
@@ -62,7 +62,7 @@ Tested with MATLAB R2023b, and others.
 
 All modern VHDL simulators supported by [VUnit](https://vunit.github.io/) should work.
 
-Tested with: GHDL 4.1.0, Modelsim ASE 2020.1, Modelsim AE 2020.1, Modelsim ME 2022.2, Modelsim PE 2024.1, Questa FE 2023.4, and others.
+Tested with: GHDL 4.1.0, NVC 1.17.1, Modelsim ASE 2020.1, Modelsim AE 2020.1, Modelsim ME 2022.2, Modelsim PE 2024.1, Questa FE 2023.4, and others.
 
 ## Fixed-Point Number Representation
 
@@ -194,6 +194,7 @@ If warnings are enabled, then the HDL simulator or software environment will iss
 - MATLAB tests can be found in ./bittrue/tests/matlab/.
 - VHDL testbenches can be found in ./tb/ and are executed from the ./sim/ directory. Any modern simulator supported by [VUnit](https://vunit.github.io/) (see [Dependencies](#dependencies)) should work. Some examples:
     - GHDL example: `python run.py --simulator=ghdl --simulator-path='C:/msys64/mingw64/bin'`
+    - NVC example: `python run.py --simulator=nvc --simulator-path='C:/Program Files/nvc/bin'`
     - Modelsim ASE example: `python run.py --simulator=modelsim --simulator-path='C:/intelFPGA/20.1/modelsim_ase/win32aloem'`
     - Modelsim AE example: `python run.py --simulator=modelsim --simulator-path='C:/intelFPGA/20.1/modelsim_ae/win32aloem'`
     - Modelsim ME example: `python run.py --simulator=modelsim --simulator-path='C:/Microchip/Libero_SoC_v2022.2/ModelSimPro/win32acoem'`

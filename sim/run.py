@@ -34,8 +34,11 @@ def create_test_suite(vu, args):
     vu.add_random()
     
     # Add en_tb library
-    en_tb = vu.add_library("en_tb")
-    en_tb.add_source_files(join(root, "../lib/en_tb/hdl/*.vhd"), vhdl_standard=vhdl_standard_tb)
+    try:
+        en_tb = vu.add_library("en_tb")
+        en_tb.add_source_files(join(root, "../lib/en_tb/hdl/*.vhd"), vhdl_standard=vhdl_standard_tb)
+    except ValueError:
+        print("en_tb already created, skip it...")
     
     # Create testbench library
     lib = vu.add_library("lib")
@@ -66,7 +69,7 @@ def create_test_suite(vu, args):
     cl_fix_add_tb = lib.test_bench("cl_fix_add_tb")
     
     for test in cl_fix_add_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_add_cosim.run)
     
@@ -77,7 +80,7 @@ def create_test_suite(vu, args):
     cl_fix_sub_tb = lib.test_bench("cl_fix_sub_tb")
     
     for test in cl_fix_sub_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_sub_cosim.run)
     
@@ -88,7 +91,7 @@ def create_test_suite(vu, args):
     cl_fix_addsub_tb = lib.test_bench("cl_fix_addsub_tb")
     
     for test in cl_fix_addsub_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_addsub_cosim.run)
     
@@ -99,7 +102,7 @@ def create_test_suite(vu, args):
     cl_fix_mult_tb = lib.test_bench("cl_fix_mult_tb")
     
     for test in cl_fix_mult_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_mult_cosim.run)
     
@@ -110,7 +113,7 @@ def create_test_suite(vu, args):
     cl_fix_neg_tb = lib.test_bench("cl_fix_neg_tb")
     
     for test in cl_fix_neg_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_neg_cosim.run)
     
@@ -121,7 +124,7 @@ def create_test_suite(vu, args):
     cl_fix_abs_tb = lib.test_bench("cl_fix_abs_tb")
     
     for test in cl_fix_abs_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_abs_cosim.run)
     
@@ -132,7 +135,7 @@ def create_test_suite(vu, args):
     cl_fix_shift_tb = lib.test_bench("cl_fix_shift_tb")
     
     for test in cl_fix_shift_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_shift_cosim.run)
     
@@ -143,7 +146,7 @@ def create_test_suite(vu, args):
     cl_fix_compare_tb = lib.test_bench("cl_fix_compare_tb")
     
     for test in cl_fix_compare_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_compare_cosim.run)
     
@@ -153,9 +156,12 @@ def create_test_suite(vu, args):
     cl_fix_round_cosim = cosim("cl_fix_round")
     cl_fix_round_tb = lib.test_bench("cl_fix_round_tb")
     
-    for test in cl_fix_round_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
-                        generics=dict(),
+    test = cl_fix_round_tb.get_tests("test")[0]
+    for meta_width in [0, 8]:
+        name = f"MetaWidth={meta_width}"
+        generics = dict(meta_width_g=meta_width)
+        test.add_config(name=name,
+                        generics=generics,
                         pre_config=cl_fix_round_cosim.run)
     
     ###################
@@ -164,10 +170,27 @@ def create_test_suite(vu, args):
     cl_fix_saturate_cosim = cosim("cl_fix_saturate")
     cl_fix_saturate_tb = lib.test_bench("cl_fix_saturate_tb")
     
-    for test in cl_fix_saturate_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
-                        generics=dict(),
+    test = cl_fix_saturate_tb.get_tests("test")[0]
+    for meta_width in [0, 8]:
+        name = f"MetaWidth={meta_width}"
+        generics = dict(meta_width_g=meta_width)
+        test.add_config(name=name,
+                        generics=generics,
                         pre_config=cl_fix_saturate_cosim.run)
+    
+    #################
+    # cl_fix_resize #
+    #################
+    cl_fix_resize_cosim = cosim("cl_fix_resize")
+    cl_fix_resize_tb = lib.test_bench("cl_fix_resize_tb")
+    
+    test = cl_fix_resize_tb.get_tests("test")[0]
+    for meta_width in [0, 8]:
+        name = f"MetaWidth={meta_width}"
+        generics = dict(meta_width_g=meta_width)
+        test.add_config(name=name,
+                        generics=generics,
+                        pre_config=cl_fix_resize_cosim.run)
     
     ####################
     # cl_fix_from_real #
@@ -176,7 +199,7 @@ def create_test_suite(vu, args):
     cl_fix_from_real_tb = lib.test_bench("cl_fix_from_real_tb")
     
     for test in cl_fix_from_real_tb.get_tests("test"):
-        test.add_config(name=(f"Test"),
+        test.add_config(name=f"Test",
                         generics=dict(),
                         pre_config=cl_fix_from_real_cosim.run)
     
@@ -184,10 +207,25 @@ def create_test_suite(vu, args):
     # Set compile and simulation options
     ###############################################################################################
 
-    # Set compile and simulation options
-    lib.set_compile_option("modelsim.vcom_flags", ["+cover=sbceft", "-check_synthesis", "-suppress", "143,14408"])
+    # Set compile and simulation options for GHDL
+    vu.add_compile_option("ghdl.a_flags", ["--warn-no-hide"])
+    lib.set_compile_option("ghdl.a_flags", ["-frelaxed", "--warn-no-hide", "--warn-no-specs"])
+    lib.set_sim_option("ghdl.elab_flags", ["-frelaxed"])
+    lib.set_sim_option("ghdl.sim_flags", ["--max-stack-alloc=0"])
+
+    # Set compile and simulation options for NVC
+    vu.add_compile_option("nvc.a_flags", ["--relaxed", "--check-synthesis"])
+    lib.set_sim_option("nvc.global_flags", ["-M 256m"])  # Increase for large designs.
+    lib.set_sim_option("nvc.heap_size", "64m")           # Increase for large data allocations.
+
+    # Set compile and simulation options for Modelsim and Questa
+    lib.set_compile_option("modelsim.vcom_flags", ["+cover=sbceft", "-check_synthesis", "-coverdeglitch", "0", "-suppress", "143"])
     lib.set_compile_option("modelsim.vlog_flags", ["+cover=sbceft"])
     lib.set_sim_option("modelsim.vsim_flags", ["-t 1ps", "-voptargs=+acc"])
+    if args.simulator == 'questa' and args.gui == False:
+        lib.set_sim_option("modelsim.three_step_flow", True)
+
+    # Set compile and simulation options for all simulators
     lib.set_sim_option("disable_ieee_warnings", True)
     if args.coverage:
         lib.set_sim_option("enable_coverage", True)
@@ -195,6 +233,8 @@ def create_test_suite(vu, args):
     # Add waveform automatically when running in GUI mode.
     for tb in lib.get_test_benches():
         tb.set_sim_option("modelsim.init_file.gui", join(root, "scripts/" + tb.name + "_wave.do"))
+        tb.set_sim_option("ghdl.viewer_script.gui", join(root, "scripts/" + tb.name + "_wave.cmd"))
+        tb.set_sim_option("nvc.viewer_script.gui", join(root, "scripts/" + tb.name + "_wave.cmd"))
 
 if __name__ == '__main__':
 

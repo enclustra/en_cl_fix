@@ -41,25 +41,26 @@ library work;
 ---------------------------------------------------------------------------------------------------
 -- Entity
 ---------------------------------------------------------------------------------------------------
-entity cl_fix_saturate_tb is
+entity cl_fix_resize_tb is
     generic(
         runner_cfg      : string;
         meta_width_g    : natural
     );
-end cl_fix_saturate_tb;
+end cl_fix_resize_tb;
 
 ---------------------------------------------------------------------------------------------------
 -- Architecture
 ---------------------------------------------------------------------------------------------------
-architecture rtl of cl_fix_saturate_tb is
+architecture rtl of cl_fix_resize_tb is
 
-    constant datapath_c         : string := tb_path(runner_cfg) & "../bittrue/cosim/cl_fix_saturate/data/";
+    constant datapath_c         : string := tb_path(runner_cfg) & "../bittrue/cosim/cl_fix_resize/data/";
     
     -- Formats
     constant a_fmt_c            : FixFormatArray_t := cl_fix_read_format_file(datapath_c & "a_fmt.txt");
     constant r_fmt_c            : FixFormatArray_t := cl_fix_read_format_file(datapath_c & "r_fmt.txt");
     
-    -- Saturation modes
+    -- Rounding and saturation modes
+    constant rnd_c              : integer_vector := read_file(datapath_c & "rnd.txt");
     constant sat_c              : integer_vector := read_file(datapath_c & "sat.txt");
     
     constant test_count_c       : positive := a_fmt_c'length;
@@ -149,10 +150,11 @@ begin
         ---------
         -- UUT --
         ---------
-        i_uut : entity work.en_cl_fix_saturate
+        i_uut : entity work.en_cl_fix_resize
         generic map(
             in_fmt_g        => a_fmt_c(i),
             out_fmt_g       => r_fmt_c(i),
+            round_g         => FixRound_t'val(rnd_c(i)),
             saturate_g      => FixSaturate_t'val(sat_c(i)),
             reg_mode_g      => RegisterMode_t'val(i mod reg_mode_count_c),  -- Toggle between test cases.
             meta_width_g    => meta_width_g
@@ -175,9 +177,10 @@ begin
         -- Checker --
         -------------
         p_check : process
-            constant Expected_c : SlvArray_t := cl_fix_read_file(DataPath_c & "test" & to_string(i) & "_output.txt", r_fmt_c(i));
-            variable Idx_v      : natural := 0;
-            variable Random_v   : RandomPType;
+            constant Expected_c     : SlvArray_t := cl_fix_read_file(DataPath_c & "test" & to_string(i) & "_output.txt", r_fmt_c(i));
+            variable Idx_v          : natural := 0;
+            variable FuncResult_v   : std_logic_vector(cl_fix_width(r_fmt_c(i))-1 downto 0);
+            variable Random_v       : RandomPType;
         begin
             Random_v.InitSeed(RandSeed_c);
             
@@ -190,11 +193,19 @@ begin
                 -- Check data against cosim
                 if out_data /= Expected_c(Idx_v) then
                     print(
-                        "Error in test case " & to_string(i) & " while saturating " & str(a, a_fmt_c(i)) & " " & to_string(a_fmt_c(i))
+                        "Error in test case " & to_string(i) & " while resizing " & str(a, a_fmt_c(i)) & " " & to_string(a_fmt_c(i))
+                        & " [rnd: " & to_string(FixRound_t'val(rnd_c(i))) & "] --> " & to_string(r_fmt_c(i))
                         & " [sat: " & to_string(FixSaturate_t'val(sat_c(i))) & "] --> " & to_string(r_fmt_c(i))
                     );
                     check_equal(out_data, Expected_c(Idx_v), "Error at index " & to_string(Idx_v));
                 end if;
+                
+                -- The UUT doesn't call cl_fix_resize() directly, so we verify that separately
+                FuncResult_v := cl_fix_resize(
+                    cl_fix_from_integer(a, a_fmt_c(i)), a_fmt_c(i),
+                    r_fmt_c(i), FixRound_t'val(rnd_c(i)), FixSaturate_t'val(sat_c(i))
+                );
+                check_equal(FuncResult_v, Expected_c(Idx_v), "Error from function call at index " & to_string(Idx_v));
                 
                 Idx_v := Idx_v + 1;
             end loop;

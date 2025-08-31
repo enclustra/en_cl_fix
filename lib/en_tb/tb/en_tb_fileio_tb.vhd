@@ -32,7 +32,7 @@ library vunit_lib;
     context vunit_lib.vc_context;
 
 library en_tb;
-    context en_tb.fileio_context;
+    context en_tb.en_tb_fileio_context;
 
 ---------------------------------------------------------------------------------------------------
 -- Entity
