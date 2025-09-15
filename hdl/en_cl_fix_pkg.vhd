@@ -809,6 +809,7 @@ package body en_cl_fix_pkg is
         constant ChunkCount_c   : positive := (cl_fix_width(result_fmt) + ChunkSize_c - 1)/ChunkSize_c;
         variable ASat_v         : real;
         variable Chunk_v        : std_logic_vector(ChunkSize_c-1 downto 0);
+        variable ChunkInt_v     : integer;
         variable Result_v       : std_logic_vector(ChunkSize_c*ChunkCount_c-1 downto 0);
     begin
         -- Saturation is mandatory in this function (because wrapping has not been implemented)

@@ -1,0 +1,21 @@
+CAPI=2:
+
+name : open-logic:open-logic-dev:en_cl_fix:2.3.1
+description : local files (release plus WIP);  see https://github.com/enclustra/en_cl_fix/blob/main/README.md
+
+filesets:
+  rtl:
+    files:
+      - hdl/en_cl_fix_private_pkg.vhd
+      - hdl/en_cl_fix_saturate.vhd
+      - hdl/en_cl_fix_round.vhd
+      - hdl/en_cl_fix_resize.vhd
+      - hdl/en_cl_fix_pkg.vhd
+    file_type : vhdlSource-2008
+    logical_name : olo
+
+targets:
+  default:
+    filesets :
+      - rtl
+  
