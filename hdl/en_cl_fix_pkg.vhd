@@ -595,7 +595,9 @@ package body en_cl_fix_pkg is
     
     function cl_fix_shift_fmt(a_fmt : FixFormat_t; min_shift : integer; max_shift : integer) return FixFormat_t is
     begin
+        -- synthesis translate_off
         assert min_shift <= max_shift report "min_shift must be <= max_shift" severity Failure;
+        -- synthesis translate_on
         
         return (a_fmt.S, a_fmt.I + max_shift, a_fmt.F - min_shift);
     end;
@@ -733,8 +735,10 @@ package body en_cl_fix_pkg is
         -- Parse Format
         Index_v := Str'low;
         Index_v := string_find_next_match(Str, '(', Index_v);
+        -- synthesis translate_off
         assert Index_v > 0
             report "cl_fix_format_from_string: Format string is missing '('" severity Failure;
+        -- synthesis translate_on
         -- Number of sign bits must be 0 or 1
         if Str(Index_v+1) = '0' then
             Format_v.S := 0;
@@ -744,16 +748,22 @@ package body en_cl_fix_pkg is
             report "cl_fix_format_from_string: Unsupported number of sign bits: " & Str(Index_v+1) severity Failure;
         end if;
         Index_v := string_find_next_match(Str, ',', Index_v+1);
+        -- synthesis translate_off
         assert Index_v > 0
             report "cl_fix_format_from_string: Format string is missing ',' between S and I" severity Failure;
+        -- synthesis translate_on
         Format_v.I := string_parse_int(Str, Index_v+1);
         Index_v := string_find_next_match(Str, ',', Index_v+1);
+        -- synthesis translate_off
         assert Index_v > 0
             report "cl_fix_format_from_string: Format string is missing ',' between I and F" severity Failure;
+        -- synthesis translate_on
         Format_v.F := string_parse_int(Str, Index_v+1);
         Index_v := string_find_next_match(Str, ')', Index_v+1);
+        -- synthesis translate_off
         assert Index_v > 0
             report "cl_fix_format_from_string: Format string is missing ')'" severity Failure;
+        -- synthesis translate_on
         return Format_v;
     end;
     
@@ -813,10 +823,12 @@ package body en_cl_fix_pkg is
         variable Result_v       : std_logic_vector(ChunkSize_c*ChunkCount_c-1 downto 0);
     begin
         -- Saturation is mandatory in this function (because wrapping has not been implemented)
+        -- synthesis translate_off
         assert saturate = SatWarn_s or saturate = Sat_s
             report "cl_fix_for_real: Saturation mode must be SatWarn_s or Sat_s"
             severity Failure;
-            
+        -- synthesis translate_on
+
         -- Saturate
         if a > max_real(result_fmt) then
             ASat_v := max_real(result_fmt);
@@ -938,8 +950,10 @@ package body en_cl_fix_pkg is
     begin
         -- Allow the designer to ignore the worst-case result format (with caution).
         if fmt_check then
+            -- synthesis translate_off
             assert result_fmt = cl_fix_round_fmt(a_fmt, result_fmt.F, round)
                 report "cl_fix_round: Invalid result format. Use cl_fix_round_fmt()." severity Failure;
+            -- synthesis translate_on
         end if;
         
         -- Write the input value into mid_v with correct binary point alignment.
@@ -984,12 +998,16 @@ package body en_cl_fix_pkg is
     ) return std_logic_vector is
         variable result_v   : std_logic_vector(cl_fix_width(result_fmt)-1 downto 0);
     begin
+        -- synthesis translate_off
         assert result_fmt.F = a_fmt.F report "cl_fix_saturate: Number of frac bits cannot change." severity Failure;
+        -- synthesis translate_on
         
         -- Saturation warning
         if saturate = Warn_s or saturate = SatWarn_s then
+            -- synthesis translate_off
             assert cl_fix_in_range(a, a_fmt, result_fmt)
                 report "cl_fix_saturate : Saturation warning!" severity Warning;
+            -- synthesis translate_on
         end if;
         
         -- Write the input value into result_v with correct binary point alignment.
@@ -1048,8 +1066,10 @@ package body en_cl_fix_pkg is
     begin
         -- Allow the designer to ignore the worst-case result format (with caution).
         if fmt_check then
+            -- synthesis translate_off
             assert result_fmt = cl_fix_round_fmt(a_fmt, result_fmt.F, round)
                 report "cl_fix_recommended_pipelining: Invalid result format. Use cl_fix_round_fmt()." severity Failure;
+            -- synthesis translate_on
         end if;
         
         -- Registering is not needed if zero logic is used. This happens in two cases:
@@ -1058,9 +1078,11 @@ package body en_cl_fix_pkg is
             return 0;
         else
             -- If a new rounding mode is defined, then appropriate behavior must be implemented.
+            -- synthesis translate_off
             assert round = NonSymPos_s or round = NonSymNeg_s or round = SymInf_s or round = SymZero_s or round = ConvEven_s or round = ConvOdd_s
                 report "cl_fix_recommended_pipelining: Unhandled rounding mode."
                 severity Failure;
+            -- synthesis translate_on
         end if;
         -- (2) If the number of fractional bits isn't being decreased.
         if result_fmt.F >= a_fmt.F then
@@ -1075,9 +1097,11 @@ package body en_cl_fix_pkg is
         saturate    : FixSaturate_t
     ) return natural is
     begin
+        -- synthesis translate_off
         assert result_fmt.F = a_fmt.F
             report "cl_fix_recommended_pipelining: Number of frac bits cannot change during saturation."
             severity Failure;
+        -- synthesis translate_on
         
         -- Registering is not needed if zero logic is used. This happens in two cases:
         -- (1) During wrapping.
@@ -1085,9 +1109,11 @@ package body en_cl_fix_pkg is
             return 0;
         else
             -- If a new saturation mode is defined, then appropriate behavior must be implemented.
+            -- synthesis translate_off
             assert saturate = Sat_s or saturate = SatWarn_s
                 report "cl_fix_recommended_pipelining: Unhandled saturation mode."
                 severity Failure;
+            -- synthesis translate_on
         end if;
         -- (2) If the number of integer bits is not being decreased, and the number of sign bits is
         --     not being changed.

@@ -161,7 +161,9 @@ package body en_cl_fix_private_pkg is
         variable MatchIdx_v         : integer := -1;
     begin
         -- Checks
+        -- synthesis translate_off
         assert StartIdx <= Str'high and StartIdx >= Str'low report "string_find_next_match: StartIdx out of range" severity Failure;
+        -- synthesis translate_on
         
         -- Implementation
         while (not Match_v) and (CurrentIdx_v <= Str'high) loop
@@ -203,7 +205,9 @@ package body en_cl_fix_private_pkg is
         variable AbsoluteVal_v      : integer   := 0;
     begin
         -- Checks
+        -- synthesis translate_off
         assert StartIdx <= Str'high and StartIdx >= Str'low report "string_parse_int: StartIdx out of range" severity Failure;
+        -- synthesis translate_on
         
         -- Remove leading spaces
         while Str(CurrentIdx_v) = ' ' loop
