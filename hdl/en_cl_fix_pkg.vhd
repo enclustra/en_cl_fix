@@ -818,8 +818,10 @@ package body en_cl_fix_pkg is
             
         -- Saturate
         if a > max_real(result_fmt) then
+            assert saturate = Sat_s report "cl_fix_from_real : Saturation warning!" severity Warning;
             ASat_v := max_real(result_fmt);
         elsif a < min_real(result_fmt) then
+            assert saturate = Sat_s report "cl_fix_from_real : Saturation warning!" severity Warning;
             ASat_v := min_real(result_fmt);
         else
             ASat_v := a;
