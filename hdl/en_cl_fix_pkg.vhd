@@ -734,12 +734,12 @@ package body en_cl_fix_pkg is
             when SymZero_s   => return "SymZero_s";
             when ConvEven_s  => return "ConvEven_s";
             when ConvOdd_s   => return "ConvOdd_s";
-            when others =>
 -- coverage off
+            when others =>
                 report "to_string(FixRound_t) : Unsupported input." severity Failure;
+                return "";
 -- coverage on
         end case;
-        return "";
     end;
     
     function to_string(sat : FixSaturate_t) return string is
@@ -750,12 +750,12 @@ package body en_cl_fix_pkg is
             when Warn_s    => return "Warn_s";
             when Sat_s     => return "Sat_s";
             when SatWarn_s => return "SatWarn_s";
-            when others =>
 -- coverage off
+            when others =>
                 report "to_string(FixSaturate_t) : Unsupported input." severity Failure;
+                return "";
 -- coverage on
         end case;
-        return "";
     end;
     
     function cl_fix_format_from_string(Str : string) return FixFormat_t is
@@ -772,8 +772,8 @@ package body en_cl_fix_pkg is
             Format_v.S := 0;
         elsif Str(Index_v+1) = '1' then
             Format_v.S := 1;
-        else
 -- coverage off
+        else
             report "cl_fix_format_from_string: Unsupported number of sign bits: " & Str(Index_v+1) severity Failure;
 -- coverage on
         end if;
@@ -1005,8 +1005,8 @@ package body en_cl_fix_pkg is
                     mid_v := mid_v + half_c - ("" & not unit_v);
                 when ConvOdd_s =>
                     mid_v := mid_v + half_c - ("" & unit_v);
-                when others =>
 -- coverage off
+                when others =>
                     report "Unrecognized rounding mode: " & to_string(round) severity Failure;
 -- coverage on
             end case;
@@ -1166,8 +1166,8 @@ package body en_cl_fix_pkg is
                 return 1;
             when No_s =>
                 return 0;
-            when others =>
 -- coverage off
+            when others =>
                 report "cl_fix_latency: Unsupported reg_mode." severity Failure;
                 return 0;
 -- coverage on
@@ -1188,8 +1188,8 @@ package body en_cl_fix_pkg is
                 return 1;
             when No_s =>
                 return 0;
-            when others =>
 -- coverage off
+            when others =>
                 report "cl_fix_latency: Unsupported reg_mode." severity Failure;
                 return 0;
 -- coverage on
@@ -1395,8 +1395,8 @@ package body en_cl_fix_pkg is
             elsif comparison = ">"  then return signed(a_v) >  signed(b_v);
             elsif comparison = "<=" then return signed(a_v) <= signed(b_v);
             elsif comparison = ">=" then return signed(a_v) >= signed(b_v);
-            else
 -- coverage off
+            else
                 report "cl_fix_compare: Unrecognized comparison type: " & comparison severity Failure;
                 return false;
 -- coverage on
@@ -1408,8 +1408,8 @@ package body en_cl_fix_pkg is
             elsif comparison = ">"  then return unsigned(a_v) >  unsigned(b_v);
             elsif comparison = "<=" then return unsigned(a_v) <= unsigned(b_v);
             elsif comparison = ">=" then return unsigned(a_v) >= unsigned(b_v);
-            else
 -- coverage off
+            else
                 report "cl_fix_compare: Unrecognized comparison type: " & comparison severity Failure;
                 return false;
 -- coverage on

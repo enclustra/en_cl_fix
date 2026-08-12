@@ -29,10 +29,8 @@ library ieee;
 package en_cl_fix_private_pkg is
     
     function choose(condition : boolean; if_true : integer; if_false : integer) return integer;
-    function choose(condition : boolean; if_true : std_logic; if_false : std_logic) return std_logic;
     function to01(x : std_logic) return std_logic;
     function to01(x : std_logic_vector) return std_logic_vector;
-    function toInteger(bool : boolean) return integer;
     
     function maximum(a, b : integer) return integer;
     function minimum(a, b : integer) return integer;
@@ -49,14 +47,6 @@ end package;
 package body en_cl_fix_private_pkg is
     
     function choose(condition : boolean; if_true : integer; if_false : integer) return integer is
-    begin
-        if condition then
-            return if_true;
-        end if;
-        return if_false;
-    end function;
-    
-    function choose(condition : boolean; if_true : std_logic; if_false : std_logic) return std_logic is
     begin
         if condition then
             return if_true;
@@ -84,15 +74,6 @@ package body en_cl_fix_private_pkg is
         return result_v;
     end;
     
-    function toInteger(bool : boolean) return integer is
-    begin
-        if bool then
-            return 1;
-        else
-            return 0;
-        end if;
-    end;
-    
     function maximum(a, b : integer) return integer is
     begin
         if a >= b then
@@ -115,6 +96,7 @@ package body en_cl_fix_private_pkg is
         variable v : character;
     begin
         case c is
+-- coverage off
             when 'A' => v := 'a';
             when 'B' => v := 'b';
             when 'C' => v := 'c';
@@ -142,6 +124,7 @@ package body en_cl_fix_private_pkg is
             when 'Y' => v := 'y';
             when 'Z' => v := 'z';
             when others => v := c;
+-- coverage on
         end case;
         return v;
     end;
@@ -177,6 +160,7 @@ package body en_cl_fix_private_pkg is
     function string_int_from_char(Char : character) return integer is
     begin
         case Char is
+-- coverage off
             when '0'    => return 0;
             when '1'    => return 1;
             when '2'    => return 2;
@@ -188,8 +172,8 @@ package body en_cl_fix_private_pkg is
             when '8'    => return 8;
             when '9'    => return 9;
             when others => return -1;
+-- coverage on
         end case;
-        return 0;
     end function;
     
     function string_char_is_numeric(Char : character) return boolean is

@@ -1,0 +1,55 @@
+Coverage Report Summary Data by DU
+
+=================================================================================
+=== Design Unit: work.en_cl_fix_pkg
+=================================================================================
+    Enabled Coverage              Bins      Hits    Misses  Coverage
+    ----------------              ----      ----    ------  --------
+    Assertions                      15        12         3    80.00%
+    Branches                       140       137         3    97.85%
+    Conditions                      46        33        13    71.73%
+    Expressions                      4         4         0   100.00%
+    Statements                     221       221         0   100.00%
+
+=================================================================================
+=== Design Unit: work.en_cl_fix_private_pkg
+=================================================================================
+    Enabled Coverage              Bins      Hits    Misses  Coverage
+    ----------------              ----      ----    ------  --------
+    Assertions                       2         2         0   100.00%
+    Branches                        16        16         0   100.00%
+    Conditions                       8         2         6    25.00%
+    Statements                      39        39         0   100.00%
+
+=================================================================================
+=== Design Unit: work.en_cl_fix_resize(rtl)
+=================================================================================
+    Enabled Coverage              Bins      Hits    Misses  Coverage
+    ----------------              ----      ----    ------  --------
+    Toggles                        124       120         4    96.77%
+
+=================================================================================
+=== Design Unit: work.en_cl_fix_round(rtl)
+=================================================================================
+    Enabled Coverage              Bins      Hits    Misses  Coverage
+    ----------------              ----      ----    ------  --------
+    Branches                         1         1         0   100.00%
+    Expressions                      2         1         1    50.00%
+    Statements                       7         7         0   100.00%
+    Toggles                        106       102         4    96.22%
+
+=================================================================================
+=== Design Unit: work.en_cl_fix_saturate(rtl)
+=================================================================================
+    Enabled Coverage              Bins      Hits    Misses  Coverage
+    ----------------              ----      ----    ------  --------
+    Branches                         1         1         0   100.00%
+    Expressions                      2         1         1    50.00%
+    Statements                       7         7         0   100.00%
+    Toggles                        106       102         4    96.22%
+
+
+TOTAL ASSERTION COVERAGE: 82.35%  ASSERTIONS: 17
+
+Total Coverage By Design Unit (filtered view): 86.11%
+
