@@ -1,0 +1,16 @@
+[project]
+name = "en-cl-fix-pkg"
+version = "0.1.0"
+description = "True Bit Python models for Fixed Point HDL"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
