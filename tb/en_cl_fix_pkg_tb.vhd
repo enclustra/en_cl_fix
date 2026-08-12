@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
--- Copyright (c) 2024 Enclustra GmbH, Switzerland (info@enclustra.com)
+-- Copyright (c) 2026 Enclustra GmbH, Switzerland (info@enclustra.com)
 -- 
 -- Permission is hereby granted, free of charge, to any person obtaining a copy of this software
 -- and associated documentation files (the "Software"), to deal in the Software without
@@ -52,6 +52,16 @@ architecture sim of en_cl_fix_pkg_tb is
         assert got = expected report msg & ", got: " & to_string(got) & ", expected: " & to_string(expected) severity Failure;
     end procedure;
     
+    procedure check_equal(got, expected : FixRound_t; msg : string) is
+    begin
+        assert got = expected report msg & ", got: " & to_string(got) & ", expected: " & to_string(expected) severity Failure;
+    end procedure;
+    
+    procedure check_equal(got, expected : FixSaturate_t; msg : string) is
+    begin
+        assert got = expected report msg & ", got: " & to_string(got) & ", expected: " & to_string(expected) severity Failure;
+    end procedure;
+    
 begin
     
     test_runner_watchdog(runner, 100 ms);
@@ -72,6 +82,10 @@ begin
                 -- cl_fix_sub_fmt
                 print("cl_fix_sub_fmt");
                 check_equal(cl_fix_sub_fmt((1, 1, 1), (0, 7, 0)), (1, 8, 1), "cl_fix_sub_fmt Wrong");
+                
+                -- cl_fix_addsub_fmt
+                print("cl_fix_addsub_fmt");
+                check_equal(cl_fix_addsub_fmt((1, 1, 1), (0, 7, 0)), (1, 8, 1), "cl_fix_addsub_fmt Wrong");
                 
                 -- cl_fix_mult_fmt
                 print("cl_fix_mult_fmt");
@@ -161,6 +175,13 @@ begin
                 check_equal(cl_fix_to_integer("011", (1,2,0)), 3, "cl_fix_to_integer: Signed Positive");
                 check_equal(cl_fix_to_integer("1101", (1,3,0)), -3, "cl_fix_to_integer: Signed Negative");
                 check_equal(cl_fix_to_integer("1101", (1,1,2)), -3, "cl_fix_to_integer: Fractional"); -- binary point position is not important
+                check_equal(cl_fix_to_integer("", (0,0,0)), 0, "cl_fix_to_integer: Zero-width");
+                
+                -- cl_fix_round
+                -- This trivial corner case seems to be the only way to achieve code coverage
+                print("cl_fix_round");
+                check_equal(cl_fix_round("1", (0, 0, 1), (0, 0, 0), ConvOdd_s, fmt_check => false), std_logic_vector'(""),
+                            "cl_fix_round: Implicit sign extension in convergent round");
                 
                 -- cl_fix_resize
                 print("cl_fix_resize");
@@ -289,7 +310,7 @@ begin
                                         cl_fix_from_real(1.25, (0, 5, 3)), (0, 5, 3),
                                         (0, 5, 3)),
                             cl_fix_from_real(2.5+1.25, (0, 5, 3)),
-                            "cl_fix_add: Same Fmt Usigned");
+                            "cl_fix_add: Same Fmt Unsigned");
                 check_equal(cl_fix_add(cl_fix_from_real(-2.5, (1, 6, 3)), (1, 6, 3),
                                         cl_fix_from_real(1.25, (1, 5, 3)), (1, 5, 3),
                                         (1, 5, 3)),
@@ -299,7 +320,7 @@ begin
                                         cl_fix_from_real(1.25, (0, 5, 3)), (0, 5, 3),
                                         (0, 5, 3)),
                             cl_fix_from_real(2.5+1.25, (0, 5, 3)),
-                            "cl_fix_add: Different Int Bits Usigned");
+                            "cl_fix_add: Different Int Bits Unsigned");
                 check_equal(cl_fix_add(cl_fix_from_real(-2.5, (1, 5, 4)), (1, 5, 4),
                                         cl_fix_from_real(1.25, (1, 5, 3)), (1, 5, 3),
                                         (1, 5, 3)),
@@ -309,7 +330,7 @@ begin
                                         cl_fix_from_real(1.25, (0, 5, 3)), (0, 5, 3),
                                         (0, 5, 3)),
                             cl_fix_from_real(2.5+1.25, (0, 5, 3)),
-                            "cl_fix_add: Different Frac Bits Usigned");
+                            "cl_fix_add: Different Frac Bits Unsigned");
                 check_equal(cl_fix_add(cl_fix_from_real(0.75, (0, 0, 4)), (0, 0, 4),
                                         cl_fix_from_real(4.0, (0, 4, -1)), (0, 4, -1),
                                         (0, 5, 5)),
@@ -325,6 +346,10 @@ begin
                                         (0, 4, 0), NonSymPos_s, Sat_s),
                             cl_fix_from_real(15.0, (0, 4, 0)),
                             "cl_fix_add: Satturate");
+                check_equal(cl_fix_add(cl_fix_from_real(2.5, (0, 5, 3)), (0, 5, 3),
+                                        cl_fix_from_real(1.25, (0, 5, 3)), (0, 5, 3)),
+                            cl_fix_from_real(2.5+1.25, (0, 6, 3)),
+                            "cl_fix_add: Inferred result format");
                             
                 -- cl_fix_sub
                 print("cl_fix_sub");
@@ -337,7 +362,7 @@ begin
                                         cl_fix_from_real(1.25, (0, 5, 3)), (0, 5, 3),
                                         (0, 5, 3)),
                             cl_fix_from_real(2.5-1.25, (0, 5, 3)),
-                            "cl_fix_sub: Same Fmt Usigned");
+                            "cl_fix_sub: Same Fmt Unsigned");
                 check_equal(cl_fix_sub(cl_fix_from_real(-2.5, (1, 6, 3)), (1, 6, 3),
                                         cl_fix_from_real(1.25, (1, 5, 3)), (1, 5, 3),
                                         (1, 5, 3)),
@@ -347,7 +372,7 @@ begin
                                         cl_fix_from_real(1.25, (0, 5, 3)), (0, 5, 3),
                                         (0, 5, 3)),
                             cl_fix_from_real(2.5-1.25, (0, 5, 3)),
-                            "cl_fix_sub: Different Int Bits Usigned");
+                            "cl_fix_sub: Different Int Bits Unsigned");
                 check_equal(cl_fix_sub(cl_fix_from_real(-2.5, (1, 5, 4)), (1, 5, 4),
                                         cl_fix_from_real(1.25, (1, 5, 3)), (1, 5, 3),
                                         (1, 5, 3)),
@@ -357,7 +382,7 @@ begin
                                         cl_fix_from_real(1.25, (0, 5, 3)), (0, 5, 3),
                                         (0, 5, 3)),
                             cl_fix_from_real(2.5-1.25, (0, 5, 3)),
-                            "cl_fix_sub: Different Frac Bits Usigned");
+                            "cl_fix_sub: Different Frac Bits Unsigned");
                 check_equal(cl_fix_sub(cl_fix_from_real(4.0, (0, 4, -1)), (0, 4, -1),
                                         cl_fix_from_real(0.75, (0, 0, 4)), (0, 0, 4),
                                         (0, 5, 5)),
@@ -732,6 +757,68 @@ begin
                                           cl_fix_from_real(0.25, (1,3,3)), (1,3,3), '0', (1,3,3)),
                             cl_fix_from_real(1.0, (1,3,3)),
                             "Sub");
+                
+                -- cl_fix_recommended_pipelining
+                print("cl_fix_recommended_pipelining");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,1,7), NonSymPos_s), 1, "Round");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,0,7), Trunc_s), 0, "Round");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,-1,8), SatWarn_s), 1, "Saturate");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,-1,8), Warn_s), 0, "Saturate");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,-1,7), Trunc_s, Sat_s), 1, "Resize");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,-1,7), ConvEven_s, None_s), 1, "Resize");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,-1,7), ConvEven_s, Sat_s), 2, "Resize");
+                
+                -- cl_fix_latency
+                print("cl_fix_latency");
+                check_equal(cl_fix_latency((0,0,8), (0,1,7), NonSymPos_s, Auto_s), 1, "Round");
+                check_equal(cl_fix_latency((0,0,8), (0,1,7), NonSymPos_s, No_s), 0, "Round");
+                check_equal(cl_fix_latency((0,0,8), (0,0,7), Trunc_s, Yes_s), 1, "Round");
+                check_equal(cl_fix_latency((0,0,8), (0,-1,8), SatWarn_s, Auto_s), 1, "Saturate");
+                check_equal(cl_fix_latency((0,0,8), (0,-1,8), SatWarn_s, No_s), 0, "Saturate");
+                check_equal(cl_fix_latency((0,0,8), (0,-1,8), Warn_s, Yes_s), 1, "Saturate");
+                check_equal(cl_fix_latency((0,0,8), (0,-1,7), ConvEven_s, Sat_s, Auto_s), 2, "Resize");
+                check_equal(cl_fix_latency((0,0,8), (0,-1,7), ConvEven_s, Sat_s, No_s), 0, "Resize");
+                check_equal(cl_fix_latency((0,0,8), (0,-1,7), Trunc_s, None_s, Yes_s), 2, "Resize");
+                
+                -- to_string
+                print("to_string");
+                check_equal(to_string("11", (0, -1, 3)), ".(0)11", "Number");
+                check_equal(to_string("11", (0, 3, -1)), "11(0).", "Number");
+                check_equal(to_string("11", (0, 0, 2)), ".11", "Number");
+                check_equal(to_string("11", (0, 2, 0)), "11.", "Number");
+                check_equal(to_string(FixFormat_t'(1, 2, 3)), "(1,2,3)", "FixFormat_t");
+                check_equal(to_string(Trunc_s), "Trunc_s", "FixRound_t");
+                check_equal(to_string(NonSymPos_s), "NonSymPos_s", "FixRound_t");
+                check_equal(to_string(NonSymNeg_s), "NonSymNeg_s", "FixRound_t");
+                check_equal(to_string(SymInf_s), "SymInf_s", "FixRound_t");
+                check_equal(to_string(SymZero_s), "SymZero_s", "FixRound_t");
+                check_equal(to_string(ConvEven_s), "ConvEven_s", "FixRound_t");
+                check_equal(to_string(ConvOdd_s), "ConvOdd_s", "FixRound_t");
+                check_equal(to_string(None_s), "None_s", "FixSaturate_t");
+                check_equal(to_string(Warn_s), "Warn_s", "FixSaturate_t");
+                check_equal(to_string(Sat_s), "Sat_s", "FixSaturate_t");
+                check_equal(to_string(SatWarn_s), "SatWarn_s", "FixSaturate_t");
+                
+                -- from_string
+                print("from_string");
+                check_equal(cl_fix_format_from_string("(0,3,  5)"), (0, 3, 5), "FixFormat_t");
+                check_equal(cl_fix_format_from_string("(1, 3,5)"), (1, 3, 5), "FixFormat_t");
+                check_equal(cl_fix_round_from_string("Trunc_s"), Trunc_s, "FixRound_t");
+                check_equal(cl_fix_round_from_string("NONSYMPOS_S"), NonSymPos_s, "FixRound_t");
+                check_equal(cl_fix_round_from_string("nonsymneg_s"), NonSymNeg_s, "FixRound_t");
+                check_equal(cl_fix_round_from_string("SymInf_s"), SymInf_s, "FixRound_t");
+                check_equal(cl_fix_round_from_string("SymZero_s"), SymZero_s, "FixRound_t");
+                check_equal(cl_fix_round_from_string("ConvEven_s"), ConvEven_s, "FixRound_t");
+                check_equal(cl_fix_round_from_string("ConvOdd_s"), ConvOdd_s, "FixRound_t");
+                check_equal(cl_fix_saturate_from_string("None_s"), None_s, "FixSaturate_t");
+                check_equal(cl_fix_saturate_from_string("WARN_S"), Warn_s, "FixSaturate_t");
+                check_equal(cl_fix_saturate_from_string("sat_s"), Sat_s, "FixSaturate_t");
+                check_equal(cl_fix_saturate_from_string("SatWarn_s"), SatWarn_s, "FixSaturate_t");
+                
+                -- cl_fix_sign
+                print("cl_fix_sign");
+                check_equal(cl_fix_sign("1", (1,0,0)), '1', "Sign '1'");
+                check_equal(cl_fix_sign("1", (0,1,0)), '0', "Sign '0'");
             end if;
         end loop;
         

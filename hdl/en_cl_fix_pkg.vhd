@@ -184,6 +184,32 @@ package en_cl_fix_pkg is
         saturate    : FixSaturate_t
     ) return natural;
     
+    -- Latency of cl_fix_round
+    function cl_fix_latency(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t;
+        reg_mode    : RegisterMode_t;
+        fmt_check   : boolean := true
+    ) return natural;
+    
+    -- Latency of cl_fix_saturate
+    function cl_fix_latency(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        saturate    : FixSaturate_t;
+        reg_mode    : RegisterMode_t
+    ) return natural;
+    
+    -- Latency of cl_fix_resize
+    function cl_fix_latency(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t;
+        saturate    : FixSaturate_t;
+        reg_mode    : RegisterMode_t
+    ) return natural;
+    
     -----------------------------------------------------------------------------------------------
     -- Math Functions
     -----------------------------------------------------------------------------------------------
@@ -708,9 +734,12 @@ package body en_cl_fix_pkg is
             when SymZero_s   => return "SymZero_s";
             when ConvEven_s  => return "ConvEven_s";
             when ConvOdd_s   => return "ConvOdd_s";
-            when others => report "to_string(FixRound_t) : Unsupported input." severity Failure;
+-- coverage off
+            when others =>
+                report "to_string(FixRound_t) : Unsupported input." severity Failure;
+                return "";
+-- coverage on
         end case;
-        return "";
     end;
     
     function to_string(sat : FixSaturate_t) return string is
@@ -721,9 +750,12 @@ package body en_cl_fix_pkg is
             when Warn_s    => return "Warn_s";
             when Sat_s     => return "Sat_s";
             when SatWarn_s => return "SatWarn_s";
-            when others => report "to_string(FixSaturate_t) : Unsupported input." severity Failure;
+-- coverage off
+            when others =>
+                report "to_string(FixSaturate_t) : Unsupported input." severity Failure;
+                return "";
+-- coverage on
         end case;
-        return "";
     end;
     
     function cl_fix_format_from_string(Str : string) return FixFormat_t is
@@ -740,8 +772,10 @@ package body en_cl_fix_pkg is
             Format_v.S := 0;
         elsif Str(Index_v+1) = '1' then
             Format_v.S := 1;
+-- coverage off
         else
             report "cl_fix_format_from_string: Unsupported number of sign bits: " & Str(Index_v+1) severity Failure;
+-- coverage on
         end if;
         Index_v := string_find_next_match(Str, ',', Index_v+1);
         assert Index_v > 0
@@ -776,8 +810,10 @@ package body en_cl_fix_pkg is
             return ConvOdd_s;
         end if;
         
+-- coverage off
         report "cl_fix_round_from_string: unrecognized format " & Str severity failure;
         return Trunc_s;
+-- coverage on
     end;
     
     function cl_fix_saturate_from_string(Str : string) return FixSaturate_t is
@@ -793,8 +829,10 @@ package body en_cl_fix_pkg is
             return SatWarn_s;
         end if;
         
+-- coverage off
         report "cl_fix_saturate_from_string: unrecognized format " & Str severity failure;
         return None_s;
+-- coverage on
     end;
     
     function cl_fix_from_real(a : real; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector is
@@ -967,7 +1005,10 @@ package body en_cl_fix_pkg is
                     mid_v := mid_v + half_c - ("" & not unit_v);
                 when ConvOdd_s =>
                     mid_v := mid_v + half_c - ("" & unit_v);
-                when others => report "Unrecognized rounding mode: " & to_string(round) severity Failure;
+-- coverage off
+                when others =>
+                    report "Unrecognized rounding mode: " & to_string(round) severity Failure;
+-- coverage on
             end case;
         end if;
         
@@ -1108,6 +1149,64 @@ package body en_cl_fix_pkg is
     begin
         return cl_fix_recommended_pipelining(a_fmt, round_fmt_c, round)
              + cl_fix_recommended_pipelining(round_fmt_c, result_fmt, saturate);
+    end;
+    
+    function cl_fix_latency(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t;
+        reg_mode    : RegisterMode_t;
+        fmt_check   : boolean := true
+    ) return natural is
+    begin
+        case reg_mode is
+            when Auto_s =>
+                return cl_fix_recommended_pipelining(a_fmt, result_fmt, round, fmt_check);
+            when Yes_s =>
+                return 1;
+            when No_s =>
+                return 0;
+-- coverage off
+            when others =>
+                report "cl_fix_latency: Unsupported reg_mode." severity Failure;
+                return 0;
+-- coverage on
+        end case;
+    end;
+    
+    function cl_fix_latency(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        saturate    : FixSaturate_t;
+        reg_mode    : RegisterMode_t
+    ) return natural is
+    begin
+        case reg_mode is
+            when Auto_s =>
+                return cl_fix_recommended_pipelining(a_fmt, result_fmt, saturate);
+            when Yes_s =>
+                return 1;
+            when No_s =>
+                return 0;
+-- coverage off
+            when others =>
+                report "cl_fix_latency: Unsupported reg_mode." severity Failure;
+                return 0;
+-- coverage on
+        end case;
+    end;
+    
+    function cl_fix_latency(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t;
+        saturate    : FixSaturate_t;
+        reg_mode    : RegisterMode_t
+    ) return natural is
+        constant round_fmt_c    : FixFormat_t := cl_fix_round_fmt(a_fmt, result_fmt.F, round);
+    begin
+        return cl_fix_latency(a_fmt, round_fmt_c, round, reg_mode)
+             + cl_fix_latency(round_fmt_c, result_fmt, saturate, reg_mode);
     end;
     
     function cl_fix_abs(
@@ -1296,9 +1395,11 @@ package body en_cl_fix_pkg is
             elsif comparison = ">"  then return signed(a_v) >  signed(b_v);
             elsif comparison = "<=" then return signed(a_v) <= signed(b_v);
             elsif comparison = ">=" then return signed(a_v) >= signed(b_v);
+-- coverage off
             else
                 report "cl_fix_compare: Unrecognized comparison type: " & comparison severity Failure;
                 return false;
+-- coverage on
             end if;
         else
             if    comparison = "="  then return unsigned(a_v) =  unsigned(b_v);
@@ -1307,9 +1408,11 @@ package body en_cl_fix_pkg is
             elsif comparison = ">"  then return unsigned(a_v) >  unsigned(b_v);
             elsif comparison = "<=" then return unsigned(a_v) <= unsigned(b_v);
             elsif comparison = ">=" then return unsigned(a_v) >= unsigned(b_v);
+-- coverage off
             else
                 report "cl_fix_compare: Unrecognized comparison type: " & comparison severity Failure;
                 return false;
+-- coverage on
             end if;
         end if;
     end function;

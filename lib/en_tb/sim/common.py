@@ -1,5 +1,5 @@
 ###################################################################################################
-# Copyright (c) 2024 Enclustra GmbH, Switzerland (info@enclustra.com)
+# Copyright (c) 2025 Enclustra GmbH, Switzerland (info@enclustra.com)
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software
 # and associated documentation files (the "Software"), to deal in the Software without
@@ -23,8 +23,7 @@ from os import environ, system, getcwd, chdir
 
 # Import VUnit
 import sys
-sys.path.insert(1, join(abspath(dirname(__file__)), "../../vunit/"))
-import vunit
+sys.path.insert(1, abspath(dirname(__file__)) + "/../../vunit")
 from vunit import VUnitCLI, VUnit
 
 # Add custom command line arguments

@@ -65,6 +65,8 @@ architecture rtl of cl_fix_round_tb is
     constant test_count_c       : positive := a_fmt_c'length;
     constant reg_mode_count_c   : positive := 1 + RegisterMode_t'pos(RegisterMode_t'high);  -- In VHDL-2019: RegisterMode_t'length.
     
+    constant clk_period_c       : time := 10 ns;
+    
     signal clk                  : std_logic := '0';
     
     signal finished             : std_logic_vector(0 to test_count_c-1) := (others => '0');
@@ -79,7 +81,7 @@ begin
     
     test_runner_watchdog(runner, 100 ms);
     
-    clk <= not clk after 5 ns;
+    clk <= not clk after clk_period_c/2;
     
     ----------------
     -- VUnit Main --
@@ -102,9 +104,11 @@ begin
     -- Test Cases
     -----------------------------------------------------------------------------------------------
     g_test_case : for i in 0 to test_count_c-1 generate
-        constant RandSeed_c : string := "Metadata seed " & to_string(i);
-        constant Amin       : integer := cl_fix_to_integer(cl_fix_min_value(a_fmt_c(i)), a_fmt_c(i));
-        constant Amax       : integer := cl_fix_to_integer(cl_fix_max_value(a_fmt_c(i)), a_fmt_c(i));
+        constant rand_seed_c    : string := "Metadata seed " & to_string(i);
+        constant Amin           : integer := cl_fix_to_integer(cl_fix_min_value(a_fmt_c(i)), a_fmt_c(i));
+        constant Amax           : integer := cl_fix_to_integer(cl_fix_max_value(a_fmt_c(i)), a_fmt_c(i));
+        constant round_c        : FixRound_t := FixRound_t'val(rnd_c(i));
+        constant reg_mode_c     : RegisterMode_t := RegisterMode_t'val(i mod reg_mode_count_c);  -- Toggle between test cases.
         
         signal rst          : std_logic;
         
@@ -115,6 +119,8 @@ begin
         signal out_valid    : std_logic;
         signal out_meta     : std_logic_vector(meta_width_g-1 downto 0);
         signal out_data     : std_logic_vector(cl_fix_width(r_fmt_c(i))-1 downto 0);
+        
+        signal delay_meta   : std_logic_vector(meta_width_g-1 downto 0);
     begin
         -----------
         -- Input --
@@ -122,7 +128,7 @@ begin
         p_input : process
             variable Random_v   : RandomPType;
         begin
-            Random_v.InitSeed(RandSeed_c);
+            Random_v.InitSeed(rand_seed_c);
             
             -- Reset
             rst <= '1';
@@ -153,8 +159,8 @@ begin
         generic map(
             in_fmt_g        => a_fmt_c(i),
             out_fmt_g       => r_fmt_c(i),
-            round_g         => FixRound_t'val(rnd_c(i)),
-            reg_mode_g      => RegisterMode_t'val(i mod reg_mode_count_c),  -- Toggle between test cases.
+            round_g         => round_c,
+            reg_mode_g      => reg_mode_c,
             meta_width_g    => meta_width_g
         )
         port map(
@@ -171,6 +177,9 @@ begin
             out_data    => out_data
         );
         
+        -- Use the metadata path to verify cl_fix_latency()
+        delay_meta <= transport in_meta after clk_period_c * cl_fix_latency(a_fmt_c(i), r_fmt_c(i), round_c, reg_mode_c);
+        
         -------------
         -- Checker --
         -------------
@@ -179,7 +188,7 @@ begin
             variable Idx_v      : natural := 0;
             variable Random_v   : RandomPType;
         begin
-            Random_v.InitSeed(RandSeed_c);
+            Random_v.InitSeed(rand_seed_c);
             
             for a in Amin to Amax loop
                 wait until out_valid = '1' and rising_edge(Clk);
@@ -191,10 +200,14 @@ begin
                 if out_data /= Expected_c(Idx_v) then
                     print(
                         "Error in test case " & to_string(i) & " while rounding " & str(a, a_fmt_c(i)) & " " & to_string(a_fmt_c(i))
-                        & " [rnd: " & to_string(FixRound_t'val(rnd_c(i))) & "] --> " & to_string(r_fmt_c(i))
+                        & " [rnd: " & to_string(round_c) & "] --> " & to_string(r_fmt_c(i))
                     );
                     check_equal(out_data, Expected_c(Idx_v), "Error at index " & to_string(Idx_v));
                 end if;
+                
+                -- Check cl_fix_latency delay (using metadata path)
+                wait for 0 ns;  -- Wait 1 delta cycle for assignment.
+                check_equal(delay_meta, out_meta, "cl_fix_latency-delayed metadata mismatch in test case " & to_string(i));
                 
                 Idx_v := Idx_v + 1;
             end loop;

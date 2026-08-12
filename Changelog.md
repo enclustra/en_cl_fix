@@ -1,3 +1,8 @@
+## 2.4.0
+* Features
+  * Added cl_fix_latency functions.
+  * Added code coverage script and increased statement coverage to 100%.
+
 ## 2.3.0
 * Features
   * Added support for NVC simulator.

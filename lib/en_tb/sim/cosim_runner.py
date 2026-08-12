@@ -28,7 +28,7 @@ COSIM_PATH_THREADLOCK = Lock()
 
 # Cosim runner class to: (1) Run the cosim script at most once (thread safe) and (2) Give access to
 # any config info needed to enumerate all test cases in run.py (e.g. number of test sets defined).
-class CosimRunner:
+class cosim_runner:
     def __init__(self, disable, cosim_path, module_name="cosim"):
         self.enable = not disable
         self.cosim_path = cosim_path

@@ -10,7 +10,7 @@ If the following requirements cannot be met, then the code is not ready to be ad
 
 Do not add any VHDL entities to this library, unless a new use case is agreed with the library maintainer (and stated here).
 
-Reusable simulation entities are expected to be VUnit models, which belong in [en_vunit](https://gitlab.enclustra.com/Enclustra/Lib/Fw/VHDL/en_vunit).
+Reusable simulation entities are expected to be VUnit models, which belong in [en_vunit](https://gitlab.com/Enclustra/Lib/Fw/VHDL/en_vunit).
 
 ## Packages
 
@@ -35,4 +35,4 @@ The changelog shall be updated on every release using [semantic versioning](http
 
 The master branch shall always be at the latest stable release state.
 
-The released features shall be pulled into the corresponding  submodule within the [en\_vhdl\_all](https://gitlab.enclustra.com/Enclustra/Lib/Fw/VHDL/en_vhdl_all) repository and regression tests shall successfully complete.
+The released features shall be pulled into the corresponding  submodule within the [en\_vhdl\_all](https://gitlab.com/Enclustra/Lib/Fw/VHDL/en_vhdl_all) repository and regression tests shall successfully complete.
