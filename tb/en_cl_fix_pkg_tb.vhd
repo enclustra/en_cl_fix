@@ -732,6 +732,28 @@ begin
                                           cl_fix_from_real(0.25, (1,3,3)), (1,3,3), '0', (1,3,3)),
                             cl_fix_from_real(1.0, (1,3,3)),
                             "Sub");
+                
+                -- cl_fix_recommended_pipelining
+                print("cl_fix_recommended_pipelining");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,1,7), NonSymPos_s), 1, "Round");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,0,7), Trunc_s), 0, "Round");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,-1,8), SatWarn_s), 1, "Saturate");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,-1,8), Warn_s), 0, "Saturate");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,-1,7), Trunc_s, Sat_s), 1, "Resize");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,-1,7), ConvEven_s, None_s), 1, "Resize");
+                check_equal(cl_fix_recommended_pipelining((0,0,8), (0,-1,7), ConvEven_s, Sat_s), 2, "Resize");
+                
+                -- cl_fix_latency
+                print("cl_fix_latency");
+                check_equal(cl_fix_latency((0,0,8), (0,1,7), NonSymPos_s, Auto_s), 1, "Round");
+                check_equal(cl_fix_latency((0,0,8), (0,1,7), NonSymPos_s, No_s), 0, "Round");
+                check_equal(cl_fix_latency((0,0,8), (0,0,7), Trunc_s, Yes_s), 1, "Round");
+                check_equal(cl_fix_latency((0,0,8), (0,-1,8), SatWarn_s, Auto_s), 1, "Saturate");
+                check_equal(cl_fix_latency((0,0,8), (0,-1,8), SatWarn_s, No_s), 0, "Saturate");
+                check_equal(cl_fix_latency((0,0,8), (0,-1,8), Warn_s, Yes_s), 1, "Saturate");
+                check_equal(cl_fix_latency((0,0,8), (0,-1,7), ConvEven_s, Sat_s, Auto_s), 2, "Resize");
+                check_equal(cl_fix_latency((0,0,8), (0,-1,7), ConvEven_s, Sat_s, No_s), 0, "Resize");
+                check_equal(cl_fix_latency((0,0,8), (0,-1,7), Trunc_s, None_s, Yes_s), 2, "Resize");
             end if;
         end loop;
         

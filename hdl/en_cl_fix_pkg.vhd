@@ -184,6 +184,32 @@ package en_cl_fix_pkg is
         saturate    : FixSaturate_t
     ) return natural;
     
+    -- Latency of cl_fix_round
+    function cl_fix_latency(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t;
+        reg_mode    : RegisterMode_t;
+        fmt_check   : boolean := true
+    ) return natural;
+    
+    -- Latency of cl_fix_saturate
+    function cl_fix_latency(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        saturate    : FixSaturate_t;
+        reg_mode    : RegisterMode_t
+    ) return natural;
+    
+    -- Latency of cl_fix_resize
+    function cl_fix_latency(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t;
+        saturate    : FixSaturate_t;
+        reg_mode    : RegisterMode_t
+    ) return natural;
+    
     -----------------------------------------------------------------------------------------------
     -- Math Functions
     -----------------------------------------------------------------------------------------------
@@ -1108,6 +1134,60 @@ package body en_cl_fix_pkg is
     begin
         return cl_fix_recommended_pipelining(a_fmt, round_fmt_c, round)
              + cl_fix_recommended_pipelining(round_fmt_c, result_fmt, saturate);
+    end;
+    
+    function cl_fix_latency(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t;
+        reg_mode    : RegisterMode_t;
+        fmt_check   : boolean := true
+    ) return natural is
+    begin
+        case reg_mode is
+            when Auto_s =>
+                return cl_fix_recommended_pipelining(a_fmt, result_fmt, round, fmt_check);
+            when Yes_s =>
+                return 1;
+            when No_s =>
+                return 0;
+            when others =>
+                report "cl_fix_latency: Unsupported reg_mode." severity Failure;
+                return 0;
+        end case;
+    end;
+    
+    function cl_fix_latency(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        saturate    : FixSaturate_t;
+        reg_mode    : RegisterMode_t
+    ) return natural is
+    begin
+        case reg_mode is
+            when Auto_s =>
+                return cl_fix_recommended_pipelining(a_fmt, result_fmt, saturate);
+            when Yes_s =>
+                return 1;
+            when No_s =>
+                return 0;
+            when others =>
+                report "cl_fix_latency: Unsupported reg_mode." severity Failure;
+                return 0;
+        end case;
+    end;
+    
+    function cl_fix_latency(
+        a_fmt       : FixFormat_t;
+        result_fmt  : FixFormat_t;
+        round       : FixRound_t;
+        saturate    : FixSaturate_t;
+        reg_mode    : RegisterMode_t
+    ) return natural is
+        constant round_fmt_c    : FixFormat_t := cl_fix_round_fmt(a_fmt, result_fmt.F, round);
+    begin
+        return cl_fix_latency(a_fmt, round_fmt_c, round, reg_mode)
+             + cl_fix_latency(round_fmt_c, result_fmt, saturate, reg_mode);
     end;
     
     function cl_fix_abs(
