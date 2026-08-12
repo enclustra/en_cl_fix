@@ -734,7 +734,10 @@ package body en_cl_fix_pkg is
             when SymZero_s   => return "SymZero_s";
             when ConvEven_s  => return "ConvEven_s";
             when ConvOdd_s   => return "ConvOdd_s";
-            when others => report "to_string(FixRound_t) : Unsupported input." severity Failure;
+            when others =>
+-- coverage off
+                report "to_string(FixRound_t) : Unsupported input." severity Failure;
+-- coverage on
         end case;
         return "";
     end;
@@ -747,7 +750,10 @@ package body en_cl_fix_pkg is
             when Warn_s    => return "Warn_s";
             when Sat_s     => return "Sat_s";
             when SatWarn_s => return "SatWarn_s";
-            when others => report "to_string(FixSaturate_t) : Unsupported input." severity Failure;
+            when others =>
+-- coverage off
+                report "to_string(FixSaturate_t) : Unsupported input." severity Failure;
+-- coverage on
         end case;
         return "";
     end;
@@ -767,7 +773,9 @@ package body en_cl_fix_pkg is
         elsif Str(Index_v+1) = '1' then
             Format_v.S := 1;
         else
+-- coverage off
             report "cl_fix_format_from_string: Unsupported number of sign bits: " & Str(Index_v+1) severity Failure;
+-- coverage on
         end if;
         Index_v := string_find_next_match(Str, ',', Index_v+1);
         assert Index_v > 0
@@ -802,8 +810,10 @@ package body en_cl_fix_pkg is
             return ConvOdd_s;
         end if;
         
+-- coverage off
         report "cl_fix_round_from_string: unrecognized format " & Str severity failure;
         return Trunc_s;
+-- coverage on
     end;
     
     function cl_fix_saturate_from_string(Str : string) return FixSaturate_t is
@@ -819,8 +829,10 @@ package body en_cl_fix_pkg is
             return SatWarn_s;
         end if;
         
+-- coverage off
         report "cl_fix_saturate_from_string: unrecognized format " & Str severity failure;
         return None_s;
+-- coverage on
     end;
     
     function cl_fix_from_real(a : real; result_fmt : FixFormat_t; saturate : FixSaturate_t := SatWarn_s) return std_logic_vector is
@@ -993,7 +1005,10 @@ package body en_cl_fix_pkg is
                     mid_v := mid_v + half_c - ("" & not unit_v);
                 when ConvOdd_s =>
                     mid_v := mid_v + half_c - ("" & unit_v);
-                when others => report "Unrecognized rounding mode: " & to_string(round) severity Failure;
+                when others =>
+-- coverage off
+                    report "Unrecognized rounding mode: " & to_string(round) severity Failure;
+-- coverage on
             end case;
         end if;
         
@@ -1152,8 +1167,10 @@ package body en_cl_fix_pkg is
             when No_s =>
                 return 0;
             when others =>
+-- coverage off
                 report "cl_fix_latency: Unsupported reg_mode." severity Failure;
                 return 0;
+-- coverage on
         end case;
     end;
     
@@ -1172,8 +1189,10 @@ package body en_cl_fix_pkg is
             when No_s =>
                 return 0;
             when others =>
+-- coverage off
                 report "cl_fix_latency: Unsupported reg_mode." severity Failure;
                 return 0;
+-- coverage on
         end case;
     end;
     
@@ -1377,8 +1396,10 @@ package body en_cl_fix_pkg is
             elsif comparison = "<=" then return signed(a_v) <= signed(b_v);
             elsif comparison = ">=" then return signed(a_v) >= signed(b_v);
             else
+-- coverage off
                 report "cl_fix_compare: Unrecognized comparison type: " & comparison severity Failure;
                 return false;
+-- coverage on
             end if;
         else
             if    comparison = "="  then return unsigned(a_v) =  unsigned(b_v);
@@ -1388,8 +1409,10 @@ package body en_cl_fix_pkg is
             elsif comparison = "<=" then return unsigned(a_v) <= unsigned(b_v);
             elsif comparison = ">=" then return unsigned(a_v) >= unsigned(b_v);
             else
+-- coverage off
                 report "cl_fix_compare: Unrecognized comparison type: " & comparison severity Failure;
                 return false;
+-- coverage on
             end if;
         end if;
     end function;

@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
--- Copyright (c) 2024 Enclustra GmbH, Switzerland (info@enclustra.com)
+-- Copyright (c) 2026 Enclustra GmbH, Switzerland (info@enclustra.com)
 -- 
 -- Permission is hereby granted, free of charge, to any person obtaining a copy of this software
 -- and associated documentation files (the "Software"), to deal in the Software without
@@ -48,6 +48,16 @@ end entity en_cl_fix_pkg_tb;
 architecture sim of en_cl_fix_pkg_tb is
     
     procedure check_equal(got, expected : FixFormat_t; msg : string) is
+    begin
+        assert got = expected report msg & ", got: " & to_string(got) & ", expected: " & to_string(expected) severity Failure;
+    end procedure;
+    
+    procedure check_equal(got, expected : FixRound_t; msg : string) is
+    begin
+        assert got = expected report msg & ", got: " & to_string(got) & ", expected: " & to_string(expected) severity Failure;
+    end procedure;
+    
+    procedure check_equal(got, expected : FixSaturate_t; msg : string) is
     begin
         assert got = expected report msg & ", got: " & to_string(got) & ", expected: " & to_string(expected) severity Failure;
     end procedure;
@@ -754,6 +764,31 @@ begin
                 check_equal(cl_fix_latency((0,0,8), (0,-1,7), ConvEven_s, Sat_s, Auto_s), 2, "Resize");
                 check_equal(cl_fix_latency((0,0,8), (0,-1,7), ConvEven_s, Sat_s, No_s), 0, "Resize");
                 check_equal(cl_fix_latency((0,0,8), (0,-1,7), Trunc_s, None_s, Yes_s), 2, "Resize");
+                
+                -- to_string
+                print("to_string");
+                check_equal(to_string("11", (0, -1, 3)), ".(0)11", "Number");
+                check_equal(to_string("11", (0, 3, -1)), "11(0).", "Number");
+                check_equal(to_string("11", (0, 0, 2)), ".11", "Number");
+                check_equal(to_string(FixFormat_t'(1, 2, 3)), "(1,2,3)", "FixFormat_t");
+                check_equal(to_string(NonSymPos_s), "NonSymPos_s", "FixRound_t");
+                check_equal(to_string(SatWarn_s), "SatWarn_s", "FixSaturate_t");
+                
+                -- from_string
+                print("from_string");
+                check_equal(cl_fix_format_from_string("(0,3,  5)"), (0, 3, 5), "FixFormat_t");
+                check_equal(cl_fix_format_from_string("(1, 3,5)"), (1, 3, 5), "FixFormat_t");
+                check_equal(cl_fix_round_from_string("Trunc_s"), Trunc_s, "FixRound_t");
+                check_equal(cl_fix_round_from_string("NONSYMPOS_S"), NonSymPos_s, "FixRound_t");
+                check_equal(cl_fix_round_from_string("nonsymneg_s"), NonSymNeg_s, "FixRound_t");
+                check_equal(cl_fix_round_from_string("SymInf_s"), SymInf_s, "FixRound_t");
+                check_equal(cl_fix_round_from_string("SymZero_s"), SymZero_s, "FixRound_t");
+                check_equal(cl_fix_round_from_string("ConvEven_s"), ConvEven_s, "FixRound_t");
+                check_equal(cl_fix_round_from_string("ConvOdd_s"), ConvOdd_s, "FixRound_t");
+                check_equal(cl_fix_saturate_from_string("None_s"), None_s, "FixSaturate_t");
+                check_equal(cl_fix_saturate_from_string("WARN_S"), Warn_s, "FixSaturate_t");
+                check_equal(cl_fix_saturate_from_string("sat_s"), Sat_s, "FixSaturate_t");
+                check_equal(cl_fix_saturate_from_string("SatWarn_s"), SatWarn_s, "FixSaturate_t");
             end if;
         end loop;
         
