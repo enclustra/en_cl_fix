@@ -219,7 +219,9 @@ begin
                 
                 -- Check cl_fix_latency delay (using metadata path)
                 wait for 0 ns;  -- Wait 1 delta cycle for assignment.
-                check_equal(delay_meta, out_meta, "cl_fix_latency-delayed metadata mismatch" & to_string(i));
+                wait for 0 ns;  -- Wait 1 delta cycle for assignment.
+                wait for 0 ns;  -- Wait 1 delta cycle for assignment.
+                check_equal(delay_meta, out_meta, "cl_fix_latency-delayed metadata mismatch in test case " & to_string(i));
                 
                 Idx_v := Idx_v + 1;
             end loop;
